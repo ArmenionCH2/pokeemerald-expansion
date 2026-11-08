@@ -28,3 +28,17 @@ jobs:
         run: make -j2
       - name: Native Atlas smoke test
         run: python3 dev_scripts/test_atlas_emulator.py
+      - name: Package AtlasGBA ROM
+        run: |
+          mkdir -p build/atlas-rom
+          cp pokeemerald.gba build/atlas-rom/AtlasGBA.gba
+          git rev-parse HEAD > build/atlas-rom/COMMIT.txt
+          cd build/atlas-rom
+          sha256sum AtlasGBA.gba > SHA256SUMS
+      - name: Upload AtlasGBA ROM
+        uses: actions/upload-artifact@v4
+        with:
+          name: AtlasGBA-${{ github.sha }}
+          path: build/atlas-rom/
+          if-no-files-found: error
+          retention-days: 14
