@@ -1,0 +1,9 @@
+{
+  "docs/atlas/FULL_PLAN.md": "10c1ccf98a534e854cf0f689334b4b3583a6a865a5c75855721425c3f82f5e58",
+  "migration/atlas/original.patch": "933521c87b29f2c9902a4505182824e1ccf81f9158b4a0fd1256eb24a752ef85",
+  "migration/atlas/SOURCE_REF.json": "6879885b1144b0de61023e3d5eb8b7a675f25538fe0da638f2251cf07f6b1559",
+  "migration/atlas/EXTRACTED_SOURCE_PROVENANCE.json": "937623219a7d36637386516645df739f3a188e07709657de9f3bbc8fe95716d7",
+  "migration/atlas/hydrate_game.py": "de08d39390fbcf48a3f9aae155473fb35cafdeda360a05da8750bd984f39cc16",
+  "assets/punyworld/source.png": "14d285bde8dee96cb0113947c8cce4922b86bf1d033b19123112145c7cef3a38",
+  "assets/punyworld/CC0-1.0.txt": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+}

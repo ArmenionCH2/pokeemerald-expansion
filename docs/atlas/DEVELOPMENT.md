@@ -1,0 +1,98 @@
+# Development
+
+## Layout and authority
+
+Keep the Expansion build layout. `FULL_PLAN.md` is the owner's game vision,
+including explicitly undecided mechanics. `src/` is the implementation authority;
+`tests/atlas/` contains executable host contracts; `test/` is Expansion's native
+battle test framework. Do not describe a host mock as emulator evidence.
+
+| Task | Entry points |
+| --- | --- |
+| World seed, position, startup | `src/atlas_world.c`, `src/atlas_creation.c` |
+| Geography, hydrology, habitat | `src/atlas_plan.c`, `src/atlas_terrain.c`, `src/atlas_water.c`, `src/atlas_habitat.c` |
+| Streaming, rendering, art | `src/atlas_stream.c`, `src/atlas_tiles.c`, `src/atlas_tiles_data.c`, `assets/punyworld/` |
+| Exploration journal and map | `src/atlas_state.c`, `src/atlas_map.c`, `include/atlas_state.h` |
+| Wildlife selection and ownership | `src/atlas_wildlife.c`, `src/atlas_pokemon.c`, `src/atlas_actor_*.c` |
+| Engine integration | `src/fieldmap.c`, `src/overworld.c`, `src/event_object_movement.c`, `src/main_menu.c`, `src/new_game.c`, `src/start_menu.c` |
+| Original changes and exact hashes | `migration/atlas/` |
+
+Use `rg` to follow callers. A callable subsystem is not necessarily wired into
+play: the wildlife loop wires up to three habitat-selected, wandering native
+actors; identity/admission tests do not demonstrate persistent populations,
+autonomous ecology or relationships. No implementation-status mirror is maintained.
+
+## Build and verify
+
+On Debian/Ubuntu, install `build-essential binutils-arm-none-eabi gcc-arm-none-eabi
+libnewlib-arm-none-eabi libpng-dev python3` using your environment's package manager.
+Host tests need a C compiler with AddressSanitizer and UBSan. Asset regeneration
+also needs Pillow (`python3-pil`, or a local virtual environment). Emulator checks
+use `libmgba-dev`. No private repository credential is required for normal development.
+
+Run the commands in README. For a built development ROM, run
+`python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
+entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
+ `make` builds the Emerald target; other Expansion game
+targets are retained engine code, not supported Atlas releases. `make release`
+enables the engine's release/LTO mode. Build artifacts stay in `build/` or the
+engine's existing ignored output paths. CI checks; it never commits or publishes ROMs.
+
+Preserved tests exercise real Atlas C with host mocks. `dev_scripts/test_atlas.py`
+compiles separate cases with sanitizers. New regressions should protect behavior
+or data integrity, not mirror source formatting. Use `git diff --check` before commit.
+
+Regenerate art with `python3 dev_scripts/compile_atlas_nature.py`; review the C,
+header and manifest diff. The PNG preview goes to `build/atlas/`. Preserve raw
+licensed art and credits. Do not add arbitrary art from other ROM hacks.
+
+## Compatibility contracts
+
+- Start from Expansion commit `d7ee392a2ca13fb708258940614a48b32a90992c`.
+  The original Atlas engine was a different pret/pokeemerald revision. Do not
+  copy its allocator, linker script, sprite engine or save code over Expansion.
+- World generation version and save-journal version are separate identities.
+  Restore validates them and the seed. Unknown Atlas formats fail closed.
+  There is no old Atlas/Emerald save converter; use backed-up, fresh saves.
+- The original optional recipe cache wrote sectors 28–31. Expansion owns these
+  sectors and its per-sector SaveBlock3 extension. The port deliberately uses
+  native save blocks and reconstructs terrain from the seed. Do not enable the
+  raw-flash backend from the recovery patch.
+- `AtlasSaveState` lives in SaveBlock3, subject to the engine's compile-time save
+  budget assertion. It records exact visited tiles in 24 chunks, never evicts a
+  chunk, and rejects additional chunks when full. The map reports this limit.
+  This is bounded exploration persistence, not unlimited planet history.
+- The saved clock advances during overworld simulation, pauses in menus, and
+  saturates instead of wrapping. Regional hourly weather is deterministic from
+  seed, place, saved time and climate; it currently informs the map, not animated
+  precipitation, terrain changes or a complete seasons/ecology simulation.
+- The player map projects only genuinely visited tiles at every zoom. Admin-map
+  reads never mark discovery. Developer teleport is not normal traversal.
+- Atlas reserves the upper 55,296 bytes of Expansion's existing 115,968-byte
+  heap while its world is active. Native allocation then uses the lower 60,672
+  bytes. Save relocation is compile-time checked against that boundary; the
+  complete heap remains available outside Atlas scenes. The reservation begins
+  only after the previous UI releases its allocations. Do not enter modes using
+  fixed upper-heap scratch (such as contests) while Atlas owns that region. Check
+  linker EWRAM/IWRAM/ROM totals and emulator allocations after changing budgets.
+  Host sanitizers cannot establish ARM memory safety or frame performance.
+
+## Branches, continuity and research
+
+Use `master` as the single active branch. Direct commits are authorized by the
+owner after checks. A short local worktree is useful for risky research; merge only
+reviewed changes and remove the worktree. Avoid standing experiment branches.
+A commit message should state behavior, checks actually run, and remaining limits.
+Use Git history for decisions rather than a second taskboard or daily diary.
+
+Reference research considered the bounded reading route and source/evidence
+separation in `despairarc000/dgunmod`'s development workspace, and onboarding in
+`despairarc000/pokeemerald-expansion`. Their separate status catalogs, gameplay
+rules and branch policies were not imported. Atlas uses this short guide, the
+vision and source searches because its source is directly available.
+
+Before implementing further vision, trace the current call graph and choose an
+observable vertical slice. Larger ecology, trust, terrain alteration, caves,
+legendaries, evolution, survival and shared-world play need real integration and
+acceptance tests. Design questions explicitly left open in FULL_PLAN remain open;
+a mock, debug screen or document does not finish them.

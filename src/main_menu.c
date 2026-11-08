@@ -1,4 +1,6 @@
 #include "global.h"
+#include "atlas_world.h"
+#include "atlas_plan.h"
 #include "trainer_pokemon_sprites.h"
 #include "bg.h"
 #include "constants/rgb.h"
@@ -1091,12 +1093,16 @@ static void Task_HandleMainMenuAPressed(u8 taskId)
 
             gPlttBufferUnfaded[0] = RGB_BLACK;
             gPlttBufferFaded[0] = RGB_BLACK;
-            gTasks[taskId].func = Task_NewGameBirchSpeech_Init;
+            ResetAllPicSprites();
+            gMain.state = 0;
+            SetMainCallback2(CB2_AtlasCreateWorld);
+            DestroyTask(taskId);
             break;
         case ACTION_CONTINUE:
             gPlttBufferUnfaded[0] = RGB_BLACK;
             gPlttBufferFaded[0] = RGB_BLACK;
-            SetMainCallback2(CB2_ContinueSavedGame);
+            gMain.state = 0;
+            SetMainCallback2(CB2_AtlasRestoreWorld);
             DestroyTask(taskId);
             break;
         case ACTION_OPTION:

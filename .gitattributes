@@ -27,3 +27,6 @@ Makefile text eol=lf
 
 *.h linguist-language=C
 *.inc linguist-language=Assembly
+
+# Immutable recovery delta preserves original whitespace exactly.
+migration/atlas/original.patch -whitespace

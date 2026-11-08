@@ -1,4 +1,7 @@
 #include "global.h"
+#include "atlas_world.h"
+#include "atlas_geo.h"
+#include "atlas_state.h"
 #include "config/save.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -69,6 +72,8 @@ enum
     MENU_ACTION_PYRAMID_BAG,
     MENU_ACTION_DEBUG,
     MENU_ACTION_DEXNAV,
+    MENU_ACTION_GEO,
+    MENU_ACTION_ATLAS_MAP,
 };
 
 // Save status
@@ -105,6 +110,10 @@ static bool8 StartMenuPlayerNameCallback(void);
 static bool8 StartMenuSaveCallback(void);
 static bool8 StartMenuOptionCallback(void);
 static bool8 StartMenuExitCallback(void);
+static bool8 StartMenuGeoCallback(void);
+static bool8 StartMenuAtlasMapCallback(void);
+static const u8 sAtlasMapText[] = _("WORLD MAP");
+static const u8 sGeoText[] = _("GEO TP");
 static bool8 StartMenuSafariZoneRetireCallback(void);
 static bool8 StartMenuLinkModePlayerNameCallback(void);
 static bool8 StartMenuBattlePyramidRetireCallback(void);
@@ -206,6 +215,8 @@ static const struct MenuAction sStartMenuItems[] =
     [MENU_ACTION_PYRAMID_BAG]     = {gText_MenuBag,     {.u8_void = StartMenuBattlePyramidBagCallback}},
     [MENU_ACTION_DEBUG]           = {sText_MenuDebug,   {.u8_void = StartMenuDebugCallback}},
     [MENU_ACTION_DEXNAV]          = {gText_MenuDexNav,  {.u8_void = StartMenuDexNavCallback}},
+    [MENU_ACTION_ATLAS_MAP] = {sAtlasMapText, {.u8_void = StartMenuAtlasMapCallback}},
+    [MENU_ACTION_GEO]             = {sGeoText, {.u8_void = StartMenuGeoCallback}},
 };
 
 static const struct BgTemplate sBgTemplates_LinkBattleSave[] =
@@ -324,6 +335,17 @@ static void AddStartMenuAction(u8 action)
 
 static void BuildNormalStartMenu(void)
 {
+    if (AtlasWorld_IsActive())
+    {
+        AddStartMenuAction(MENU_ACTION_ATLAS_MAP);
+        AddStartMenuAction(MENU_ACTION_SAVE);
+        AddStartMenuAction(MENU_ACTION_OPTION);
+#ifndef NDEBUG
+        AddStartMenuAction(MENU_ACTION_GEO);
+#endif
+        AddStartMenuAction(MENU_ACTION_EXIT);
+        return;
+    }
     if (FlagGet(FLAG_SYS_POKEDEX_GET) == TRUE)
         AddStartMenuAction(MENU_ACTION_POKEDEX);
 
@@ -1510,4 +1532,25 @@ void Script_ForceSaveGame(struct ScriptContext *ctx)
     ShowSaveInfoWindow();
     gMenuCallback = SaveCallback;
     sSaveDialogCallback = SaveSavingMessageCallback;
+}
+
+static bool8 StartMenuGeoCallback(void)
+{
+    if (!gPaletteFade.active)
+    {
+        RemoveExtraStartMenuWindows();
+        CleanupOverworldWindowsAndTilemaps();
+        SetMainCallback2(CB2_AtlasGeoMenu);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static bool8 StartMenuAtlasMapCallback(void)
+{
+    if (gPaletteFade.active) return FALSE;
+    RemoveExtraStartMenuWindows();
+    CleanupOverworldWindowsAndTilemaps();
+    SetMainCallback2(CB2_AtlasMap);
+    return TRUE;
 }

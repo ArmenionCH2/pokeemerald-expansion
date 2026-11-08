@@ -1,0 +1,3 @@
+#!/bin/sh
+# Git passes the actual destination, including when pushing a literal URL.
+exec python3 dev_scripts/atlas.py guard "$2"

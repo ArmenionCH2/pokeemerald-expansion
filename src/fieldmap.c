@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_world.h"
 #include "battle_pyramid.h"
 #include "bg.h"
 #include "fieldmap.h"
@@ -173,8 +174,17 @@ static void InitMapLayoutData(const struct MapHeader *mapHeader)
     if (gBackupMapLayout.width * gBackupMapLayout.height > MAX_MAP_DATA_SIZE)
         return;
 
-    InitBackupMapLayoutData(mapLayout->map, mapLayout->width, mapLayout->height);
-    InitBackupMapLayoutConnections(mapHeader);
+    if (AtlasWorld_IsActive())
+    {
+        /* Native connection flags are initialized before replacing all terrain. */
+        InitBackupMapLayoutConnections(mapHeader);
+        AtlasWorld_Fill();
+    }
+    else
+    {
+        InitBackupMapLayoutData(mapLayout->map, mapLayout->width, mapLayout->height);
+        InitBackupMapLayoutConnections(mapHeader);
+    }
 }
 
 static void InitBackupMapLayoutData(const u16 *map, u16 width, u16 height)
@@ -574,6 +584,9 @@ static void LoadSavedMapView(void)
     s32 x, y;
     u16 *mapView;
     s32 width;
+    /* The seed/compiler owns Atlas terrain. Native save snapshots may contain
+     * artwork from a previous terrain revision, not persistent world edits. */
+    if (AtlasWorld_IsActive()) { ClearSavedMapView(); return; }
     mapView = gSaveBlock1Ptr->mapView;
     if (SavedMapViewIsEmpty())
         return;
@@ -616,6 +629,8 @@ static void MoveMapViewToBackup(enum Connection direction)
     s32 i, j;
 
     u16 *mapView = gSaveBlock1Ptr->mapView;
+
+    if (AtlasWorld_IsActive()) { ClearSavedMapView(); return; }
     
     width = gBackupMapLayout.width;
     i = 0;
@@ -767,7 +782,13 @@ bool8 CameraMove(s32 x, s32 y)
         }
 
         SetPositionFromConnection(connection, direction, x, y);
-        LoadMapFromCameraTransition(connection->mapGroup, connection->mapNum);
+        if (AtlasWorld_IsActive())
+        {
+            AtlasWorld_Move(direction);
+            AtlasWorld_Fill();
+        }
+        else
+            LoadMapFromCameraTransition(connection->mapGroup, connection->mapNum);
         gCamera.active = TRUE;
         gCamera.x = old_x - gSaveBlock1Ptr->pos.x;
         gCamera.y = old_y - gSaveBlock1Ptr->pos.y;

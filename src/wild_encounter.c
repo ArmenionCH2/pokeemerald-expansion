@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_world.h"
 #include "battle_setup.h"
 #include "battle_pike.h"
 #include "battle_pyramid.h"
@@ -664,6 +665,7 @@ bool8 AreLegendariesInSootopolisPreventingEncounters(void)
 
 bool8 StandardWildEncounter(u16 curMetatileBehavior, u16 prevMetatileBehavior)
 {
+    if (AtlasWorld_IsActive()) return FALSE;
     u32 headerId;
     enum TimeOfDay timeOfDay;
     struct Roamer *roamer;

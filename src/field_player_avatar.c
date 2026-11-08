@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_world.h"
 #include "main.h"
 #include "bike.h"
 #include "event_data.h"
@@ -378,6 +379,7 @@ void PlayerStep(enum Direction direction, u16 newKeys, u16 heldKeys)
                 }
                 else
                 {
+                    if (AtlasWorld_IsActive() && !AtlasStream_CanStep(direction)) direction = DIR_NONE;
                     MovePlayerAvatarUsingKeypadInput(direction, newKeys, heldKeys);
                     PlayerAllowForcedMovementIfMovingSameDirection();
                 }

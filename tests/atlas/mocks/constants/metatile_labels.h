@@ -1,0 +1,5 @@
+#define METATILE_General_Grass 0x001
+#define METATILE_General_CalmWater 0x170
+#define METATILE_General_SandPit_Center 0x121
+#define METATILE_General_RockWall_GrassBase 0x079
+#define METATILE_General_TallGrass 0x00D

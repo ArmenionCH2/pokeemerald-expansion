@@ -1,4 +1,6 @@
 #include "global.h"
+#include "atlas_actor_runtime.h"
+#include "atlas_world.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -657,6 +659,8 @@ static bool32 IsDummyWarp(struct WarpData *warp)
 
 struct MapHeader const *const Overworld_GetMapHeaderByGroupAndId(u16 mapGroup, u16 mapNum)
 {
+    if (mapGroup == MAP_GROUP(MAP_ATLAS_WORLD) && mapNum == MAP_NUM(MAP_ATLAS_WORLD))
+        return AtlasWorld_Header(gMapGroups[mapGroup][mapNum]);
     return gMapGroups[mapGroup][mapNum];
 }
 
@@ -1851,7 +1855,9 @@ static void OverworldBasic(void)
     ScriptContext_RunScript();
     RunTasks();
     AnimateSprites();
+    AtlasWorld_Tick();
     CameraUpdate();
+    AtlasWildlife_Tick();
     UpdateCameraPanning();
     BuildOamBuffer();
     UpdatePaletteFade();
@@ -1933,12 +1939,12 @@ void CB2_NewGame(void)
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
     ResetSafariZoneFlag_();
-    NewGameInitData();
+    if (IS_FRLG) NewGameInitData();
     ResetInitialPlayerAvatarState();
     PlayTimeCounter_Start();
     ScriptContext_Init();
     UnlockPlayerFieldControls();
-    if (IS_FRLG)
+    if (IS_FRLG || AtlasWorld_IsActive())
         gFieldCallback = FieldCB_WarpExitFadeFromBlack;
     else
         gFieldCallback = ExecuteTruckSequence;
@@ -2608,6 +2614,11 @@ static void InitObjectEventsLink(void)
     gTotalCameraPixelOffsetX = 0;
     gTotalCameraPixelOffsetY = 0;
     ResetObjectEvents();
+    /* The preceding ResumeMap reset ALL sprite slots, and ResetObjectEvents
+     * has now cleared native object records. Only here is bulk generation
+     * invalidation safe; return-to-field keeps objects and must rebind. */
+    if (AtlasActorRuntime_PeekRoster() != NULL)
+        AtlasActorRuntime_ResetAfterNativeClear();
     TrySpawnObjectEvents(0, 0);
     TryRunOnWarpIntoMapScript();
 }
@@ -2620,6 +2631,11 @@ static void InitObjectEventsLocal(void)
     gTotalCameraPixelOffsetX = 0;
     gTotalCameraPixelOffsetY = 0;
     ResetObjectEvents();
+    /* The preceding ResumeMap reset ALL sprite slots, and ResetObjectEvents
+     * has now cleared native object records. Only here is bulk generation
+     * invalidation safe; return-to-field keeps objects and must rebind. */
+    if (AtlasActorRuntime_PeekRoster() != NULL)
+        AtlasActorRuntime_ResetAfterNativeClear();
     GetCameraFocusCoords(&x, &y);
     player = GetInitialPlayerAvatarState();
     InitPlayerAvatar(x, y, player->direction, gSaveBlock2Ptr->playerGender);
@@ -2633,7 +2649,14 @@ static void InitObjectEventsLocal(void)
 
 static void InitObjectEventsReturnToField(void)
 {
+    bool8 atlasRestoring = FALSE;
+
+    /* ResumeMap already cleared sprite records, but not object identities. */
+    if (AtlasActorRuntime_PeekRoster() != NULL)
+        atlasRestoring = AtlasActorRuntime_BeginSpriteRestore();
     SpawnObjectEventsOnReturnToField(0, 0);
+    if (atlasRestoring)
+        AtlasActorRuntime_EndSpriteRestore();
     RotatingGate_InitPuzzleAndGraphics();
     RunOnReturnToFieldMapScript();
 }

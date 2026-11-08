@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_actor_runtime.h"
 #include "malloc.h"
 #include "battle_anim.h"
 #include "battle_pyramid.h"
@@ -1691,6 +1692,79 @@ void RemoveObjectEventByLocalIdAndMap(u8 localId, u8 mapNum, u8 mapGroup)
     }
 }
 
+/* Capture a newly spawned native object's sprite only after confirming
+ * the returned object-event slot still belongs to the requested local/map
+ * identity. This is read-only: it does not allocate, remove, or set flags.
+ * A caller must additionally bind the receipt to its actor generation and
+ * revalidate ownership before cleanup. */
+bool8 AtlasTryCaptureTransientSpawnReceipt(u8 objectEventId, u8 localId, u8 mapNum, u8 mapGroup, u8 *outSpriteId)
+{
+    struct ObjectEvent *objectEvent;
+    u8 spriteId;
+    u8 i;
+
+    if (outSpriteId != NULL)
+        *outSpriteId = MAX_SPRITES;
+    if (outSpriteId == NULL || objectEventId >= OBJECT_EVENTS_COUNT
+     || localId == 0 || localId >= LOCALID_CAMERA
+     || objectEventId == gPlayerAvatar.objectEventId)
+        return FALSE;
+
+    objectEvent = &gObjectEvents[objectEventId];
+    if (!objectEvent->active || objectEvent->isPlayer
+     || objectEvent->localId != localId
+     || objectEvent->mapNum != mapNum || objectEvent->mapGroup != mapGroup)
+        return FALSE;
+
+    spriteId = objectEvent->spriteId;
+    if (spriteId >= MAX_SPRITES || !gSprites[spriteId].inUse
+     || gSprites[spriteId].sObjEventId != objectEventId)
+        return FALSE;
+
+    for (i = 0; i < ARRAY_COUNT(gLinkPlayerObjectEvents); i++)
+    {
+        if (gLinkPlayerObjectEvents[i].active
+         && gLinkPlayerObjectEvents[i].objEventId == objectEventId)
+            return FALSE;
+    }
+
+    *outSpriteId = spriteId;
+    return TRUE;
+}
+
+bool8 AtlasTryRemoveTransientObjectEvent(u8 objectEventId, u8 localId, u8 mapNum, u8 mapGroup, u8 spriteId)
+{
+    struct ObjectEvent *objectEvent;
+    u8 i;
+
+    /* A caller must provide the exact native object and sprite slots it owns.
+     * The local-ID/map tuple alone is insufficient after slot reuse. */
+    if (objectEventId >= OBJECT_EVENTS_COUNT || spriteId >= MAX_SPRITES
+     || localId == 0 || localId >= LOCALID_CAMERA
+     || objectEventId == gPlayerAvatar.objectEventId)
+        return FALSE;
+
+    objectEvent = &gObjectEvents[objectEventId];
+    if (!objectEvent->active || objectEvent->isPlayer
+     || objectEvent->localId != localId
+     || objectEvent->mapNum != mapNum || objectEvent->mapGroup != mapGroup
+     || objectEvent->spriteId != spriteId || !gSprites[spriteId].inUse
+     || gSprites[spriteId].sObjEventId != objectEventId)
+        return FALSE;
+
+    for (i = 0; i < ARRAY_COUNT(gLinkPlayerObjectEvents); i++)
+    {
+        if (gLinkPlayerObjectEvents[i].active
+         && gLinkPlayerObjectEvents[i].objEventId == objectEventId)
+            return FALSE;
+    }
+
+    /* Native removal destroys the owned sprite without setting event flags.
+     * Shared object palettes remain under the field engine's ownership. */
+    RemoveObjectEvent(objectEvent);
+    return TRUE;
+}
+
 static void RemoveObjectEventInternal(struct ObjectEvent *objectEvent)
 {
     struct SpriteFrameImage image;
@@ -2949,6 +3023,10 @@ static void RemoveObjectEventIfOutsideView(struct ObjectEvent *objectEvent)
     s16 right =  gSaveBlock1Ptr->pos.x + 17;
     s16 top =    gSaveBlock1Ptr->pos.y;
     s16 bottom = gSaveBlock1Ptr->pos.y + 16;
+    struct AtlasActorRemovalReceipt receipt;
+    u8 objectEventId;
+    u8 spriteId = MAX_SPRITES;
+    bool8 atlasOwned = FALSE;
 
     if (objectEvent->currentCoords.x >= left && objectEvent->currentCoords.x <= right
      && objectEvent->currentCoords.y >= top && objectEvent->currentCoords.y <= bottom)
@@ -2957,10 +3035,26 @@ static void RemoveObjectEventIfOutsideView(struct ObjectEvent *objectEvent)
      && objectEvent->initialCoords.y >= top && objectEvent->initialCoords.y <= bottom)
         return;
 
-    // Overworld Wild Ecnounters need to be set as offscreen in order to determine whether
-    // their despawn animation should play.
+    /* Only a live, owner-verified native object can produce a generation
+     * receipt. Do not initialize an unused roster or touch ordinary NPCs. */
+    objectEventId = (u8)(objectEvent - gObjectEvents);
+    if (AtlasActorRuntime_PeekRoster() != NULL
+     && objectEventId < OBJECT_EVENTS_COUNT
+     && AtlasTryCaptureTransientSpawnReceipt(objectEventId, objectEvent->localId,
+                                              objectEvent->mapNum, objectEvent->mapGroup,
+                                              &spriteId))
+        atlasOwned = AtlasActorRuntime_CaptureBound(objectEventId, spriteId,
+                                                   objectEvent->localId,
+                                                   objectEvent->mapNum,
+                                                   objectEvent->mapGroup, &receipt);
+
     objectEvent->offScreen = TRUE;
     RemoveObjectEvent(objectEvent);
+
+    /* Destruction is synchronous. Never clear an Atlas binding unless the
+     * exact native object is inactive AND its sprite slot was released. */
+    if (atlasOwned && !objectEvent->active && !gSprites[spriteId].inUse)
+        (void)AtlasActorRuntime_ConfirmRemoval(&receipt);
 }
 
 void SpawnObjectEventsOnReturnToField(s16 x, s16 y)
@@ -2986,6 +3080,10 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
     struct SpriteFrameImage spriteFrameImage;
     const struct SubspriteTable *subspriteTables;
     const struct ObjectEventGraphicsInfo *graphicsInfo;
+    struct AtlasActorRemovalReceipt atlasReceipt;
+    bool8 atlasOwned = FALSE;
+    bool8 atlasSpriteVerified = FALSE;
+    u8 verifiedSpriteId = MAX_SPRITES;
 
     for (i = 0; i < ARRAY_COUNT(gLinkPlayerObjectEvents); i++)
     {
@@ -2994,6 +3092,16 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
     }
 
     objectEvent = &gObjectEvents[objectEventId];
+    /* Return-to-field follows ResetSpriteData: the old sprite slot is not
+     * trustworthy, but the surviving object/local/map identity can be
+     * captured before native CreateSprite assigns a new slot. */
+    if (objectEvent->active && !objectEvent->isPlayer
+     && AtlasActorRuntime_PeekRoster() != NULL)
+        atlasOwned = AtlasActorRuntime_CaptureForSpriteRestore(objectEventId,
+                                                               objectEvent->localId,
+                                                               objectEvent->mapNum,
+                                                               objectEvent->mapGroup,
+                                                               &atlasReceipt);
     subspriteTables = NULL;
     graphicsInfo = GetObjectEventGraphicsInfo(objectEvent->graphicsId);
     CopyObjectGraphicsInfoToSpriteTemplate_WithMovementType(objectEvent->graphicsId, objectEvent->movementType, &spriteTemplate, &subspriteTables);
@@ -3037,12 +3145,62 @@ static void SpawnObjectEventOnReturnToField(u8 objectEventId, s16 x, s16 y)
         sprite->coordOffsetEnabled = TRUE;
         sprite->sObjEventId = objectEventId;
         objectEvent->spriteId = i;
+        /* Rebind only after Emerald has established and independently
+         * verified the new sprite-to-object association. A failed creation
+         * leaves no claim on any pre-reset sprite slot. */
+        if (atlasOwned)
+        {
+            atlasSpriteVerified = AtlasTryCaptureTransientSpawnReceipt(
+                objectEventId, objectEvent->localId,
+                objectEvent->mapNum, objectEvent->mapGroup, &verifiedSpriteId)
+                && verifiedSpriteId == i;
+            if (!atlasSpriteVerified || !AtlasActorRuntime_CommitRestoredSprite(&atlasReceipt, i))
+            {
+                /* The roster still owns the old generation, but a new native
+                 * sprite is not proven/rebound. Attempt flag-free teardown
+                 * only with BOTH a valid generation receipt and Emerald's
+                 * independently checked native object/sprite ownership. */
+                if (AtlasActorRuntime_CanAbandonFailedSpriteRestore(&atlasReceipt)
+                 && AtlasTryRemoveTransientObjectEvent(objectEventId, atlasReceipt.localId,
+                                                       atlasReceipt.binding.mapNum,
+                                                       atlasReceipt.binding.mapGroup, i)
+                 && !objectEvent->active && !gSprites[i].inUse)
+                    (void)AtlasActorRuntime_AbandonFailedSpriteRestore(&atlasReceipt);
+                if (!objectEvent->active)
+                return;
+
+                /* If safe removal was impossible, quarantine only the exact
+                 * still-owned newly created sprite. Do not animate an
+                 * unverified Atlas actor or touch a reused native slot. */
+                if (objectEvent->active && !objectEvent->isPlayer
+                 && objectEventId != gPlayerAvatar.objectEventId
+                 && objectEvent->localId == atlasReceipt.localId
+                 && objectEvent->mapNum == atlasReceipt.binding.mapNum
+                 && objectEvent->mapGroup == atlasReceipt.binding.mapGroup
+                 && objectEvent->spriteId == i
+                 && gSprites[i].inUse && gSprites[i].sObjEventId == objectEventId)
+                {
+                    sprite->invisible = TRUE;
+                    objectEvent->invisible = TRUE;
+                }
+                return;
+            }
+        }
+
         if (!objectEvent->inanimate && objectEvent->movementType != MOVEMENT_TYPE_PLAYER)
             StartSpriteAnim(sprite, GetFaceDirectionAnimNum(objectEvent->facingDirection));
 
         ResetObjectEventFldEffData(objectEvent);
         SetObjectSubpriorityByElevation(objectEvent->previousElevation, sprite, 1);
         RestoreSavedOWEBehaviorState(objectEvent, sprite);
+    }
+    else if (atlasOwned)
+    {
+        /* ResetSpriteData already removed the old sprite. No new sprite
+         * exists: do NOT call RemoveObjectEvent (stale sprite index).
+         * Retire only this Atlas generation after deactivating its record. */
+        objectEvent->active = FALSE;
+        (void)AtlasActorRuntime_AbandonFailedSpriteRestore(&atlasReceipt);
     }
 }
 

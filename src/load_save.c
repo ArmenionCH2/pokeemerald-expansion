@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_plan.h"
 #include "malloc.h"
 #include "berry_powder.h"
 #include "fake_rtc.h"
@@ -90,6 +91,8 @@ void SetSaveBlocksPointers(u16 offset)
     SetBagItemsPointers();
     SetDecorationInventoriesPointers();
 }
+
+STATIC_ASSERT(sizeof(struct SaveBlock2) + sizeof(struct SaveBlock1) + sizeof(struct PokemonStorage) <= ATLAS_RUNTIME_HEAP_SIZE, AtlasSaveRelocationFitsHeap);
 
 void MoveSaveBlocks_ResetHeap(void)
 {

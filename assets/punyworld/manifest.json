@@ -1,0 +1,1389 @@
+{
+  "author": "Shade",
+  "license": "CC0-1.0",
+  "source_url": "https://opengameart.org/content/16x16-puny-world-tileset",
+  "source_sha256": "14d285bde8dee96cb0113947c8cce4922b86bf1d033b19123112145c7cef3a38",
+  "raw_tiles": 112,
+  "metatiles": 510,
+  "palette_slots": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "water_count": 376,
+  "mountain_start": 924,
+  "cliff_start": 900,
+  "tree_start": 915,
+  "pass_start": 1018,
+  "pass_count": 4,
+  "water_families": [
+    {
+      "form": "freshwater",
+      "material": "grass",
+      "first": 512,
+      "count": 47
+    },
+    {
+      "form": "freshwater",
+      "material": "sand",
+      "first": 559,
+      "count": 47
+    },
+    {
+      "form": "freshwater",
+      "material": "rock",
+      "first": 606,
+      "count": 47
+    },
+    {
+      "form": "freshwater",
+      "material": "snow",
+      "first": 653,
+      "count": 47
+    },
+    {
+      "form": "ocean",
+      "material": "grass",
+      "first": 700,
+      "count": 47
+    },
+    {
+      "form": "ocean",
+      "material": "sand",
+      "first": 747,
+      "count": 47
+    },
+    {
+      "form": "ocean",
+      "material": "rock",
+      "first": 794,
+      "count": 47
+    },
+    {
+      "form": "ocean",
+      "material": "snow",
+      "first": 841,
+      "count": 47
+    }
+  ],
+  "options": [
+    {
+      "id": 888,
+      "name": "grass_floor_0_0",
+      "palette": 6,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 889,
+      "name": "grass_floor_1_0",
+      "palette": 6,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 890,
+      "name": "grass_floor_2_0",
+      "palette": 6,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": 891,
+      "name": "grass_floor_1_1",
+      "palette": 6,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 892,
+      "name": "sand_floor_0_0",
+      "palette": 7,
+      "behavior": 33,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 893,
+      "name": "sand_floor_1_0",
+      "palette": 7,
+      "behavior": 33,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 894,
+      "name": "sand_floor_2_0",
+      "palette": 7,
+      "behavior": 33,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": 895,
+      "name": "sand_floor_1_1",
+      "palette": 7,
+      "behavior": 33,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 896,
+      "name": "snow_floor_0_0",
+      "palette": 9,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 897,
+      "name": "snow_floor_1_0",
+      "palette": 9,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 898,
+      "name": "snow_floor_2_0",
+      "palette": 9,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": 899,
+      "name": "snow_floor_1_1",
+      "palette": 9,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 900,
+      "name": "cliff_option_0_4",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        0,
+        4
+      ]
+    },
+    {
+      "id": 901,
+      "name": "cliff_option_1_4",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        1,
+        4
+      ]
+    },
+    {
+      "id": 902,
+      "name": "cliff_option_2_4",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        2,
+        4
+      ]
+    },
+    {
+      "id": 903,
+      "name": "cliff_option_3_4",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": 904,
+      "name": "cliff_option_4_4",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        4,
+        4
+      ]
+    },
+    {
+      "id": 905,
+      "name": "cliff_option_0_5",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        0,
+        5
+      ]
+    },
+    {
+      "id": 906,
+      "name": "cliff_option_1_5",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        1,
+        5
+      ]
+    },
+    {
+      "id": 907,
+      "name": "cliff_option_2_5",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        2,
+        5
+      ]
+    },
+    {
+      "id": 908,
+      "name": "cliff_option_3_5",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        3,
+        5
+      ]
+    },
+    {
+      "id": 909,
+      "name": "cliff_option_4_5",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": 910,
+      "name": "cliff_option_0_6",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        0,
+        6
+      ]
+    },
+    {
+      "id": 911,
+      "name": "cliff_option_1_6",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        1,
+        6
+      ]
+    },
+    {
+      "id": 912,
+      "name": "cliff_option_2_6",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        2,
+        6
+      ]
+    },
+    {
+      "id": 913,
+      "name": "cliff_option_3_6",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        3,
+        6
+      ]
+    },
+    {
+      "id": 914,
+      "name": "cliff_option_4_6",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        4,
+        6
+      ]
+    },
+    {
+      "id": 915,
+      "name": "tree_option_0_7",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        0,
+        7
+      ]
+    },
+    {
+      "id": 916,
+      "name": "tree_option_1_7",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        1,
+        7
+      ]
+    },
+    {
+      "id": 917,
+      "name": "tree_option_2_7",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        2,
+        7
+      ]
+    },
+    {
+      "id": 918,
+      "name": "tree_option_0_8",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        0,
+        8
+      ]
+    },
+    {
+      "id": 919,
+      "name": "tree_option_1_8",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        1,
+        8
+      ]
+    },
+    {
+      "id": 920,
+      "name": "tree_option_2_8",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 2,
+      "blocked": true,
+      "source": [
+        2,
+        8
+      ]
+    },
+    {
+      "id": 921,
+      "name": "tree_option_0_9",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        0,
+        9
+      ]
+    },
+    {
+      "id": 922,
+      "name": "tree_option_1_9",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        1,
+        9
+      ]
+    },
+    {
+      "id": 923,
+      "name": "tree_option_2_9",
+      "palette": 11,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": [
+        2,
+        9
+      ]
+    },
+    {
+      "id": 924,
+      "name": "mountain_grass_00",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 925,
+      "name": "mountain_grass_01",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 926,
+      "name": "mountain_grass_02",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 927,
+      "name": "mountain_grass_03",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 928,
+      "name": "mountain_grass_04",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 929,
+      "name": "mountain_grass_05",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 930,
+      "name": "mountain_grass_06",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 931,
+      "name": "mountain_grass_07",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 932,
+      "name": "mountain_grass_08",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 933,
+      "name": "mountain_grass_09",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 934,
+      "name": "mountain_grass_0a",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 935,
+      "name": "mountain_grass_0b",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 936,
+      "name": "mountain_grass_0c",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 937,
+      "name": "mountain_grass_0d",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 938,
+      "name": "mountain_grass_0e",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 939,
+      "name": "mountain_grass_0f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 940,
+      "name": "mountain_grass_13",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 941,
+      "name": "mountain_grass_17",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 942,
+      "name": "mountain_grass_1b",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 943,
+      "name": "mountain_grass_1f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 944,
+      "name": "mountain_grass_26",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 945,
+      "name": "mountain_grass_27",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 946,
+      "name": "mountain_grass_2e",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 947,
+      "name": "mountain_grass_2f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 948,
+      "name": "mountain_grass_37",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 949,
+      "name": "mountain_grass_3f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 950,
+      "name": "mountain_grass_4c",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 951,
+      "name": "mountain_grass_4d",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 952,
+      "name": "mountain_grass_4e",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 953,
+      "name": "mountain_grass_4f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 954,
+      "name": "mountain_grass_5f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 955,
+      "name": "mountain_grass_6e",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 956,
+      "name": "mountain_grass_6f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 957,
+      "name": "mountain_grass_7f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 958,
+      "name": "mountain_grass_89",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 959,
+      "name": "mountain_grass_8b",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 960,
+      "name": "mountain_grass_8d",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 961,
+      "name": "mountain_grass_8f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 962,
+      "name": "mountain_grass_9b",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 963,
+      "name": "mountain_grass_9f",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 964,
+      "name": "mountain_grass_af",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 965,
+      "name": "mountain_grass_bf",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 966,
+      "name": "mountain_grass_cd",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 967,
+      "name": "mountain_grass_cf",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 968,
+      "name": "mountain_grass_df",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 969,
+      "name": "mountain_grass_ef",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 970,
+      "name": "mountain_grass_ff",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 971,
+      "name": "mountain_snow_00",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 972,
+      "name": "mountain_snow_01",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 973,
+      "name": "mountain_snow_02",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 974,
+      "name": "mountain_snow_03",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 975,
+      "name": "mountain_snow_04",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 976,
+      "name": "mountain_snow_05",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 977,
+      "name": "mountain_snow_06",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 978,
+      "name": "mountain_snow_07",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 979,
+      "name": "mountain_snow_08",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 980,
+      "name": "mountain_snow_09",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 981,
+      "name": "mountain_snow_0a",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 982,
+      "name": "mountain_snow_0b",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 983,
+      "name": "mountain_snow_0c",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 984,
+      "name": "mountain_snow_0d",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 985,
+      "name": "mountain_snow_0e",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 986,
+      "name": "mountain_snow_0f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 987,
+      "name": "mountain_snow_13",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 988,
+      "name": "mountain_snow_17",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 989,
+      "name": "mountain_snow_1b",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 990,
+      "name": "mountain_snow_1f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 991,
+      "name": "mountain_snow_26",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 992,
+      "name": "mountain_snow_27",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 993,
+      "name": "mountain_snow_2e",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 994,
+      "name": "mountain_snow_2f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 995,
+      "name": "mountain_snow_37",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 996,
+      "name": "mountain_snow_3f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 997,
+      "name": "mountain_snow_4c",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 998,
+      "name": "mountain_snow_4d",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 999,
+      "name": "mountain_snow_4e",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1000,
+      "name": "mountain_snow_4f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1001,
+      "name": "mountain_snow_5f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1002,
+      "name": "mountain_snow_6e",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1003,
+      "name": "mountain_snow_6f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1004,
+      "name": "mountain_snow_7f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1005,
+      "name": "mountain_snow_89",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1006,
+      "name": "mountain_snow_8b",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1007,
+      "name": "mountain_snow_8d",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1008,
+      "name": "mountain_snow_8f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1009,
+      "name": "mountain_snow_9b",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1010,
+      "name": "mountain_snow_9f",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1011,
+      "name": "mountain_snow_af",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1012,
+      "name": "mountain_snow_bf",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1013,
+      "name": "mountain_snow_cd",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1014,
+      "name": "mountain_snow_cf",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1015,
+      "name": "mountain_snow_df",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1016,
+      "name": "mountain_snow_ef",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": true,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1017,
+      "name": "mountain_snow_ff",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "cliff quadrants x0..4/y4..6"
+    },
+    {
+      "id": 1018,
+      "name": "pass_grass_0",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "small stones x1/y26 over flat grass x0/y0; snow uses palette 12"
+    },
+    {
+      "id": 1019,
+      "name": "pass_snow_0",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "small stones x1/y26 over flat grass x0/y0; snow uses palette 12"
+    },
+    {
+      "id": 1020,
+      "name": "pass_grass_1",
+      "palette": 10,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "small stones x1/y26 over flat grass x0/y0; snow uses palette 12"
+    },
+    {
+      "id": 1021,
+      "name": "pass_snow_1",
+      "palette": 12,
+      "behavior": 0,
+      "layer": 1,
+      "blocked": false,
+      "source": "small stones x1/y26 over flat grass x0/y0; snow uses palette 12"
+    }
+  ]
+}

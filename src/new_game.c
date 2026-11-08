@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_world.h"
 #include "clock.h"
 #include "new_game.h"
 #include "random.h"
@@ -211,11 +212,12 @@ void NewGameInitData(void)
     ResetFanClub();
     ResetLotteryCorner();
     UpdateDailySeed();
-    WarpToTruck();
+    if (IS_FRLG) WarpToTruck();
     if (IS_FRLG)
         RunScriptImmediately(EventScript_ResetAllMapFlagsFrlg);
     else
         RunScriptImmediately(EventScript_ResetAllMapFlags);
+    if (!IS_FRLG) AtlasWorld_NewGame();
 #if IS_FRLG
         StringCopy(gSaveBlock1Ptr->rivalName, rivalName);
 #endif

@@ -9323,6 +9323,16 @@
       "border_filepath": "data/layouts/OneIsland_KindleRoad_EmberSpa_Frlg/border.bin",
       "blockdata_filepath": "data/layouts/OneIsland_KindleRoad_EmberSpa_Frlg/map.bin",
       "layout_version": "frlg"
+    },
+    {
+      "id": "LAYOUT_ATLAS_WORLD",
+      "name": "AtlasWorld_Layout",
+      "width": 20,
+      "height": 20,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_AtlasNature",
+      "border_filepath": "data/layouts/AtlasWorld/border.bin",
+      "blockdata_filepath": "data/layouts/AtlasWorld/map.bin"
     }
   ]
 }

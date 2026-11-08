@@ -1,5 +1,6 @@
 #include "global.h"
 #include "malloc.h"
+#include "atlas_plan.h"
 #if TESTING
 #include "test/test.h"
 #endif
@@ -149,6 +150,10 @@ static void *AllocZeroedInternal(void *heapStart, u32 size, const char *location
 
 void InitHeap(void *heapStart, u32 heapSize)
 {
+    // Native map transitions relocate saves through the lower heap, then
+    // reset it. The Atlas plan remains in the reserved upper region.
+    if (heapStart == gHeap && gAtlasPlanReserved && heapSize > ATLAS_RUNTIME_HEAP_SIZE)
+        heapSize = ATLAS_RUNTIME_HEAP_SIZE;
     sHeapStart = heapStart;
     sHeapSize = heapSize;
     PutFirstMemBlockHeader(heapStart, heapSize);

@@ -1,5 +1,7 @@
 #include "global.h"
 #include "tilesets.h"
+#include "atlas_world.h"
+#include "atlas_tiles.h"
 #include "tileset_anims.h"
 
 #include "data/tilesets/graphics.h"

@@ -1,4 +1,9 @@
 # Instructions
+
+For AtlasGBA, start with [the development guide](docs/atlas/DEVELOPMENT.md).
+Only `ArmenionCH2/pokeemerald-expansion` is a write destination. Upstream URLs
+below are read-only engine references; never push or submit Atlas work upstream.
+
 Install instructions for each supported operating system can be found in their respective directories under `docs/install/`.
 Lines to those can be found under each heading.
 This file only contains a short introduction to each supported system.
@@ -52,7 +57,7 @@ Follow these steps to build `pokeemerald-expansion`.
 2. Download `pokeemerald-expansion` with `git`
 
     ```console
-    git clone https://github.com/rh-hideout/pokeemerald-expansion
+    git clone https://github.com/ArmenionCH2/pokeemerald-expansion
     ```
 3. Navigate to the newly downloaded project.
 

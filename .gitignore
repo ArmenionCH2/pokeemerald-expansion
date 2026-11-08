@@ -66,3 +66,12 @@ tools/aif2pcm/aif2pcm
 *.smolTM
 __pycache__
 .map_version
+
+# Atlas scratch work and local environment
+.env
+.env.*
+.venv/
+*.sav
+*.ppm
+*.rej
+*.orig
