@@ -31,7 +31,7 @@ static EWRAM_DATA bool8 sWaterPass = FALSE;
 u16 AtlasWorld_Generation(void) {return sAtlasGenerationVersion?sAtlasGenerationVersion:ATLAS_GENERATION_LEGACY;}
 bool8 AtlasWorld_SetGeneration(u16 version)
 {
-    if (version!=ATLAS_GENERATION_LEGACY && version!=ATLAS_GENERATION_VERSION) return FALSE;
+    if (version<ATLAS_GENERATION_LEGACY || version>ATLAS_GENERATION_VERSION) return FALSE;
     sAtlasGenerationVersion=version;return TRUE;
 }
 EWRAM_DATA static struct PlanScratch *sScratch = {0};
@@ -139,6 +139,30 @@ static u8 Mountain(u16 id)
     return best;
 }
 static void Advance(void) { sStage++; sAt = 0; }
+/* Five broad continental cores define the planetary wavelength. Longitude
+ * distance is periodic; seeded offsets, aspect ratios and the former height
+ * field give irregular coasts. This is a morphological model, not tectonics.
+ * Evaluated only during macro creation, never during tile streaming. */
+static u8 ContinentalHeight(u16 id,u8 detail)
+{
+    s32 x=id%ATLAS_PLAN_WIDTH,y=id/ATLAS_PLAN_WIDTH,best=-100000;
+    unsigned i;
+    for (i=0;i<5;i++)
+    {
+        u32 h=Mix(gAtlasWorldSeed^(0x434F4E54u+i*0x9E3779B1u));
+        s32 cx=(i*ATLAS_PLAN_WIDTH/5+(h%11)+ATLAS_PLAN_WIDTH-5)%ATLAS_PLAN_WIDTH;
+        s32 cy=8+(h>>8)%32,rx=11+(h>>16)%10,ry=8+(h>>24)%8;
+        s32 dx=x-cx,dy=y-cy,score;
+        if (dx>ATLAS_PLAN_WIDTH/2) dx-=ATLAS_PLAN_WIDTH;
+        if (dx< -ATLAS_PLAN_WIDTH/2) dx+=ATLAS_PLAN_WIDTH;
+        // Slant the axes slightly so outlines are not aligned with the grid.
+        dx+=dy*((h&1)?1:-1)/3;
+        score=220-(dx*dx*4096/(rx*rx)+dy*dy*4096/(ry*ry))/32;
+        if (score>best) best=score;
+    }
+    best+=(detail-128)/3;
+    return best<0?0:best>255?255:best;
+}
 bool8 AtlasPlan_ImportHeights(const u8 *heights)
 {
     u16 i, land = 0;
@@ -173,6 +197,7 @@ bool8 AtlasPlan_Step(u16 work)
             if (y >= ATLAS_WORLD_HALF_HEIGHT) y = ATLAS_WORLD_HALF_HEIGHT - 1;
             AtlasTerrain_Sample(x, y, &c);
             n->height = c.elevation; n->rain = 96; n->parent = 0xFFFF;
+            if (AtlasWorld_Generation()>=5) n->height=ContinentalHeight(sAt,c.elevation);
             if (AtlasWorld_Generation()>=4) sScratch->heights[n->height]++;
             if (++sAt == ATLAS_PLAN_COUNT)
             {

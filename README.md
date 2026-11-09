@@ -1,8 +1,8 @@
 # AtlasGBA
 
 AtlasGBA is a procedural exploration game built on Pokémon Emerald Expansion.
-New worlds target an Earth-like macro land/ocean balance; existing generation-3
-worlds keep their original terrain.
+New worlds use broad continental cores and an Earth-like macro land/ocean balance;
+existing generation-3 and generation-4 worlds keep their original terrain.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision

@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 static struct AtlasPlanNode legacy[ATLAS_PLAN_COUNT];
+static struct AtlasPlanNode balanced[ATLAS_PLAN_COUNT];
 static void Generate(u32 seed,u16 version,u16 batch)
 {
     assert(AtlasWorld_SetGeneration(version));assert(AtlasPlan_Begin(seed));
@@ -17,10 +18,11 @@ int main(void)
     Generate(0,3,256);
     assert(gAtlasPlanStats.checksum==0xEDDF7C74u);
     memcpy(legacy,gAtlasPlan,sizeof(legacy));
+    Generate(0,4,256);assert(gAtlasPlanStats.checksum==0x718DD91Eu);memcpy(balanced,gAtlasPlan,sizeof(balanced));
     for (i=0;i<sizeof(seeds)/sizeof(seeds[0]);i++)
     {
         unsigned land=0,mountains=0;
-        Generate(seeds[i],4,256);
+        Generate(seeds[i],5,256);
         for (id=0;id<ATLAS_PLAN_COUNT;id++)
         {
             u16 at=id;unsigned steps=0;
@@ -36,14 +38,21 @@ int main(void)
             assert(gAtlasPlan[at].height<ATLAS_PLAN_SEA);
         }
         assert(land==ATLAS_PLAN_COUNT*292u/1000 && gAtlasPlanStats.land==land && mountains);
+        unsigned sizes[ATLAS_PLAN_COUNT+1]={0},largest=0,large=0;
+        for (id=0;id<ATLAS_PLAN_COUNT;id++)
+            if (gAtlasPlan[id].height>=ATLAS_PLAN_SEA) sizes[gAtlasPlan[id].continent]++;
+        for (id=1;id<=ATLAS_PLAN_COUNT;id++) {if (sizes[id]>largest) largest=sizes[id];if (sizes[id]>=80) large++;}
+        printf("Continental structure seed=%u largest=%u substantial=%u\n",seeds[i],largest,large);
+        assert(largest>=180 && large>=2);
         u32 checksum=gAtlasPlanStats.checksum;
-        Generate(seeds[i],4,31);assert(checksum==gAtlasPlanStats.checksum);
+        Generate(seeds[i],5,31);assert(checksum==gAtlasPlanStats.checksum);
         s32 x,y;assert(AtlasTerrain_FindSpawn(&x,&y));
         for (unsigned p=0;p<9;p++) assert(!(AtlasTerrain_Tile(x+(s32)(p%3)-1,y+(s32)(p/3)-1)&0xC00));
         printf("PASS ocean generation seed=%u land=%u/%u mountains=%u checksum=%08x\n",seeds[i],land,ATLAS_PLAN_COUNT,mountains,checksum);
     }
-    assert(!AtlasWorld_SetGeneration(99) && AtlasWorld_Generation()==4);
+    assert(!AtlasWorld_SetGeneration(99) && AtlasWorld_Generation()==5);
+    Generate(0,4,31);assert(!memcmp(balanced,gAtlasPlan,sizeof(balanced)));
     Generate(0,3,31);assert(!memcmp(legacy,gAtlasPlan,sizeof(legacy)));
-    puts("PASS generation 4 Earth-like macro ocean balance, drainage, natural spawn, batch determinism and unchanged generation 3");
+    puts("PASS generation 5 continental structure, ocean balance, drainage, spawn, batch determinism and unchanged generations 3/4");
     return 0;
 }

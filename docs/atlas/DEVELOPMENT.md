@@ -54,9 +54,12 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   The original Atlas engine was a different pret/pokeemerald revision. Do not
   copy its allocator, linker script, sprite engine or save code over Expansion.
 - World generation version and save-journal version are separate identities.
-  New version-4 worlds normalize the macro height distribution to approximately
-  29.2% land before mountain uplift. Version-3 saved worlds retain the original
-  algorithm and checksums; never rewrite a saved generation tag to upgrade terrain.
+  New version-5 worlds form five seeded, periodic continental cores with varying
+  aspect ratios, slanted axes and irregular coast detail. This morphological model
+  replaces fragmented short-wavelength outlines; it is not a tectonic simulation.
+  Versions 4 and 5 normalize macro height to approximately 29.2% land before mountain
+  uplift. Version-3 and version-4 saves retain their original algorithms and
+  checksums; never rewrite a saved generation tag to upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing
   node field, without increasing permanent plan storage.
   Restore validates them and the seed. Unknown Atlas formats fail closed.

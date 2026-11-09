@@ -85,8 +85,8 @@ void AtlasWorld_Fill(void)
 bool8 AtlasWorld_SaveValid(void)
 {
     return AtlasWorld_IsActive() && VarGet(VAR_ATLAS_MAGIC) == ATLAS_SAVE_MAGIC
-        && (VarGet(VAR_ATLAS_GENERATION) == ATLAS_GENERATION_VERSION
-         || VarGet(VAR_ATLAS_GENERATION) == ATLAS_GENERATION_LEGACY)
+        && VarGet(VAR_ATLAS_GENERATION) >= ATLAS_GENERATION_LEGACY
+        && VarGet(VAR_ATLAS_GENERATION) <= ATLAS_GENERATION_VERSION
         && AtlasState_Valid(&gSaveBlock3Ptr->atlas, AtlasWorld_ReadSeed());
 }
 void AtlasWorld_Tick(void)

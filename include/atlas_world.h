@@ -4,7 +4,8 @@
 #define ATLAS_WORLD_WIDTH 40075000
 #define ATLAS_WORLD_HALF_HEIGHT 10001500
 #define ATLAS_WORLD_SIZE ATLAS_WORLD_WIDTH
-#define ATLAS_GENERATION_VERSION 4
+#define ATLAS_GENERATION_VERSION 5
+#define ATLAS_GENERATION_OCEAN_BALANCE 4
 #define ATLAS_GENERATION_LEGACY 3
 #define ATLAS_SAVE_MAGIC 0xA756
 enum AtlasBiome { ATLAS_OCEAN, ATLAS_JUNGLE, ATLAS_FOREST, ATLAS_GRASSLAND, ATLAS_SAVANNA, ATLAS_DESERT, ATLAS_TAIGA, ATLAS_TUNDRA, ATLAS_WETLAND };
@@ -21,7 +22,7 @@ bool8 AtlasWorld_IsActive(void);
 bool8 AtlasWorld_SaveValid(void);
 u16 AtlasWorld_Generation(void);
 /* Select only before AtlasPlan_Begin, never during live traversal. Fresh
- * worlds use version 4; saved version 3 retains its original terrain rules. */
+ * worlds use version 5; saved versions 3 and 4 retain their terrain rules. */
 bool8 AtlasWorld_SetGeneration(u16 version);
 bool8 AtlasWorld_RestoreGeneration(void);
 const struct MapHeader *AtlasWorld_Header(const struct MapHeader *base);
