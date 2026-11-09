@@ -232,17 +232,3 @@ void AtlasState_Tick(struct AtlasSaveState *state)
         if (state->seconds != 0xFFFFFFFFu) state->seconds++;
     }
 }
-u8 AtlasState_Weather(const struct AtlasSaveState *state, s32 x, s32 y, u8 temperature, u8 humidity)
-{
-    u32 hash;
-    if (!Coordinates(&x, y)) return ATLAS_WEATHER_CLEAR;
-    /* Regional conditions advance with saved simulation time, not render order.
-     * This is a coarse weather model; baseline biomes remain untouched. */
-    hash = state->seed ^ (u32)(x / 1000) * 0x9E3779B1u
-         ^ (u32)AtlasTerrain_FloorDiv(y, 1000) * 0x85EBCA77u ^ (state->seconds / 3600);
-    hash ^= hash >> 16; hash *= 0x7FEB352Du; hash ^= hash >> 15;
-    if (humidity >= 120 && hash % 256 < humidity / 2)
-        return temperature < 80 ? ATLAS_WEATHER_SNOW : ATLAS_WEATHER_RAIN;
-    if (humidity >= 180 && (hash >> 8) % 8 == 0) return ATLAS_WEATHER_FOG;
-    return ATLAS_WEATHER_CLEAR;
-}

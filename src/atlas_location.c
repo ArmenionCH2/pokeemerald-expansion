@@ -54,7 +54,15 @@ void AtlasLocation_Tick(void)
         sX = x; sY = y;
     }
     if (!sPositionValid) return;
-    sPending |= AtlasPlace_Update(&sAtlasPlaceTracker, &sPlace);
+    u8 changed=AtlasPlace_Update(&sAtlasPlaceTracker, &sPlace);
+    if (changed && IsMapNamePopupActive()) HideMapNamePopUpWindow();
+    sPending |= changed;
+    // Do not drain an old area's queued labels while a new destination is
+    // being debounced, especially after a developer teleport or map return.
+    if (!sAtlasPlaceTracker.initialized
+     || sPlace.landmass!=sAtlasPlaceTracker.previous.landmass
+     || sPlace.basin!=sAtlasPlaceTracker.previous.basin
+     || sPlace.kind!=sAtlasPlaceTracker.previous.kind) return;
     if (IsMapNamePopupActive()) return;
     for (level = 0; level < 3; level++)
     {

@@ -30,11 +30,13 @@ static const u8 sValley[] = _("River valley / terraces");
 static const u8 sFoothills[] = _("Foothills / low ridges");
 static const u8 sMouth[] = _("River mouth");
 static const u8 sTributary[] = _("Tributary / small river");
-static const u8 *const sLabels[]={sLand,sMountain,sLake,sRiver,sCoast,sVolcano,sReturn,sRidge,sValley,sFoothills,sMouth,sTributary};
+static const u8 sForest[] = _("Forest clearing");
+static const u8 sDesert[] = _("Desert");
+static const u8 sTundra[] = _("Tundra / cold plain");
+static const u8 sWetland[] = _("Wetland / marsh edge");
+static const u8 *const sLabels[]={sLand,sMountain,sLake,sRiver,sCoast,sVolcano,sReturn,sRidge,sValley,sFoothills,sMouth,sTributary,sForest,sDesert,sTundra,sWetland};
 static const u8 sX[] = _("X: ");
 static const u8 sY[] = _("  Y: ");
-static const u8 sPage1[] = _("1/2");
-static const u8 sPage2[] = _("2/2");
 static const u8 sArrow[] = _(">");
 static const u8 sHelp[] = _("A: find and go   B: back / cancel");
 static const u8 sSearching[] = _("Searching real terrain...");
@@ -54,7 +56,9 @@ static void Draw(void)
     u8 line[48],*end;
     s32 x,y;
     FillWindowPixelBuffer(0,PIXEL_FILL(1));Print(2,0,sTitle);
-    Print(196,0,first?sPage2:sPage1);
+    end=ConvertIntToDecimalStringN(line,sGeoChoice/6+1,STR_CONV_MODE_LEFT_ALIGN,1);
+    end=StringCopy(end,COMPOUND_STRING("/"));
+    ConvertIntToDecimalStringN(end,(ATLAS_GEO_COUNT+5)/6,STR_CONV_MODE_LEFT_ALIGN,1);Print(196,0,line);
     for(i=first;i<ATLAS_GEO_COUNT && i<first+6;i++)
     {Print(14,22+13*(i-first),sLabels[i]);if(i==sGeoChoice)Print(2,22+13*(i-first),sArrow);}
     AtlasWorld_GetPosition(&x,&y);end=StringCopy(line,sX);

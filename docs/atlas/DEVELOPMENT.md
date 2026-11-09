@@ -11,6 +11,7 @@ battle test framework. Do not describe a host mock as emulator evidence.
 | --- | --- |
 | Physical location names and boundary announcements | `src/atlas_place.c`, `src/atlas_location.c` |
 | World seed, position, startup | `src/atlas_world.c`, `src/atlas_creation.c` |
+| Regional weather and atlas layers | `src/atlas_weather.c`, `src/atlas_map.c` |
 | Geography, hydrology, habitat | `src/atlas_plan.c`, `src/atlas_terrain.c`, `src/atlas_water.c`, `src/atlas_habitat.c` |
 | Streaming, rendering, art | `src/atlas_stream.c`, `src/atlas_tiles.c`, `src/atlas_tiles_data.c`, `assets/punyworld/` |
 | Exploration journal and map | `src/atlas_state.c`, `src/atlas_map.c`, `include/atlas_state.h` |
@@ -68,8 +69,10 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   without mutation. The map warns when space is low. This is bounded exploration
   persistence, not unlimited planet history.
 - The saved clock advances during overworld simulation, pauses in menus, and
-  saturates instead of wrapping. Regional hourly weather is deterministic from
-  seed, place, saved time and climate; it currently informs the map, not animated
+  saturates instead of wrapping. Regional weather is deterministic from
+  seed, place, saved time and climate. A longitude-periodic field drifts and blends
+  over six-hour epochs, avoiding arbitrary hourly/grid rerolls. It currently informs
+  the map, not animated
   precipitation, terrain changes or a complete seasons/ecology simulation.
 - Physical names derive from connected macro landmasses and drainage catchments.
   The local label describes the terrain inside that catchment; individual forests,
@@ -77,7 +80,11 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   stable, cross chunk boundaries and announce only changed hierarchy levels after
   a debounce/cooldown. This adds no terrain or save identity change.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
-  reads never mark discovery. Developer teleport is not normal traversal.
+  reads never mark discovery. START cycles seven diagnostic layers in admin view.
+  Distant admin pixels summarize macro notes; close views use final terrain, with
+  resumable water preparation and bounded sampling work to preserve input response.
+  GEO TP also verifies real forest/desert/tundra/wetland destinations and 3x3 final
+  collision before travel. Developer teleport is not normal traversal.
 - Atlas reserves the upper 55,296 bytes of Expansion's existing 115,968-byte
   heap while its world is active. Native allocation then uses the lower 60,672
   bytes. Save relocation is compile-time checked against that boundary; the

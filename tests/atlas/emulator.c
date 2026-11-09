@@ -101,6 +101,103 @@ static void placeNames(void)
     assert(names==3);
     printf("PASS native physical location breadcrumbs: landmass, catchment and local terrain\n");
 }
+static unsigned nextExitKey(uint32_t save)
+{
+    uint32_t layout=symbol("gBackupMapLayout"),map=core->busRead32(core,layout+8);
+    int width=core->busRead32(core,layout),height=core->busRead32(core,layout+4);
+    int queue[1190],parent[1190],head=0,tail=0;
+    unsigned keys[1190];
+    assert(width==35 && height==34);
+    int x=(int16_t)core->busRead16(core,save)+7,y=(int16_t)core->busRead16(core,save+2)+7;
+    assert(x>=0 && x<width && y>=0 && y<height);
+    int start=y*width+x;
+    for (int i=0;i<1190;i++) parent[i]=-1;
+    queue[tail++]=start;parent[start]=start;
+    static const int dx[]={1,-1,0,0},dy[]={0,0,1,-1};
+    static const unsigned direction[]={16,32,128,64};
+    while (head<tail)
+    {
+        int at=queue[head++],cx=at%width,cy=at/width;
+        if (at!=start && (cx<7 || cx>=27 || cy<7 || cy>=27))
+        {
+            while (parent[at]!=start) at=parent[at];
+            return keys[at];
+        }
+        for (unsigned d=0;d<4;d++)
+        {
+            int nx=cx+dx[d],ny=cy+dy[d],next=ny*width+nx;
+            if (nx<0 || ny<0 || nx>=width || ny>=height || parent[next]>=0) continue;
+            unsigned tile=core->busRead16(core,map+next*2);
+            if ((tile>>10)&3) continue;
+            unsigned elevation=tile>>12,from=core->busRead16(core,map+at*2)>>12;
+            if (elevation && from && elevation!=from) continue;
+            parent[next]=at;keys[next]=direction[d];queue[tail++]=next;
+        }
+    }
+    return 0;
+}
+static void cachedCrossing(uint32_t savePtr)
+{
+    uint32_t hits=symbol("gAtlasCacheHits"),miss=symbol("gAtlasCacheMisses"),wait=symbol("gAtlasStreamWaits");
+    unsigned initial=core->busRead32(core,hits),misses=core->busRead32(core,miss),waits=core->busRead32(core,wait);
+    for (unsigned step=0;step<80 && core->busRead32(core,hits)==initial;step++)
+    {
+        unsigned key=nextExitKey(core->busRead32(core,savePtr));
+        if (!key) break;
+        frames(key,8);frames(0,20);actors();
+    }
+    if (core->busRead32(core,hits)>initial)
+    {
+        assert(core->busRead32(core,miss)==misses && core->busRead32(core,wait)==waits);
+        printf("PASS native chunk crossing after globe inspection uses cached terrain, no new synchronous miss or readiness wait\n");
+    }
+    else printf("NOTE no reachable chunk exit in this spawn viewport; crossing coverage not exercised\n");
+}
+static void biomeTour(uint32_t savePointer)
+{
+    uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
+    uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus"),result=symbol("gAtlasGeoResult");
+    for (unsigned type=12;type<16;type++)
+    {
+        press(8);
+        for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
+        assert(core->busRead8(core,cursor)==3);press(1);
+        assert(core->busRead32(core,main+4)==(geo|1));
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<16;i++) press(128);
+        assert(core->busRead8(core,choice)==type);
+        if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
+        press(1);
+        unsigned waited=0;
+        while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
+        assert(waited<6000);
+        if (core->busRead8(core,status)==2)
+        {
+            printf("NOTE biome TP type %u has no safe destination in this seed\n",type);press(2);settle();continue;
+        }
+        assert(core->busRead8(core,status)==1 && core->busRead8(core,result+12)==type);
+        settle();frames(0,60);actors();
+        if (type==13 || type==14)
+        {
+            char label[21];unsigned n;
+            uint32_t text=symbol("sAtlasLocationPopup");
+            for (n=0;n<20;n++)
+            {
+                unsigned c=core->busRead8(core,text+n);if (c==255) break;
+                label[n]=c>=0xbb && c<=0xd4?'A'+c-0xbb:c>=0xd5 && c<=0xee?'a'+c-0xd5:' ';
+            }
+            label[n]=0;
+            assert(strcmp(label,"Forest")); // never drain the previous biome's pending label
+            if (type==14) assert(strcmp(label,"Desert"));
+        }
+        uint32_t save=core->busRead32(core,savePointer),layout=symbol("gBackupMapLayout");
+        uint32_t map=core->busRead32(core,layout+8);
+        int x=(int16_t)core->busRead16(core,save)+7,y=(int16_t)core->busRead16(core,save+2)+7;
+        for (int dy=-1;dy<=1;dy++) for (int dx=-1;dx<=1;dx++)
+            assert(!(core->busRead16(core,map+((y+dy)*35+x+dx)*2)&0xC00));
+        char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/geo-biome-%u.ppm",type);shot(path);
+        printf("PASS native biome teleport type %u, third menu page and safe 3x3 landing\n",type);
+    }
+}
 int main(int argc,char **argv)
 {
     unsigned frame;
@@ -166,7 +263,15 @@ int main(int argc,char **argv)
     assert(core->busRead8(core,mapActive));
     bytes(statePtr,before,sizeof(before));shot("build/atlas-emulator/player-map.ppm");
     press(4);frames(0,180);shot("build/atlas-emulator/admin-map.ppm"); // SELECT admin
-    press(256);frames(0,180); // R zoom out
+    for (unsigned zoom=0;zoom<7;zoom++) {press(256);assert(core->busRead8(core,symbol("sAtlasMapZoom"))==zoom+1);} // whole longitude span
+    frames(0,180);
+    for (unsigned layer=1;layer<7;layer++)
+    {
+        press(8);frames(0,240);
+        assert(core->busRead8(core,symbol("sAtlasMapLayer"))==layer);
+        assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
+        char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/admin-layer-%u.ppm",layer);shot(path);
+    }
     bytes(statePtr,after,sizeof(after));assert(!memcmp(before,after,sizeof(before)));
     printf("PASS map/admin/zoom reads leave full journal and clock unchanged\n");
     press(2);assert(!core->busRead8(core,mapActive));frames(0,180);press(2);frames(0,60);
@@ -175,6 +280,7 @@ int main(int argc,char **argv)
         if (beforeMap.mask&(1u<<i)) assert((afterMap.mask&(1u<<i)) && afterMap.generation[i]==beforeMap.generation[i]);
     printf("PASS map return, with wildlife generation checks for mask %u\n",beforeMap.mask);
     frames(16,40);frames(0,30);actors();shot("build/atlas-emulator/movement.ppm");
+    cachedCrossing(sav1);
     // Save is second Atlas menu entry. Confirm overwrite and save prompts.
     press(8);press(128);press(1);frames(0,60);press(1);frames(0,180);press(1);frames(0,900);
     shot("build/atlas-emulator/save.ppm");
@@ -205,5 +311,6 @@ int main(int argc,char **argv)
     FILE *timing=fopen("build/atlas-emulator/timing.json","w");assert(timing);
     fprintf(timing,"{\"new_game_frames\":%u,\"new_game_seconds\":%.4f,\"continue_frames\":%u,\"continue_seconds\":%.4f,\"phone_measured\":false,\"timing_origin\":\"Atlas generation screen entry\"}\n",newGameFrames,newGameFrames/59.72750057,continueFrames,continueFrames/59.72750057);fclose(timing);
     printf("PASS ready-to-walk timing: New Game %.3f s; Continue %.3f s at full GBA speed (phones unmeasured)\n",newGameFrames/59.72750057,continueFrames/59.72750057);
+    biomeTour(sav1);
     core->deinit(core);return 0;
 }

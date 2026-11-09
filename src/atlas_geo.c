@@ -52,20 +52,31 @@ void AtlasGeo_Begin(u8 type)
         sLastLand=0;sSeed=gAtlasWorldSeed;sInitialized=TRUE;
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;
-    gAtlasGeoStatus=(type<ATLAS_GEO_VOLCANO || type==ATLAS_GEO_RIDGE || type==ATLAS_GEO_VALLEY || type==ATLAS_GEO_FOOTHILLS || type==ATLAS_GEO_MOUTH || type==ATLAS_GEO_TRIBUTARY)?0:3;
+    gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_VOLCANO && type!=ATLAS_GEO_RETURN?0:3;
 }
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if (sType>=ATLAS_GEO_FOREST)
+    {
+        struct AtlasHabitat habitat;
+        s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        if (n->height<ATLAS_PLAN_SEA || n->height>180) return FALSE;
+        AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
+        if (sType==ATLAS_GEO_FOREST) return habitat.temperature>=85 && habitat.moisture>125;
+        if (sType==ATLAS_GEO_DESERT) return habitat.temperature>155 && habitat.moisture<105;
+        if (sType==ATLAS_GEO_TUNDRA) return habitat.temperature<60;
+        return habitat.temperature>75 && habitat.moisture>150 && n->height<140;
+    }
     if(sType==ATLAS_GEO_LAND)return n->height>125 && n->height<180 && n->continent && n->continent!=sLastLand;
     if(sType==ATLAS_GEO_MOUNTAIN)return n->height>=195;
     if(sType==ATLAS_GEO_RIDGE)return n->height>=218;
     if(sType==ATLAS_GEO_FOOTHILLS)return n->height>=172 && n->height<=184;
     if(sType==ATLAS_GEO_TRIBUTARY)return AtlasWater_IsTributary(id);
     if(sType==ATLAS_GEO_MOUTH)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA;
-    if(sType==ATLAS_GEO_VALLEY)return n->height>=175 && n->runoff>=600 && n->parent!=id;
+    if(sType==ATLAS_GEO_VALLEY)return n->height>=175 && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     if(sType==ATLAS_GEO_LAKE)return (n->basin&ATLAS_LAKE_FLAG) && n->water>ATLAS_PLAN_SEA && n->water>n->height+2;
-    if(sType==ATLAS_GEO_RIVER)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id;
+    if(sType==ATLAS_GEO_RIVER)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     return n->height>=ATLAS_PLAN_SEA && n->height<145;
 }
 u8 AtlasGeo_Step(void)
@@ -86,6 +97,7 @@ u8 AtlasGeo_Step(void)
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(sType==ATLAS_GEO_MOUTH){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
+            if (sType>=ATLAS_GEO_FOREST) {sTrial=0;sPhase=17;return 0;}
             sDirection=0;sPhase=1;return 0;
         }
         return 0;
@@ -199,6 +211,16 @@ u8 AtlasGeo_Step(void)
         if(Wet(x,y)){sWX=x;sWY=y;}else{sDX=x;sDY=y;}
         return 0;
     }
+    if (sPhase==17)
+    {
+        if (sTrial>=256) {sPhase=0;return 0;}
+        x=sCX+((s32)(sTrial%16)-8)*8;y=sCY+((s32)(sTrial/16)-8)*8;
+        if (!Warm(x,y)) return 0;
+        sTrial++;AtlasTerrain_Sample(x,y,&c);
+        u8 target=sType==ATLAS_GEO_FOREST?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
+        if (c.waterform || c.biome!=target) {if (sTrial==1) sPhase=0;return 0;}
+        sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
+    }
     if(sPhase==10)
     {
         /* Macro notes are interpolated at runtime. Reject weak/steep regions
@@ -281,6 +303,7 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
+        if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
         if(++sAttempt<4 && sType!=ATLAS_GEO_LAND && !ReliefTarget())
         {sLX+=sDX>sWX?3:sDX<sWX?-3:0;sLY+=sDY>sWY?3:sDY<sWY?-3:0;sCheck=0;return 0;}
         if(sType==ATLAS_GEO_MOUTH && ++sDirection<4)Direction();

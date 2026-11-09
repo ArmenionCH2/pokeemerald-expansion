@@ -21,6 +21,12 @@ int main(void)
             assert(n<8000 && gAtlasGeoStatus==1);
             for(i=0;i<9;i++)assert(!(AtlasTerrain_Tile(gAtlasGeoResult.x+(s32)(i%3)-1,gAtlasGeoResult.y+(s32)(i/3)-1)&0xC00));
             if(type==ATLAS_GEO_LAND)assert(gAtlasGeoResult.landmass);
+            if(type>=ATLAS_GEO_FOREST)
+            {
+                struct AtlasCell c;AtlasTerrain_Sample(gAtlasGeoResult.x,gAtlasGeoResult.y,&c);
+                u8 target=type==ATLAS_GEO_FOREST?ATLAS_FOREST:type==ATLAS_GEO_DESERT?ATLAS_DESERT:type==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
+                assert(c.waterform==ATLAS_DRY && c.biome==target);
+            }
             if(type==ATLAS_GEO_TRIBUTARY)assert(AtlasWater_IsTributary(gAtlasGeoResult.node));
             if(type==ATLAS_GEO_MOUTH)
             {
@@ -50,6 +56,13 @@ int main(void)
             }
         }
         AtlasGeo_Begin(ATLAS_GEO_VOLCANO);assert(AtlasGeo_Step()==3);
+        for(i=0;i<ATLAS_PLAN_COUNT;i++)gAtlasPlan[i].parent=0xFFFF;
+        for(type=ATLAS_GEO_RIVER;type<=ATLAS_GEO_VALLEY;type+=ATLAS_GEO_VALLEY-ATLAS_GEO_RIVER)
+        {
+            AtlasGeo_Begin(type);
+            for(n=0;n<1000 && !AtlasGeo_Step();n++);
+            assert(n<1000 && gAtlasGeoStatus==2);
+        }
     }
     puts("PASS: real typed destinations, safe 3x3 landings, nearby matching water and unsupported volcano");
     return 0;

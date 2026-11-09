@@ -25,8 +25,11 @@ access and geographic teleport tools. Neither target produces an official game.
 
 In Atlas: START opens the menu; WORLD MAP uses D-pad to pan, L/R to zoom,
 A to center on the player and B to return. Unknown terrain stays black. Development
-builds allow SELECT to toggle the admin map and expose GEO TP in the start menu.
-The exploration journal has a fixed save capacity and reports when it is full.
+builds allow SELECT to toggle the admin map and START to cycle terrain, elevation,
+temperature, humidity, soil moisture, drainage and weather-front layers. GEO TP
+in the start menu can find landforms, waters and forest/desert/tundra/wetland
+locations. Physical location breadcrumbs name the landmass, catchment and terrain.
+The exploration journal has a fixed save capacity and warns when space is low.
 Use a fresh save for this port; back up saves from other engines/versions.
 
 Engine documentation remains in `docs/`, [FEATURES.md](FEATURES.md),
