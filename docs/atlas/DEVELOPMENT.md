@@ -106,7 +106,11 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Dry riverbanks/lake shores/coasts use nearby prepared terrain semantics, within
   three tiles, without generating geography or changing discovery during the query.
   Regional plateau/valley/ridge descriptions compare an interpolated 400 km
-  neighborhood. The eight-layer admin atlas exposes this relief classification;
+  neighborhood. Valley/ridge axes can slope: their center must fit the opposite
+  longitudinal samples, with higher/lower cross-slopes on both sides. Closed pits
+  and isolated peaks fail that profile test. A relative ridge need not exceed an
+  absolute highland threshold. These descriptions do not carve terrain heights.
+  The eight-layer admin atlas exposes this relief classification;
   GEO TP can locate a classified plateau with a safe final 3x3 landing. These are
   annotations of existing geography, not newly carved features or individually
   named components. No generation/save version change is needed. Regional queries

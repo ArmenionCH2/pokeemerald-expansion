@@ -18,9 +18,13 @@ u8 AtlasRegion_Classify(const u8 h[9])
     {
         static const u8 axes[4][4]={{3,5,1,7},{1,7,3,5},{0,8,2,6},{2,6,0,8}};
         s32 alongA=(s32)h[axes[i][2]]-h[4],alongB=(s32)h[axes[i][3]]-h[4];
-        if (alongA< -8 || alongA>8 || alongB< -8 || alongB>8) continue;
+        /* An open valley/ridge can descend along its axis. Fit the center
+         * against that longitudinal profile instead of demanding a flat
+         * floor. A pit or isolated summit lies off the fitted profile. */
+        if (alongA+alongB< -16 || alongA+alongB>16
+         || alongA-alongB< -64 || alongA-alongB>64) continue;
         if (h[axes[i][0]]>=h[4]+10 && h[axes[i][1]]>=h[4]+10) return ATLAS_REGION_VALLEY;
-        if (h[4]>=170 && h[axes[i][0]]+12<=h[4] && h[axes[i][1]]+12<=h[4]) return ATLAS_REGION_RIDGE;
+        if (h[axes[i][0]]+12<=h[4] && h[axes[i][1]]+12<=h[4]) return ATLAS_REGION_RIDGE;
     }
     if (h[4]>=170 && high-low<=18) return ATLAS_REGION_PLATEAU;
     if (h[4]>=185 || high-low>=40) return ATLAS_REGION_MOUNTAINS;
