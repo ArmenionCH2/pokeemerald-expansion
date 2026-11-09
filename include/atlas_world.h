@@ -21,6 +21,7 @@ bool8 AtlasWorld_SaveValid(void);
 const struct MapHeader *AtlasWorld_Header(const struct MapHeader *base);
 void AtlasWorld_Fill(void);
 void AtlasWorld_Tick(void);
+void AtlasWorld_GetPosition(s32 *x, s32 *y);
 void AtlasWildlife_Tick(void);
 void AtlasWorld_Move(u8 direction);
 void AtlasWorld_NewGame(void);

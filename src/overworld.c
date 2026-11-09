@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_actor_runtime.h"
 #include "atlas_world.h"
+#include "atlas_place.h"
 #include "overworld.h"
 #include "battle_pyramid.h"
 #include "battle_setup.h"
@@ -1856,6 +1857,7 @@ static void OverworldBasic(void)
     RunTasks();
     AnimateSprites();
     AtlasWorld_Tick();
+    AtlasLocation_Tick();
     CameraUpdate();
     AtlasWildlife_Tick();
     UpdateCameraPanning();

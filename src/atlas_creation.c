@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_geo.h"
+#include "atlas_place.h"
 #include "atlas_recipe.h"
 #include "bg.h"
 #include "gpu_regs.h"
@@ -108,6 +109,7 @@ static void Run(void)
 static void Begin(bool8 restoring)
 {
     sRestoring = restoring;
+    AtlasLocation_Reset();
     SetMainCallback1(NULL); SetVBlankCallback(NULL); StopMapMusic();
     SetGpuReg(REG_OFFSET_DISPCNT, 0);
     ResetSpriteData(); ResetPaletteFade(); ResetBgsAndClearDma3BusyFlags(0);
@@ -119,6 +121,7 @@ static void Begin(bool8 restoring)
     AtlasPlan_ReserveHeap();
     AtlasRecipe_Reset();
     sInvalidSave = restoring && !AtlasWorld_SaveValid();
+    if (restoring && !sInvalidSave) sInvalidSave = !AtlasState_Upgrade(&gSaveBlock3Ptr->atlas);
     sFailed = sInvalidSave || !AtlasPlan_Begin(AtlasWorld_ReadSeed());
     if (restoring && !sFailed) AtlasRecipe_Load(AtlasWorld_ReadSeed());
     InitWindows(sWindows); DeactivateAllTextPrinters(); PutWindowTilemap(0);

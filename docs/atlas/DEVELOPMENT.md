@@ -9,6 +9,7 @@ battle test framework. Do not describe a host mock as emulator evidence.
 
 | Task | Entry points |
 | --- | --- |
+| Physical location names and boundary announcements | `src/atlas_place.c`, `src/atlas_location.c` |
 | World seed, position, startup | `src/atlas_world.c`, `src/atlas_creation.c` |
 | Geography, hydrology, habitat | `src/atlas_plan.c`, `src/atlas_terrain.c`, `src/atlas_water.c`, `src/atlas_habitat.c` |
 | Streaming, rendering, art | `src/atlas_stream.c`, `src/atlas_tiles.c`, `src/atlas_tiles_data.c`, `assets/punyworld/` |
@@ -53,19 +54,28 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   copy its allocator, linker script, sprite engine or save code over Expansion.
 - World generation version and save-journal version are separate identities.
   Restore validates them and the seed. Unknown Atlas formats fail closed.
-  There is no old Atlas/Emerald save converter; use backed-up, fresh saves.
+  Saves from the old engine still need a fresh world. This port's version-1
+  journal upgrades losslessly in memory on Continue; it is written on the next Save.
 - The original optional recipe cache wrote sectors 28–31. Expansion owns these
   sectors and its per-sector SaveBlock3 extension. The port deliberately uses
   native save blocks and reconstructs terrain from the seed. Do not enable the
   raw-flash backend from the recovery patch.
 - `AtlasSaveState` lives in SaveBlock3, subject to the engine's compile-time save
-  budget assertion. It records exact visited tiles in 24 chunks, never evicts a
-  chunk, and rejects additional chunks when full. The map reports this limit.
-  This is bounded exploration persistence, not unlimited planet history.
+  budget assertion. Version 2 uses the same 1456 bytes: lossless row/column
+  intervals or exact bitmaps preserve every recorded tile. Up to 130 compact
+  chunks fit; highly fragmented coverage fits fewer (at least 25 maximum-size
+  entries). It never evicts earlier visits; an update that cannot fit is refused
+  without mutation. The map warns when space is low. This is bounded exploration
+  persistence, not unlimited planet history.
 - The saved clock advances during overworld simulation, pauses in menus, and
   saturates instead of wrapping. Regional hourly weather is deterministic from
   seed, place, saved time and climate; it currently informs the map, not animated
   precipitation, terrain changes or a complete seasons/ecology simulation.
+- Physical names derive from connected macro landmasses and drainage catchments.
+  The local label describes the terrain inside that catchment; individual forests,
+  ridges and river branches are not separately component-labelled. Names are seed
+  stable, cross chunk boundaries and announce only changed hierarchy levels after
+  a debounce/cooldown. This adds no terrain or save identity change.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
   reads never mark discovery. Developer teleport is not normal traversal.
 - Atlas reserves the upper 55,296 bytes of Expansion's existing 115,968-byte

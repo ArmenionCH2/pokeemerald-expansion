@@ -1,0 +1,29 @@
+#ifndef GUARD_ATLAS_PLACE_H
+#define GUARD_ATLAS_PLACE_H
+#include "atlas_world.h"
+
+#define ATLAS_PLACE_NAME_BYTES 21
+enum AtlasPlaceKind { ATLAS_PLACE_OCEAN, ATLAS_PLACE_RIVER, ATLAS_PLACE_LAKE,
+    ATLAS_PLACE_COAST, ATLAS_PLACE_MOUNTAINS, ATLAS_PLACE_FOOTHILLS,
+    ATLAS_PLACE_FOREST, ATLAS_PLACE_TAIGA, ATLAS_PLACE_TUNDRA,
+    ATLAS_PLACE_DESERT, ATLAS_PLACE_WETLAND, ATLAS_PLACE_SAVANNA, ATLAS_PLACE_PLAIN };
+struct AtlasPlace { u16 landmass, basin; u8 kind; };
+struct AtlasPlaceTracker
+{
+    struct AtlasPlace previous, candidate;
+    u8 stable, cooldown;
+    bool8 initialized, pending;
+};
+/* Names follow connected macro landmasses and drainage catchments, never
+ * chunk IDs. The local descriptor is basin-wide, not a claim that every
+ * forest patch or mountain ridge has already been component-labelled. */
+bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct AtlasPlace *out);
+bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_PLACE_NAME_BYTES]);
+/* A new parent includes its descendants; unchanged parents are omitted.
+ * Call at a fixed cadence. Four observations debounce a boundary; twenty
+ * observations separate announcements. No save or exploration mutation. */
+u8 AtlasPlace_Update(struct AtlasPlaceTracker *tracker, const struct AtlasPlace *place);
+void AtlasLocation_Reset(void);
+void AtlasLocation_Tick(void);
+u8 *AtlasLocation_PopupName(u8 *dest);
+#endif

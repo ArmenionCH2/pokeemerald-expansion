@@ -21,7 +21,8 @@ int main(void)
     assert(!AtlasState_Visit(&state,INT_MAX,INT_MIN));
     assert(!AtlasState_Visit(&state,0,ATLAS_WORLD_HALF_HEIGHT));
     assert(AtlasState_Visit(&state,INT_MIN,-ATLAS_WORLD_HALF_HEIGHT));
-    for (i=0;state.count<ATLAS_JOURNAL_CHUNKS;i++) assert(AtlasState_Visit(&state,i*20,40));
+    for (i=0;i<ATLAS_JOURNAL_MAX_CHUNKS && AtlasState_Visit(&state,i*20,40);i++) {}
+    assert(state.count > ATLAS_JOURNAL_CHUNKS);
     before=state;
     assert(!AtlasState_Visit(&state,80000,80000));
     assert(memcmp(&before,&state,sizeof(state))==0);
@@ -42,6 +43,6 @@ int main(void)
     assert(state.seconds==UINT_MAX && state.frames==0);
     restored.version++;assert(!AtlasState_Valid(&restored,123));
     restored=state;restored.count=255;assert(!AtlasState_Valid(&restored,123));
-    restored=state;restored.visited[1]=restored.visited[0];assert(!AtlasState_Valid(&restored,123));
+    restored=state;restored.journal[6]=127;assert(!AtlasState_Valid(&restored,123));
     printf("PASS journal exact fog, seam/poles, full capacity, read-only queries, persistence and clock (%zu bytes)\n",sizeof(state));
 }

@@ -1,4 +1,6 @@
 #include "global.h"
+#include "atlas_world.h"
+#include "atlas_place.h"
 #include "battle_pyramid.h"
 #include "bg.h"
 #include "event_data.h"
@@ -363,6 +365,11 @@ enum {
 #define tIncomingPopUp data[3]
 #define tPrintTimer    data[4]
 
+bool8 IsMapNamePopupActive(void)
+{
+    return FuncIsActiveTask(Task_MapNamePopUpWindow);
+}
+
 void ShowMapNamePopup(void)
 {
     if (FlagGet(FLAG_HIDE_MAP_NAME_POPUP) != TRUE)
@@ -562,6 +569,7 @@ static bool32 IsCeladonDeptStore(const struct MapHeader *mapHeader)
 
 u8 *GetPopUpMapName(u8 *dest, const struct MapHeader *mapHeader)
 {
+    if (AtlasWorld_IsActive()) return AtlasLocation_PopupName(dest);
     if (IsCeladonDeptStore(mapHeader))
         StringCopy(dest, COMPOUND_STRING("CELADON DEPT."));
     else
@@ -630,8 +638,8 @@ static void ShowMapNamePopUpWindow(void)
     }
     else
     {
-        u32 fontId = GetFontIdToFit(withoutPrefixPtr, FONT_NORMAL, -1, 80);
-        x = GetStringCenterAlignXOffset(fontId, withoutPrefixPtr, 80);
+        u32 fontId = GetFontIdToFit(withoutPrefixPtr, FONT_NORMAL, -1, AtlasWorld_IsActive() ? 176 : 80);
+        x = GetStringCenterAlignXOffset(fontId, withoutPrefixPtr, AtlasWorld_IsActive() ? 176 : 80);
         AddTextPrinterParameterized(GetMapNamePopUpWindowId(), fontId, mapDisplayHeader, x, 3, TEXT_SKIP_DRAW, NULL);
         CopyWindowToVram(GetMapNamePopUpWindowId(), COPYWIN_FULL);
     }
@@ -653,8 +661,12 @@ static void DrawMapNamePopUpFrame(u8 bg, u8 x, u8 y, u8 deltaX, u8 deltaY, u8 un
     s32 i;
 
     // Draw top edge
-    for (i = 0; i < 1 + TILE_TOP_EDGE_END - TILE_TOP_EDGE_START; i++)
-        FillBgTilemapBufferRect(bg, TILE_TOP_EDGE_START + i, i - 1 + x, y - 1, 1, 1, 14);
+    for (i = 0; i < deltaX + 2; i++)
+    {
+        u16 tile = i == 0 ? TILE_TOP_EDGE_START : i == deltaX + 1 ? TILE_TOP_EDGE_END
+                   : TILE_TOP_EDGE_START + 1 + (i - 1) % (TILE_TOP_EDGE_END - TILE_TOP_EDGE_START - 1);
+        FillBgTilemapBufferRect(bg, tile, i - 1 + x, y - 1, 1, 1, 14);
+    }
 
     // Draw sides
     FillBgTilemapBufferRect(bg, TILE_LEFT_EDGE_TOP,       x - 1,     y, 1, 1, 14);
@@ -665,8 +677,12 @@ static void DrawMapNamePopUpFrame(u8 bg, u8 x, u8 y, u8 deltaX, u8 deltaY, u8 un
     FillBgTilemapBufferRect(bg, TILE_RIGHT_EDGE_BOT, deltaX + x, y + 2, 1, 1, 14);
 
     // Draw bottom edge
-    for (i = 0; i < 1 + TILE_BOT_EDGE_END - TILE_BOT_EDGE_START; i++)
-        FillBgTilemapBufferRect(bg, TILE_BOT_EDGE_START + i, i - 1 + x, y + deltaY, 1, 1, 14);
+    for (i = 0; i < deltaX + 2; i++)
+    {
+        u16 tile = i == 0 ? TILE_BOT_EDGE_START : i == deltaX + 1 ? TILE_BOT_EDGE_END
+                   : TILE_BOT_EDGE_START + 1 + (i - 1) % (TILE_BOT_EDGE_END - TILE_BOT_EDGE_START - 1);
+        FillBgTilemapBufferRect(bg, tile, i - 1 + x, y + deltaY, 1, 1, 14);
+    }
 }
 
 static void LoadMapNamePopUpWindowBg(void)
@@ -717,6 +733,13 @@ static void LoadMapNamePopUpWindowBg(void)
             LoadPalette(&sMapPopUp_Palette_Underwater, BG_PLTT_ID(14), sizeof(sMapPopUp_Palette_Underwater));
         else
             LoadPalette(sMapPopUp_PaletteTable[popUpThemeId], BG_PLTT_ID(14), sizeof(sMapPopUp_PaletteTable[0]));
-        BlitBitmapToWindow(popupWindowId, sMapPopUp_Table[popUpThemeId], 0, 0, 80, 24);
+        if (AtlasWorld_IsActive())
+        {
+            unsigned x;
+            for (x = 0; x < 176; x += 8)
+                BlitBitmapRectToWindow(popupWindowId, sMapPopUp_Table[popUpThemeId],
+                    x == 0 ? 0 : x == 168 ? 72 : 40, 0, 80, 24, x, 0, 8, 24);
+        }
+        else BlitBitmapToWindow(popupWindowId, sMapPopUp_Table[popUpThemeId], 0, 0, 80, 24);
     }
 }

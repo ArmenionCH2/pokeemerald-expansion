@@ -26,7 +26,7 @@ static const u8 sColors[] = {0,1,0};
 static const u8 sTitle[] = _("ATLAS EXPLORATION");
 static const u8 sAdmin[] = _("ATLAS ADMIN MAP");
 static const u8 sHelp[] = _("D-pad: pan  L/R: zoom  A: home  B: back");
-static const u8 sFull[] = _("Journal full - earlier visits retained");
+static const u8 sFull[] = _("Journal space low - visits retained");
 static const u8 sClear[] = _("Clear");
 static const u8 sRain[] = _("Rain");
 static const u8 sSnow[] = _("Snow");
@@ -79,7 +79,7 @@ static void Draw(void)
     AtlasWorld_GetPosition(&x,&y);
     AtlasTerrain_Sample(x,y,&cell);
     AddTextPrinterParameterized3(0,FONT_SMALL,0,132,sColors,TEXT_SKIP_DRAW,
-        state->count == ATLAS_JOURNAL_CHUNKS ? sFull : sWeather[AtlasState_Weather(state,x,y,cell.temperature,cell.humidity)]);
+        AtlasState_UsedBytes(state) > ATLAS_JOURNAL_BYTES - 57 ? sFull : sWeather[AtlasState_Weather(state,x,y,cell.temperature,cell.humidity)]);
     sRow = sChunk = 0;
     CopyWindowToVram(0,COPYWIN_FULL);
 }
@@ -102,7 +102,9 @@ static void Paint(void)
         if (sChunk >= state->count) return;
         /* Only project genuinely visited tiles. Coarse zoom shows their marks,
          * never samples an unseen representative point for a whole region. */
-        const struct AtlasVisitedChunk *chunk = &state->visited[sChunk++];
+        struct AtlasVisitedChunk decoded;
+        const struct AtlasVisitedChunk *chunk = &decoded;
+        if (!AtlasState_GetChunk(state,sChunk++,&decoded)) return;
         for (bit=0;bit<400;bit++)
         {
             if (!(chunk->tiles[bit/8] & (1 << (bit%8)))) continue;

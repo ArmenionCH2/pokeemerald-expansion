@@ -10,7 +10,8 @@ OUT = R / 'build/atlas-tests'
 OUT.mkdir(parents=True, exist_ok=True)
 world = ['terrain','mountain','tiles','tiles_data','stream','plan','habitat','water','geo']
 groups = {
-    'state terrain': ['state'],
+    'place': ['place'],
+    'state terrain': ['state','state_codec'],
     'pokemon': ['atlas_pokemon', 'atlas_pokemon_boundaries'],
     'actor_identity': ['atlas_actor_identity', 'actor_identity_property'],
     'actor_identity actor_admission': ['actor_admission'],

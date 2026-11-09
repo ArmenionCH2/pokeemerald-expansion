@@ -1,4 +1,5 @@
 #include "global.h"
+#include "atlas_world.h"
 #include "bg.h"
 #include "blit.h"
 #include "decompress.h"
@@ -418,7 +419,7 @@ u8 AddMapNamePopUpWindow(void)
         if (OW_POPUP_GENERATION == GEN_5)
             sMapNamePopupWindowId = AddWindowParameterized(0, 0, 0, 30, 3, 14, 0x107);
         else
-            sMapNamePopupWindowId = AddWindowParameterized(0, 1, 1, 10, 3, 14, 0x107);
+            sMapNamePopupWindowId = AddWindowParameterized(0, 1, 1, AtlasWorld_IsActive() ? 22 : 10, 3, 14, 0x107);
     }
     return sMapNamePopupWindowId;
 }
