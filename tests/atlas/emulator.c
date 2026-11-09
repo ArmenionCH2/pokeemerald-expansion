@@ -234,8 +234,13 @@ int main(int argc,char **argv)
         FILE *f=fopen(argv[3],"wb");assert(f);
         bytes(statePtr,before,sizeof(before));assert(fwrite(before,1,sizeof(before),f)==sizeof(before));fclose(f);
         printf("SNAPSHOT schema=%u seed=%08x position=%u,%u\n",core->busRead16(core,statePtr+12),core->busRead32(core,statePtr+4),core->busRead16(core,savePtr),core->busRead16(core,savePtr+2));
+        uint32_t stats=symbol("gAtlasPlanStats");
+        printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==4);
+    assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
+    printf("PASS native generation 4 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     placeNames();
     struct ActorView initial=actors();
     for (unsigned i=0;i<600&&!initial.mask;i++) {frames(0,1);initial=actors();}

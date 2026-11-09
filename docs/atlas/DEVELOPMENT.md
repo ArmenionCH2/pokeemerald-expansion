@@ -54,6 +54,11 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   The original Atlas engine was a different pret/pokeemerald revision. Do not
   copy its allocator, linker script, sprite engine or save code over Expansion.
 - World generation version and save-journal version are separate identities.
+  New version-4 worlds normalize the macro height distribution to approximately
+  29.2% land before mountain uplift. Version-3 saved worlds retain the original
+  algorithm and checksums; never rewrite a saved generation tag to upgrade terrain.
+  Version 4 also labels connected ocean/sea components using a tagged existing
+  node field, without increasing permanent plan storage.
   Restore validates them and the seed. Unknown Atlas formats fail closed.
   Saves from the old engine still need a fresh world. This port's version-1
   journal upgrades losslessly in memory on Continue; it is written on the next Save.
@@ -74,7 +79,7 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   over six-hour epochs, avoiding arbitrary hourly/grid rerolls. It currently informs
   the map, not animated
   precipitation, terrain changes or a complete seasons/ecology simulation.
-- Physical names derive from connected macro landmasses and drainage catchments.
+- Physical names derive from connected macro landmasses, water bodies and drainage catchments.
   The local label describes the terrain inside that catchment; individual forests,
   ridges and river branches are not separately component-labelled. Names are seed
   stable, cross chunk boundaries and announce only changed hierarchy levels after

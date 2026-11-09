@@ -52,7 +52,7 @@ void AtlasWildlife_Tick(void)
               && gObjectEvents[i].currentCoords.y==object.y+MAP_OFFSET) return;
     }
     for (i=0;i<MAX_SPRITES;i++) if (!gSprites[i].inUse) freeSprites++;
-    if (!AtlasActor_MakeSpawnKey(&key,gAtlasWorldSeed,x,y,spawn.species,ATLAS_GENERATION_VERSION)) return;
+    if (!AtlasActor_MakeSpawnKey(&key,gAtlasWorldSeed,x,y,spawn.species,AtlasWorld_Generation())) return;
     object.localId=100+slot;
     object.graphicsId=spawn.graphicsId;
     object.kind=OBJ_KIND_NORMAL;

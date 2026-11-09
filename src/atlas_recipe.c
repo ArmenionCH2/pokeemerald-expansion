@@ -48,7 +48,7 @@ bool8 AtlasRecipe_Build(u8 *data,u32 counter)
     memset(data,0,ATLAS_RECIPE_BYTES);
     Put(data,0x41544C52);Put(data+4,1);Put(data+8,gAtlasWorldSeed);
     Put(data+12,gAtlasPlanStats.checksum);Put(data+16,gAtlasPlanStats.habitatChecksum);
-    Put(data+20,counter);Put(data+24,ATLAS_GENERATION_VERSION);
+    Put(data+20,counter);Put(data+24,AtlasWorld_Generation());
     Put(data+32,ATLAS_PLAN_WIDTH|((u32)ATLAS_PLAN_HEIGHT<<16));
     for(i=0;i<ATLAS_PLAN_COUNT;i++)data[ATLAS_RECIPE_HEADER+i]=gAtlasPlan[i].height;
     Put(data+28,Crc(data));
@@ -58,7 +58,7 @@ bool8 AtlasRecipe_Valid(const u8 *data)
 {
     u16 i;
     if(!data || Get(data)!=0x41544C52 || Get(data+4)!=1
-        || Get(data+24)!=ATLAS_GENERATION_VERSION
+        || Get(data+24)!=AtlasWorld_Generation()
         || Get(data+32)!=(ATLAS_PLAN_WIDTH|((u32)ATLAS_PLAN_HEIGHT<<16))
         || Get(data+28)!=Crc(data))return FALSE;
     for(i=36;i<ATLAS_RECIPE_HEADER;i++)if(data[i])return FALSE;

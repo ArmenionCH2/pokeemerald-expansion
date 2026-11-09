@@ -1,0 +1,49 @@
+#include "global.h"
+#include "atlas_world.h"
+#include "atlas_plan.h"
+#include <assert.h>
+#include <stdio.h>
+
+static struct AtlasPlanNode legacy[ATLAS_PLAN_COUNT];
+static void Generate(u32 seed,u16 version,u16 batch)
+{
+    assert(AtlasWorld_SetGeneration(version));assert(AtlasPlan_Begin(seed));
+    while (!AtlasPlan_Step(batch)) {}
+}
+int main(void)
+{
+    const u32 seeds[]={0,1,0xFFFFFFFFu,0xDEADBEEFu,4220706268u,123456789};
+    unsigned i,id;
+    Generate(0,3,256);
+    assert(gAtlasPlanStats.checksum==0xEDDF7C74u);
+    memcpy(legacy,gAtlasPlan,sizeof(legacy));
+    for (i=0;i<sizeof(seeds)/sizeof(seeds[0]);i++)
+    {
+        unsigned land=0,mountains=0;
+        Generate(seeds[i],4,256);
+        for (id=0;id<ATLAS_PLAN_COUNT;id++)
+        {
+            u16 at=id;unsigned steps=0;
+            land+=gAtlasPlan[id].height>=ATLAS_PLAN_SEA;
+            mountains+=gAtlasPlan[id].height>=195;
+            assert(!!(gAtlasPlan[id].continent&ATLAS_OCEAN_COMPONENT)==(gAtlasPlan[id].height<ATLAS_PLAN_SEA));
+            u16 east=(id/ATLAS_PLAN_WIDTH)*ATLAS_PLAN_WIDTH+(id+1)%ATLAS_PLAN_WIDTH;
+            if (gAtlasPlan[id].height<ATLAS_PLAN_SEA && gAtlasPlan[east].height<ATLAS_PLAN_SEA)
+                assert(gAtlasPlan[id].continent==gAtlasPlan[east].continent);
+            assert(gAtlasPlan[id].parent<ATLAS_PLAN_COUNT);
+            while (gAtlasPlan[at].parent!=at)
+            {at=gAtlasPlan[at].parent;assert(++steps<ATLAS_PLAN_COUNT);}
+            assert(gAtlasPlan[at].height<ATLAS_PLAN_SEA);
+        }
+        assert(land==ATLAS_PLAN_COUNT*292u/1000 && gAtlasPlanStats.land==land && mountains);
+        u32 checksum=gAtlasPlanStats.checksum;
+        Generate(seeds[i],4,31);assert(checksum==gAtlasPlanStats.checksum);
+        s32 x,y;assert(AtlasTerrain_FindSpawn(&x,&y));
+        for (unsigned p=0;p<9;p++) assert(!(AtlasTerrain_Tile(x+(s32)(p%3)-1,y+(s32)(p/3)-1)&0xC00));
+        printf("PASS ocean generation seed=%u land=%u/%u mountains=%u checksum=%08x\n",seeds[i],land,ATLAS_PLAN_COUNT,mountains,checksum);
+    }
+    assert(!AtlasWorld_SetGeneration(99) && AtlasWorld_Generation()==4);
+    Generate(0,3,31);assert(!memcmp(legacy,gAtlasPlan,sizeof(legacy)));
+    puts("PASS generation 4 Earth-like macro ocean balance, drainage, natural spawn, batch determinism and unchanged generation 3");
+    return 0;
+}

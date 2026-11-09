@@ -7,6 +7,7 @@
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
 EWRAM_DATA static u16 sNext[ATLAS_GEO_COUNT] = {0}, sVisited = 0, sNode = 0, sLastLand = 0, sTrial = 0;
+EWRAM_DATA static u16 sGeneration = 0;
 EWRAM_DATA static u8 sType = 0, sPhase = 0, sDirection = 0, sCheck = 0, sAttempt = 0;
 EWRAM_DATA static s32 sCX = 0, sCY = 0, sWX = 0, sWY = 0, sDX = 0, sDY = 0, sLX = 0, sLY = 0;
 EWRAM_DATA static s32 sMouthDX = 0, sMouthDY = 0;
@@ -45,11 +46,11 @@ static void Direction(void)
 }
 void AtlasGeo_Begin(u8 type)
 {
-    if(!sInitialized || sSeed!=gAtlasWorldSeed)
+    if(!sInitialized || sSeed!=gAtlasWorldSeed || sGeneration!=AtlasWorld_Generation())
     {
         u8 i;
         for(i=0;i<ATLAS_GEO_COUNT;i++)sNext[i]=ATLAS_PLAN_WIDTH*(ATLAS_PLAN_HEIGHT/2)+(gAtlasWorldSeed%ATLAS_PLAN_WIDTH)+i*13;
-        sLastLand=0;sSeed=gAtlasWorldSeed;sInitialized=TRUE;
+        sLastLand=0;sSeed=gAtlasWorldSeed;sGeneration=AtlasWorld_Generation();sInitialized=TRUE;
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_VOLCANO && type!=ATLAS_GEO_RETURN?0:3;

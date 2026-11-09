@@ -18,7 +18,6 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
     if (!gAtlasPlanReady || cell == NULL || y < -ATLAS_WORLD_HALF_HEIGHT
      || y >= ATLAS_WORLD_HALF_HEIGHT || cell->waterform > ATLAS_LAKE
      || cell->biome > ATLAS_WETLAND || cell->landform > ATLAS_COAST) return FALSE;
-    if (cell->waterform == ATLAS_SEA) return TRUE;
     x %= ATLAS_WORLD_WIDTH; if (x < 0) x += ATLAS_WORLD_WIDTH;
     sx = (u32)x * ATLAS_PLAN_WIDTH;
     sy = (u32)(y + ATLAS_WORLD_HALF_HEIGHT) * (ATLAS_PLAN_HEIGHT - 1);
@@ -36,14 +35,16 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
         u16 id;
         if (cy >= ATLAS_PLAN_HEIGHT) cy = ATLAS_PLAN_HEIGHT - 1;
         id = cy * ATLAS_PLAN_WIDTH + cx;
-        if (!gAtlasPlan[id].continent || distance >= best) continue;
+        if (!gAtlasPlan[id].continent || distance >= best
+         || !!(gAtlasPlan[id].continent & ATLAS_OCEAN_COMPONENT) != (cell->waterform == ATLAS_SEA)) continue;
         chosen = id; best = distance;
     }
     if (chosen != ATLAS_PLAN_COUNT)
     {
         out->landmass = gAtlasPlan[chosen].continent;
-        out->basin = gAtlasPlan[chosen].basin & ATLAS_BASIN_MASK;
+        if (cell->waterform!=ATLAS_SEA) out->basin = gAtlasPlan[chosen].basin & ATLAS_BASIN_MASK;
     }
+    if (cell->waterform==ATLAS_SEA) return TRUE;
     out->kind = cell->waterform == ATLAS_RIVER ? ATLAS_PLACE_RIVER
               : cell->waterform == ATLAS_LAKE ? ATLAS_PLACE_LAKE
               : cell->landform == ATLAS_COAST ? ATLAS_PLACE_COAST
@@ -77,9 +78,9 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
     if (out == NULL) return FALSE;
     out[0] = 0;
     if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_PLAIN
-     || place->landmass > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT) return FALSE;
+     || (place->landmass & ~ATLAS_OCEAN_COMPONENT) > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT) return FALSE;
     if (level == 2) {Append(out, feature[place->kind]);return TRUE;}
-    id = level == 0 ? place->landmass : place->basin;
+    id = level == 0 ? place->landmass & ~ATLAS_OCEAN_COMPONENT : place->basin;
     if (!id)
     {
         if (level == 1) return FALSE;
@@ -93,8 +94,9 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
     if (level == 1) Append(out, " Basin");
     else
     {
-        for (i = 0; i < ATLAS_PLAN_COUNT; i++) if (gAtlasPlan[i].continent == id) count++;
-        Append(out, count >= 32 ? " Continent" : " Island");
+        for (i = 0; i < ATLAS_PLAN_COUNT; i++) if (gAtlasPlan[i].continent == place->landmass) count++;
+        if (place->landmass & ATLAS_OCEAN_COMPONENT) Append(out,count>=128?" Ocean":" Sea");
+        else Append(out, count >= 32 ? " Continent" : " Island");
     }
     return TRUE;
 }

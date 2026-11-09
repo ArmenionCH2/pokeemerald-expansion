@@ -22,7 +22,18 @@ EWRAM_DATA bool8 gAtlasPlanReady = FALSE;
 struct PlanScratch {
     u16 heap[ATLAS_PLAN_COUNT], order[ATLAS_PLAN_COUNT];
     u8 level[ATLAS_PLAN_COUNT], rain[ATLAS_PLAN_COUNT];
+    u16 heights[256];
 };
+static EWRAM_DATA u16 sAtlasGenerationVersion = 0, sCoastalTies = 0;
+static EWRAM_DATA u8 sSeaCutoff = 0;
+static EWRAM_DATA u16 sOceans = 0;
+static EWRAM_DATA bool8 sWaterPass = FALSE;
+u16 AtlasWorld_Generation(void) {return sAtlasGenerationVersion?sAtlasGenerationVersion:ATLAS_GENERATION_LEGACY;}
+bool8 AtlasWorld_SetGeneration(u16 version)
+{
+    if (version!=ATLAS_GENERATION_LEGACY && version!=ATLAS_GENERATION_VERSION) return FALSE;
+    sAtlasGenerationVersion=version;return TRUE;
+}
 EWRAM_DATA static struct PlanScratch *sScratch = {0};
 EWRAM_DATA static u16 sAt = 0, sHeapSize = 0, sOrderSize = 0, sFlooded = 0, sQueueHead = 0, sQueueTail = 0;
 EWRAM_DATA static u8 sStage = 0, sRainPass = 0;
@@ -101,6 +112,7 @@ bool8 AtlasPlan_Begin(u32 seed)
     AtlasTerrain_SetSeed(seed);
     AtlasWater_Reset();
     gAtlasPlanReady = FALSE;
+    sSeaCutoff=0;sCoastalTies=0;sOceans=0;sWaterPass=FALSE;
     sAt = sHeapSize = sOrderSize = sFlooded = sQueueHead = sQueueTail = 0;
     sStage = sRainPass = 0; sLabeling = FALSE;
     return TRUE;
@@ -161,12 +173,41 @@ bool8 AtlasPlan_Step(u16 work)
             if (y >= ATLAS_WORLD_HALF_HEIGHT) y = ATLAS_WORLD_HALF_HEIGHT - 1;
             AtlasTerrain_Sample(x, y, &c);
             n->height = c.elevation; n->rain = 96; n->parent = 0xFFFF;
-            if (++sAt == ATLAS_PLAN_COUNT) Advance();
+            if (AtlasWorld_Generation()>=4) sScratch->heights[n->height]++;
+            if (++sAt == ATLAS_PLAN_COUNT)
+            {
+                if (AtlasWorld_Generation()>=4)
+                {
+                    unsigned h,count=0,target=ATLAS_PLAN_COUNT*292u/1000;
+                    for (h=255;h>0;h--)
+                    {
+                        if (count+sScratch->heights[h]>=target) break;
+                        count+=sScratch->heights[h];
+                    }
+                    sSeaCutoff=h;sCoastalTies=target-count;
+                }
+                Advance();
+            }
         }
         else if (sStage == 1)
         {
-            s32 e = n->height;
-            if (e >= ATLAS_PLAN_SEA) { e += Mountain(sAt); gAtlasPlanStats.land++; }
+            u16 id=sAt;
+            s32 e;
+            if (AtlasWorld_Generation()>=4)
+            {
+                // Coprime traversal distributes quantile ties across the globe,
+                // rather than assigning equal-height shoreline cells north-first.
+                id=((u32)sAt*2053+gAtlasWorldSeed%ATLAS_PLAN_COUNT)%ATLAS_PLAN_COUNT;
+                n=&gAtlasPlan[id];e=(s32)n->height-sSeaCutoff+ATLAS_PLAN_SEA;
+                if (n->height==sSeaCutoff)
+                {
+                    if (sCoastalTies) sCoastalTies--;
+                    else e=ATLAS_PLAN_SEA-1;
+                }
+                if (e<0) e=0;
+            }
+            else e=n->height;
+            if (e >= ATLAS_PLAN_SEA) { e += Mountain(id); gAtlasPlanStats.land++; }
             if (e > 255) e = 255;
             n->height = e;
             if (++sAt == ATLAS_PLAN_COUNT) Advance();
@@ -280,20 +321,26 @@ bool8 AtlasPlan_Step(u16 work)
                 for (d = 0; d < 4; d++)
                 {
                     u16 other = Neighbor(id, d);
-                    if (gAtlasPlan[other].height < ATLAS_PLAN_SEA || gAtlasPlan[other].continent) continue;
-                    gAtlasPlan[other].continent = gAtlasPlanStats.continents;
+                    if ((sWaterPass ? gAtlasPlan[other].height >= ATLAS_PLAN_SEA : gAtlasPlan[other].height < ATLAS_PLAN_SEA)
+                     || gAtlasPlan[other].continent) continue;
+                    gAtlasPlan[other].continent = sWaterPass ? ATLAS_OCEAN_COMPONENT | sOceans : gAtlasPlanStats.continents;
                     sScratch->heap[sQueueTail++] = other;
                 }
                 if (sQueueHead == sQueueTail) sLabeling = FALSE;
             }
             else
             {
-                if (n->height >= ATLAS_PLAN_SEA && !n->continent)
+                if ((sWaterPass ? n->height < ATLAS_PLAN_SEA : n->height >= ATLAS_PLAN_SEA) && !n->continent)
                 {
-                    n->continent = ++gAtlasPlanStats.continents;
+                    n->continent = sWaterPass ? ATLAS_OCEAN_COMPONENT | ++sOceans : ++gAtlasPlanStats.continents;
                     sQueueHead = 0; sQueueTail = 1; sScratch->heap[0] = sAt; sLabeling = TRUE;
                 }
-                if (++sAt == ATLAS_PLAN_COUNT) { if (sLabeling) sAt--; else Advance(); }
+                if (++sAt == ATLAS_PLAN_COUNT)
+                {
+                    if (sLabeling) sAt--;
+                    else if (AtlasWorld_Generation()>=4 && !sWaterPass) {sWaterPass=TRUE;sAt=0;}
+                    else Advance();
+                }
             }
         }
         else if (sStage == 8)

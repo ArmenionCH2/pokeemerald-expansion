@@ -32,7 +32,7 @@ static const u8 *const sAtlasMapLayers[] = {COMPOUND_STRING("ATLAS - TERRAIN"),C
 static const u8 sHelp[] = _("D-pad: pan  L/R: zoom  A: home  B: back");
 static const u8 sAdminHelp[] = _("L/R zoom  START layer  SELECT player");
 static const u8 sUnknown[] = _("Unexplored");
-static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Low: green   High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue")};
+static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue")};
 static const u8 sFull[] = _("Journal space low - visits retained");
 static const u8 sClear[] = _("Clear");
 static const u8 sRain[] = _("Rain");
@@ -85,7 +85,8 @@ static u8 Color(s32 x, s32 y)
         return value<70?4:value<110?10:value<150?3:value<190?7:2;
     }
     if (sAtlasMapLayer==LAYER_ELEVATION)
-        return cell.waterform!=ATLAS_DRY?2:cell.elevation<145?3:cell.elevation<170?4:cell.elevation<195?11:6;
+        return cell.waterform==ATLAS_SEA?(cell.elevation<60?9:cell.elevation<100?2:13)
+             :cell.waterform!=ATLAS_DRY?2:cell.elevation<145?3:cell.elevation<170?4:cell.elevation<195?11:6;
     if (sAtlasMapLayer==LAYER_BASINS)
     {
         struct AtlasPlace place;

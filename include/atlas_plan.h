@@ -7,7 +7,10 @@
 #define ATLAS_PLAN_STAGES 11
 #define ATLAS_BASIN_MASK 0x1FFF
 #define ATLAS_LAKE_FLAG 0x8000
+#define ATLAS_OCEAN_COMPONENT 0x8000
 #define ATLAS_PLAN_BYTES (ATLAS_PLAN_COUNT * 12)
+/* Version 4 also labels connected seas in continent, tagged with the high bit.
+ * Land labels retain their original untagged identity. No extra node storage. */
 struct AtlasPlanNode { u16 parent, runoff, continent, basin; u8 height, rain, humidity, water; };
 struct AtlasPlanStats { u32 seed, checksum; u16 land, continents, rivers, lakes, basins, cold, wet; u32 habitatChecksum; };
 struct AtlasPlanSample { u8 height, rain, humidity, water, lake; };

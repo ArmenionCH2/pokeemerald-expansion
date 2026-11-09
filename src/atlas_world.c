@@ -76,7 +76,8 @@ void AtlasWorld_Fill(void)
 bool8 AtlasWorld_SaveValid(void)
 {
     return AtlasWorld_IsActive() && VarGet(VAR_ATLAS_MAGIC) == ATLAS_SAVE_MAGIC
-        && VarGet(VAR_ATLAS_GENERATION) == ATLAS_GENERATION_VERSION
+        && (VarGet(VAR_ATLAS_GENERATION) == ATLAS_GENERATION_VERSION
+         || VarGet(VAR_ATLAS_GENERATION) == ATLAS_GENERATION_LEGACY)
         && AtlasState_Valid(&gSaveBlock3Ptr->atlas, AtlasWorld_ReadSeed());
 }
 void AtlasWorld_Tick(void)
@@ -112,6 +113,7 @@ void AtlasWorld_NewGame(void)
     WriteCoord(VAR_ATLAS_SEED_LOW, seed);
     AtlasState_Init(&gSaveBlock3Ptr->atlas, seed);
     VarSet(VAR_ATLAS_GENERATION, ATLAS_GENERATION_VERSION);
+    AtlasWorld_SetGeneration(ATLAS_GENERATION_VERSION);
     VarSet(VAR_ATLAS_MAGIC, ATLAS_SAVE_MAGIC);
     StringCopy(gSaveBlock2Ptr->playerName, sPlayerName);
     gSaveBlock2Ptr->playerGender = 0;
@@ -120,6 +122,10 @@ void AtlasWorld_NewGame(void)
 u32 AtlasWorld_ReadSeed(void)
 {
     return (u32)ReadCoord(VAR_ATLAS_SEED_LOW);
+}
+bool8 AtlasWorld_RestoreGeneration(void)
+{
+    return AtlasWorld_SetGeneration(VarGet(VAR_ATLAS_GENERATION));
 }
 void AtlasWorld_FinishNewGame(void)
 {

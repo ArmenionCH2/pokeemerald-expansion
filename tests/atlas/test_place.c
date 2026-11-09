@@ -72,6 +72,12 @@ int main(void)
     assert(!AtlasPlace_Name(&b, 1, name));
     // No query or notification changes the underlying geographic labels.
     for (j = 0; j < ATLAS_PLAN_COUNT; j++) assert(gAtlasPlan[j].basin == (37 | ATLAS_LAKE_FLAG));
+    for (j = 0; j < ATLAS_PLAN_COUNT; j++) gAtlasPlan[j].continent=ATLAS_OCEAN_COMPONENT|1;
+    assert(AtlasPlace_Identify(0,0,&cell,&b));
+    assert(b.landmass==(ATLAS_OCEAN_COMPONENT|1));
+    assert(AtlasPlace_Name(&b,0,name) && strstr(name,"Ocean"));
+    for (j=1;j<ATLAS_PLAN_COUNT;j++) gAtlasPlan[j].continent=ATLAS_OCEAN_COMPONENT|2;
+    assert(AtlasPlace_Name(&b,0,name) && strstr(name," Sea"));
     puts("PASS physical names, geographic IDs, chunk/dateline continuity, poles, hierarchy and border debounce");
     return 0;
 }

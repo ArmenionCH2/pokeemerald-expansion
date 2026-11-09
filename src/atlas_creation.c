@@ -121,6 +121,7 @@ static void Begin(bool8 restoring)
     AtlasPlan_ReserveHeap();
     AtlasRecipe_Reset();
     sInvalidSave = restoring && !AtlasWorld_SaveValid();
+    if (restoring && !sInvalidSave) sInvalidSave = !AtlasWorld_RestoreGeneration();
     if (restoring && !sInvalidSave) sInvalidSave = !AtlasState_Upgrade(&gSaveBlock3Ptr->atlas);
     sFailed = sInvalidSave || !AtlasPlan_Begin(AtlasWorld_ReadSeed());
     if (restoring && !sFailed) AtlasRecipe_Load(AtlasWorld_ReadSeed());
