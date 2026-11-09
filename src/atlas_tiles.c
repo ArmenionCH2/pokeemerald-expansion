@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_tiles.h"
+#include "atlas_vegetation.h"
 #include "constants/metatile_labels.h"
 
 /* Compact semantics: geographic height, relief/pass, material and water type.
@@ -31,6 +32,7 @@ u16 AtlasTiles_Describe(s32 x, s32 y, u16 *floor)
 }
 u16 AtlasTiles_Render(u16 floor, const u16 *cells)
 {
+    if (AtlasVegetation_IsTree(floor)) floor=AtlasVegetation_Result(floor,FALSE);
     static const u8 neighbors[8] = {1,5,7,3,2,8,6,0};
     u16 center = cells[4];
     u8 water = center & 3, tier = (center >> 4) & 7;
@@ -68,13 +70,22 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     for (i = 1; i < 4; i++) if (count[i] > count[material]) material = i;
     return PACK_METATILE(AtlasTiles_Water(mask, material, water)) | PACK_COLLISION(1) | PACK_ELEVATION(3);
 }
+static u16 Tree(s32 x,s32 y,u16 floor)
+{
+    u16 floors[9],semantics[9];unsigned i;
+    u16 part=(floor&1023)-ATLAS_NATURE_TREE_FIRST;
+    x-=part%3;y-=part/3;
+    for (i=0;i<9;i++) semantics[i]=AtlasTiles_Describe(x+(s32)(i%3),y+(s32)(i/3),&floors[i]);
+    return AtlasVegetation_Result(floor,AtlasVegetation_Valid(floors,semantics));
+}
 u16 AtlasTiles_At(s32 x, s32 y, const struct AtlasCell *center)
 {
     u16 cells[9], floor, ignored;
     s32 dx, dy;
+    cells[4]=Describe(x,y,center,&floor);
+    if (AtlasVegetation_IsTree(floor)) return Tree(x,y,floor);
     for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++)
-        if (!dx && !dy) cells[4] = Describe(x, y, center, &floor);
-        else cells[(dy + 1) * 3 + dx + 1] = AtlasTiles_Describe(x + dx, y + dy, &ignored);
+        if (dx || dy) cells[(dy + 1) * 3 + dx + 1] = AtlasTiles_Describe(x + dx, y + dy, &ignored);
     return AtlasTiles_Render(floor, cells);
 }
 void AtlasTiles_FillRow(u16 *dest, s32 x, s32 y, u16 width)
@@ -87,6 +98,6 @@ void AtlasTiles_FillRow(u16 *dest, s32 x, s32 y, u16 width)
     for (col = 0; col < width; col++)
     {
         for (dy = 0; dy < 3; dy++) for (dx = 0; dx < 3; dx++) nine[dy * 3 + dx] = cells[dy][col + dx];
-        dest[col] = AtlasTiles_Render(floors[col], nine);
+        dest[col] = AtlasVegetation_IsTree(floors[col])?Tree(x+col,y,floors[col]):AtlasTiles_Render(floors[col], nine);
     }
 }

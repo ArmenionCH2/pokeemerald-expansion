@@ -159,6 +159,19 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     /* Stateless coordinate detail; no new lattice, cache or geographic query.
      * The source's three tuft variants share the same flat grass/snow border. */
     detail = Hash(x, y, 0x47524E44);
+    if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
+     && c->landform!=ATLAS_COAST
+     && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE || c->biome==ATLAS_TAIGA))
+    {
+        s32 cy=AtlasTerrain_FloorDiv(y,5),cx=x/5;
+        u32 grove=Hash(cx,cy,0x54524545u);
+        s32 ox=x-cx*5-(s32)(grove&1),oy=y-cy*5-(s32)((grove>>1)&1);
+        unsigned density=c->biome==ATLAS_JUNGLE?75:c->biome==ATLAS_FOREST?55:40;
+        // Every fifth row/column stays free of groves. These remain natural
+        // ground/cover, not artificial roads. Offsets vary between clearings.
+        if ((grove>>8)%100<density && ox>=0 && ox<3 && oy>=0 && oy<3)
+            return PACK_METATILE(ATLAS_NATURE_TREE_FIRST+oy*3+ox)|PACK_ELEVATION(3);
+    }
     variant = (detail & 15) < 4 ? detail & 3 : 0;
     id = ATLAS_NATURE_GRASS_FIRST + variant;
     if (c->biome == ATLAS_TUNDRA) id = ATLAS_NATURE_SNOW_FIRST + variant;

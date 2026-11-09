@@ -56,6 +56,7 @@ static uint32_t symbol(const char *name)
     fprintf(stderr,"missing symbol %s\n",name);abort();
 }
 static void frames(unsigned keys,unsigned count) {core->setKeys(core,keys);while(count--) {core->runFrame(core);elapsedFrames++;}}
+static void shot(const char *path);
 static unsigned settle(void)
 {
     unsigned start=elapsedFrames;
@@ -65,6 +66,11 @@ static unsigned settle(void)
     while ((core->busRead32(core,main)!=(cb1|1) || core->busRead32(core,main+4)!=(cb2|1)
          || (core->busRead32(core,fade+12)&0x80000000u) || core->busRead8(core,lock))
          && elapsedFrames-start<600) frames(0,1);
+    if (elapsedFrames-start>=600)
+    {
+        printf("SETTLE failure cb1=%08x cb2=%08x lock=%u fade=%08x\n",core->busRead32(core,main),core->busRead32(core,main+4),core->busRead8(core,lock),core->busRead32(core,fade+12));
+        shot("build/atlas-emulator/settle-failure.ppm");
+    }
     assert(elapsedFrames-start<600);
     return elapsedFrames-start;
 }
@@ -226,7 +232,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<16;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<18;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -235,7 +241,9 @@ static void biomeTour(uint32_t savePointer)
         assert(waited<6000);
         if (core->busRead8(core,status)==2)
         {
-            printf("NOTE biome TP type %u has no safe destination in this seed\n",type);press(2);settle();continue;
+            printf("NOTE biome TP type %u has no safe destination in this seed\n",type);
+            frames(0,30); // status is published before the failure pane finishes drawing
+            press(2);settle();continue;
         }
         assert(core->busRead8(core,status)==1 && core->busRead8(core,result+12)==type);
         settle();frames(0,120);actors();unsigned weather=fieldWeather();
@@ -272,22 +280,22 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    for (unsigned visit=0;visit<4;visit++)
+    for (unsigned visit=0;visit<5;visit++)
     {
-        unsigned type=visit<3?visit+2:16;
+        unsigned type=visit<3?visit+2:visit==3?16:17;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<16;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<18;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
         assert(waited<6000);
-        if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);press(2);settle();continue;}
+        if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);frames(0,30);press(2);settle();continue;}
         assert(core->busRead8(core,status)==1);settle();frames(0,60);
-        unsigned reached=type==16;
-        for (unsigned step=0;step<40 && type!=16;step++)
+        unsigned reached=type>=16;
+        for (unsigned step=0;step<40 && type<16;step++)
         {
             unsigned key=nextMapKey(core->busRead32(core,savePointer),type==4?2:1);
             if (key==1024) {reached=1;break;}
@@ -297,13 +305,50 @@ static void shoreTour(uint32_t savePointer)
         frames(0,300);actors();fieldWeather();
         if (reached)
         {
-            unsigned expected=type==16?13:type==2?2:type==3?1:3;
-            assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
+            if (type==17)
+            {
+                uint32_t map=core->busRead32(core,symbol("gBackupMapLayout")+8);
+                unsigned trees=0;
+                for (unsigned at=0;at<1190;at++)
+                {
+                    unsigned tile=core->busRead16(core,map+at*2),id=tile&1023;
+                    if (id<915 || id>=924) continue;
+                    trees++;assert(tile&0x400);
+                    int ax=(int)(at%35)-(int)((id-915)%3),ay=(int)(at/35)-(int)((id-915)/3);
+                    if (ax<0 || ay<0 || ax+2>=35 || ay+2>=34) continue;
+                    for (unsigned part=0;part<9;part++)
+                        assert((core->busRead16(core,map+((ay+part/3)*35+ax+part%3)*2)&1023)==915+part);
+                }
+                assert(trees>=9);printf("PASS native visible complete forest groves: %u blocked tree tiles\n",trees);
+            }
+            else
+            {
+                unsigned expected=type==16?13:type==2?2:type==3?1:3;
+                assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
+            }
             printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
+        if (type==17) cachedCrossing(savePointer);
     }
+}
+static void cancelGeoSearch(uint32_t savePointer)
+{
+    uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),cursor=symbol("sStartMenuCursorPos");
+    uint32_t choice=symbol("sGeoChoice"),save=core->busRead32(core,savePointer);
+    unsigned x=core->busRead16(core,save),y=core->busRead16(core,save+2);
+    press(8);
+    for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
+    assert(core->busRead8(core,cursor)==3);press(1);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<18;i++) press(128);
+    assert(core->busRead8(core,choice)==17);press(1);
+    if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
+    press(2);frames(0,30);
+    if (core->busRead32(core,main+4)==(geo|1)) press(2);
+    settle();save=core->busRead32(core,savePointer);
+    assert(core->busRead16(core,save)==x && core->busRead16(core,save+2)==y);
+    actors();printf("PASS native geographic search cancel returns to unlocked field without teleporting\n");
 }
 int main(int argc,char **argv)
 {
@@ -345,9 +390,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==6);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==7);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 6 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 7 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     struct ActorView initial=actors();
@@ -437,6 +482,7 @@ int main(int argc,char **argv)
     fprintf(timing,"{\"new_game_frames\":%u,\"new_game_seconds\":%.4f,\"continue_frames\":%u,\"continue_seconds\":%.4f,\"phone_measured\":false,\"timing_origin\":\"Atlas generation screen entry\"}\n",newGameFrames,newGameFrames/59.72750057,continueFrames,continueFrames/59.72750057);fclose(timing);
     printf("PASS ready-to-walk timing: New Game %.3f s; Continue %.3f s at full GBA speed (phones unmeasured)\n",newGameFrames/59.72750057,continueFrames/59.72750057);
     biomeTour(sav1);
+    cancelGeoSearch(sav1);
     shoreTour(sav1);
     core->deinit(core);return 0;
 }

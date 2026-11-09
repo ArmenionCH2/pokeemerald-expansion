@@ -4,6 +4,7 @@
 #include "atlas_geo.h"
 #include "atlas_tiles.h"
 #include "atlas_region.h"
+#include "atlas_vegetation.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -55,6 +56,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_VOLCANO && type!=ATLAS_GEO_RETURN?0:3;
+    if (type==ATLAS_GEO_GROVE && AtlasWorld_Generation()<7) gAtlasGeoStatus=3;
 }
 static bool8 Candidate(u16 id)
 {
@@ -65,8 +67,9 @@ static bool8 Candidate(u16 id)
         struct AtlasHabitat habitat;
         s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         if (n->height<ATLAS_PLAN_SEA || n->height>180) return FALSE;
+        if (sType==ATLAS_GEO_GROVE && n->height>165) return FALSE;
         AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
-        if (sType==ATLAS_GEO_FOREST) return habitat.temperature>=85 && habitat.moisture>125;
+        if (sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE) return habitat.temperature>=85 && habitat.moisture>125;
         if (sType==ATLAS_GEO_DESERT) return habitat.temperature>155 && habitat.moisture<105;
         if (sType==ATLAS_GEO_TUNDRA) return habitat.temperature<60;
         return habitat.temperature>75 && habitat.moisture>150 && n->height<140;
@@ -88,6 +91,15 @@ u8 AtlasGeo_Step(void)
     u8 i;
     struct AtlasCell c;
     if(gAtlasGeoStatus)return gAtlasGeoStatus;
+    if (sPhase==18)
+    {
+        x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
+        if (!ReadyPoint(x,y)) return 0;
+        if (AtlasVegetation_IsTree(AtlasTerrain_Tile(x,y))) sSceneTarget++;
+        if (sSceneTarget>=9) {sPhase=9;return 0;}
+        if (++sSceneAt>=117) sPhase=17;
+        return 0;
+    }
     if(sPhase==0)
     {
         for(i=0;i<24;i++)
@@ -220,8 +232,8 @@ u8 AtlasGeo_Step(void)
         x=sCX+((s32)(sTrial%16)-8)*8;y=sCY+((s32)(sTrial/16)-8)*8;
         if (!Warm(x,y)) return 0;
         sTrial++;AtlasTerrain_Sample(x,y,&c);
-        u8 target=sType==ATLAS_GEO_FOREST?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
-        if (c.waterform || (sType==ATLAS_GEO_PLATEAU
+        u8 target=sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
+        if (c.waterform || (sType==ATLAS_GEO_GROVE && (c.elevation>=175 || AtlasMountain_Relief(x,y,&c))) || (sType==ATLAS_GEO_PLATEAU
             ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : c.biome!=target))
         {if (sTrial==1) sPhase=0;return 0;}
         sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
@@ -317,6 +329,7 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if (sType==ATLAS_GEO_GROVE) {sSceneAt=sSceneTarget=0;sPhase=18;return 0;}
         if(sType==ATLAS_GEO_MOUTH){sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=14;return 0;}
         if(ReliefTarget() || sType==ATLAS_GEO_VALLEY)
         {

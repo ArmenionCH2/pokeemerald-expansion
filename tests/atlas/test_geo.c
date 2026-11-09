@@ -15,7 +15,7 @@ int main(void)
         assert(AtlasPlan_Begin(seeds[seed]));while(!AtlasPlan_Step(256));
         for(type=0;type<ATLAS_GEO_COUNT;type++)
         {
-            if(type==ATLAS_GEO_VOLCANO || type==ATLAS_GEO_RETURN)continue;
+            if(type==ATLAS_GEO_VOLCANO || type==ATLAS_GEO_RETURN || type==ATLAS_GEO_GROVE)continue;
             AtlasGeo_Begin(type);
             for(n=0;n<20000 && !AtlasGeo_Step();n++);
             printf("TP seed=%u type=%u steps=%u status=%u x=%d y=%d\n",seeds[seed],type,n,gAtlasGeoStatus,gAtlasGeoResult.x,gAtlasGeoResult.y);
@@ -58,6 +58,7 @@ int main(void)
             }
         }
         AtlasGeo_Begin(ATLAS_GEO_VOLCANO);assert(AtlasGeo_Step()==3);
+        AtlasGeo_Begin(ATLAS_GEO_GROVE);assert(AtlasGeo_Step()==3);
         for(i=0;i<ATLAS_PLAN_COUNT;i++)gAtlasPlan[i].parent=0xFFFF;
         for(type=ATLAS_GEO_RIVER;type<=ATLAS_GEO_VALLEY;type+=ATLAS_GEO_VALLEY-ATLAS_GEO_RIVER)
         {

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "atlas_world.h"
+#include "atlas_vegetation.h"
 
 /* One world-coordinate ring replaces three independently generated chunks.
  * 9,604 bytes: final/native entries and compact geographic semantics.
@@ -67,6 +68,19 @@ static void Render(s32 x, s32 y)
     if(x<=sX || x>=sX+SIDE-1 || y<=sY || y>=sY+SIDE-1)return;
     entry=sEntries[index]&0x3FFF;
     center=sSemantics[index];
+    if (AtlasVegetation_IsTree(entry))
+    {
+        u16 floors[9],semantics[9],part=(entry&1023)-ATLAS_NATURE_TREE_FIRST;
+        s32 ax=x-part%3,ay=y-part/3;
+        for (i=0;i<9;i++)
+        {
+            s32 at=Index(ax+(s32)(i%3),ay+(s32)(i/3));
+            if (at<0 || !(sEntries[at]&SAMPLED)) return;
+            floors[i]=sEntries[at]&0x3FFF;semantics[i]=sSemantics[at];
+        }
+        entry=AtlasVegetation_Result(entry,AtlasVegetation_Valid(floors,semantics));
+        goto ready;
+    }
     /* Flat dry floors and unmarked connector floors do not inspect neighbors
      * in AtlasTiles_Render. Water, raised non-connectors and potentially
      * marked connector variants still need their full semantic stencil. */
@@ -87,6 +101,7 @@ static void Render(s32 x, s32 y)
         }
         entry=AtlasTiles_Render(entry,cells);
     }
+ready:
     sEntries[index]=entry|SAMPLED|READY;
     if(sMap && x>=sMapX && x<sMapX+35 && y>=sMapY && y<sMapY+34)
         sMap[(y-sMapY)*35+x-sMapX]=entry;
@@ -244,7 +259,7 @@ void AtlasStream_Tick(s32 x,s32 y,s32 localX,s32 localY)
             if(!AtlasWater_Prewarm(wx,wy))continue;
             sSemantics[index]=AtlasTiles_Describe(wx,wy,&floor);
             sEntries[index]=floor|SAMPLED;
-            for(dy=-1;dy<=1;dy++)for(dx=-1;dx<=1;dx++)Render(wx+dx,wy+dy);
+            for(dy=-2;dy<=2;dy++)for(dx=-2;dx<=2;dx++)Render(wx+dx,wy+dy);
         }
         Advance();
     }

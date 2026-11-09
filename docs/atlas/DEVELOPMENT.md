@@ -63,8 +63,10 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   smooth equatorial/subtropical/storm-belt rainfall envelopes. Climate is ordinal,
   not measured mm/year; there is no ocean-current or numerical atmosphere solver.
   Versions 4 onward normalize macro height to approximately 29.2% land before mountain
-  uplift. Version-3 through version-5 saves retain their original algorithms and
-  checksums; never rewrite a saved generation tag to upgrade terrain.
+  uplift. Generation 7 adds vegetation collision, retaining generation 6's macro
+  height/climate/drainage rules. Existing versions 3 through 6 retain their original
+  algorithms, checksums and walkability. Never retag an existing world to add trees
+  or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing
   node field, without increasing permanent plan storage.
   Restore validates them and the seed. Unknown Atlas formats fail closed.
@@ -105,6 +107,14 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   Ground presentation reuses sparse walkable stones on high grass/snow and four
   sand variants. Sand behavior/layer matches the engine's original sand floor;
   these details preserve collision/elevation and require no new world version.
+  Generation-7 forests/jungles/taiga can propose 3x3 groves from the existing CC0
+  tree catalog. Whole footprints must be suitable, dry, flat and free of terrace
+  connectors; incomplete proposals become ordinary grass, never partial canopies.
+  Grove proposals leave periodic rows/columns free of tree collision. These are
+  ground/cover corridors, not generated roads or a proof that every forest has a
+  global route through pre-existing cliffs/water. Direct and ring rendering share
+  footprint rules. The ring reads prepared semantics and retries within a two-tile
+  radius as cells arrive; it adds no terrain query while rendering a grove.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
   reads never mark discovery. START cycles seven diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with
