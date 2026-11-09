@@ -22,7 +22,7 @@
 #define HEIGHT 25
 #define TOP 28
 enum {LAYER_TERRAIN,LAYER_ELEVATION,LAYER_TEMPERATURE,LAYER_HUMIDITY,LAYER_MOISTURE,LAYER_BASINS,LAYER_WEATHER,LAYER_COUNT};
-static const u32 sScales[] = {1, 4, 20, 100, 1000, 10000, 100000, ATLAS_WORLD_WIDTH/WIDTH};
+static const u32 sScales[] = {1, 4, 20, 100, 1000, 10000, 100000, (2*ATLAS_WORLD_HALF_HEIGHT)/HEIGHT};
 static const struct BgTemplate sBg[] = {{.bg=0, .charBaseIndex=0, .mapBaseIndex=31, .screenSize=0, .paletteMode=0, .priority=0, .baseTile=0}};
 static const struct WindowTemplate sWindows[] = {{.bg=0,.tilemapLeft=1,.tilemapTop=0,.width=28,.height=20,.paletteNum=15,.baseBlock=1},DUMMY_WIN_TEMPLATE};
 static const u16 sPalette[16] = {RGB_BLACK, RGB_WHITE, RGB(10,20,30), RGB(4,20,6), RGB(24,21,8), RGB(22,27,29), RGB(15,14,12), RGB(8,25,16), RGB(31,10,8), RGB(4,8,22), RGB(30,28,15), RGB(30,17,5), RGB(23,4,4), RGB(4,22,25), RGB(21,9,24), RGB(24,24,24)};
@@ -42,6 +42,7 @@ static const u8 *const sWeather[] = {sClear, sRain, sSnow, sFog};
 static s32 sX, sY;
 static u8 sAtlasMapZoom, sAtlasMapRow, sChunk, sAtlasMapLayer, sAtlasMapColumn;
 static u16 sTile;
+static u16 sAtlasMapRiver;
 static bool8 sAdminView;
 EWRAM_DATA bool8 gAtlasMapActive = FALSE;
 static u8 sPainted[(WIDTH * HEIGHT + 7) / 8];
@@ -150,8 +151,40 @@ static void Draw(void)
         AtlasState_UsedBytes(state) > ATLAS_JOURNAL_BYTES - 57 ? sFull
         : sAdminView && sAtlasMapLayer!=LAYER_TERRAIN ? sLegends[sAtlasMapLayer]
         : sWeather[AtlasState_Weather(state,x,y,cell.temperature,cell.humidity)]);
-    sAtlasMapRow = sAtlasMapColumn = sChunk = sTile = 0;
+    sAtlasMapRow = sAtlasMapColumn = sChunk = sTile = sAtlasMapRiver = 0;
     CopyWindowToVram(0,COPYWIN_FULL);
+}
+static void RiverOverlay(void)
+{
+    unsigned budget=24;
+    while (budget-- && sAtlasMapRiver<ATLAS_PLAN_COUNT)
+    {
+        u16 id=sAtlasMapRiver++,parent=gAtlasPlan[id].parent;
+        if (parent>=ATLAS_PLAN_COUNT || parent==id || gAtlasPlan[id].height<ATLAS_PLAN_SEA || gAtlasPlan[id].runoff<600) continue;
+        s32 ax=(s32)((u32)(id%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH)-sX;
+        s32 bx=(s32)((u32)(parent%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH)-sX;
+        if (ax>ATLAS_WORLD_WIDTH/2) ax-=ATLAS_WORLD_WIDTH;
+        if (ax< -ATLAS_WORLD_WIDTH/2) ax+=ATLAS_WORLD_WIDTH;
+        if (bx>ATLAS_WORLD_WIDTH/2) bx-=ATLAS_WORLD_WIDTH;
+        if (bx< -ATLAS_WORLD_WIDTH/2) bx+=ATLAS_WORLD_WIDTH;
+        ax=AtlasTerrain_FloorDiv(ax,sScales[sAtlasMapZoom])+WIDTH/2;
+        bx=AtlasTerrain_FloorDiv(bx,sScales[sAtlasMapZoom])+WIDTH/2;
+        if (ax-bx>WIDTH/2 || bx-ax>WIDTH/2) continue; // split at the displayed longitude seam
+        s32 ay=AtlasTerrain_FloorDiv((id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT-sY,sScales[sAtlasMapZoom])+HEIGHT/2;
+        s32 by=AtlasTerrain_FloorDiv((parent/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT-sY,sScales[sAtlasMapZoom])+HEIGHT/2;
+        ax=ax*4+2;bx=bx*4+2;ay=ay*4+2;by=by*4+2;
+        s32 dx=ax>bx?ax-bx:bx-ax,dy=ay>by?by-ay:ay-by;
+        s32 sx=ax<bx?1:-1,sy=ay<by?1:-1,error=dx+dy;
+        for (;;)
+        {
+            if (ax>=0 && ax<WIDTH*4 && ay>=0 && ay<HEIGHT*4)
+                FillWindowPixelRect(0,PIXEL_FILL(9),ax,TOP+ay,1,1);
+            if (ax==bx && ay==by) break;
+            s32 twice=2*error;
+            if (twice>=dy) {error+=dy;ax+=sx;}
+            if (twice<=dx) {error+=dx;ay+=sy;}
+        }
+    }
 }
 static void Paint(void)
 {
@@ -160,12 +193,20 @@ static void Paint(void)
     u32 bit;
     if (sAdminView)
     {
-        if (sAtlasMapRow >= HEIGHT) return;
+        if (sAtlasMapRow>=HEIGHT)
+        {
+            if (sScales[sAtlasMapZoom]<100000 || sAtlasMapRiver>=ATLAS_PLAN_COUNT
+             || (sAtlasMapLayer!=LAYER_TERRAIN && sAtlasMapLayer!=LAYER_ELEVATION && sAtlasMapLayer!=LAYER_BASINS)) return;
+            RiverOverlay();
+        }
         unsigned budget=sScales[sAtlasMapZoom]>=100?8:1;
         while (budget-- && sAtlasMapRow<HEIGHT)
         {
             y = sY + ((s32)sAtlasMapRow-HEIGHT/2) * (s32)sScales[sAtlasMapZoom];
-            if (y >= -ATLAS_WORLD_HALF_HEIGHT && y < ATLAS_WORLD_HALF_HEIGHT)
+            s32 horizontal=((s32)sAtlasMapColumn-WIDTH/2)*(s32)sScales[sAtlasMapZoom];
+            bool8 outsideGlobe=sAtlasMapZoom==ARRAY_COUNT(sScales)-1
+                && (horizontal>ATLAS_WORLD_WIDTH/2 || horizontal< -ATLAS_WORLD_WIDTH/2);
+            if (!outsideGlobe && y >= -ATLAS_WORLD_HALF_HEIGHT && y < ATLAS_WORLD_HALF_HEIGHT)
                 if (!Pixel(sAtlasMapColumn,sAtlasMapRow,Wrap(sX+((s32)sAtlasMapColumn-WIDTH/2)*(s32)sScales[sAtlasMapZoom]),y)) break;
             if (++sAtlasMapColumn==WIDTH) {sAtlasMapColumn=0;sAtlasMapRow++;}
         }
@@ -214,7 +255,11 @@ static void Run(void)
     if (sY < -ATLAS_WORLD_HALF_HEIGHT) sY=-ATLAS_WORLD_HALF_HEIGHT;
     if (sY >= ATLAS_WORLD_HALF_HEIGHT) sY=ATLAS_WORLD_HALF_HEIGHT-1;
     if (JOY_NEW(L_BUTTON) && sAtlasMapZoom>0) sAtlasMapZoom--,changed=TRUE;
-    if (JOY_NEW(R_BUTTON) && sAtlasMapZoom+1<ARRAY_COUNT(sScales)) sAtlasMapZoom++,changed=TRUE;
+    if (JOY_NEW(R_BUTTON) && sAtlasMapZoom+1<ARRAY_COUNT(sScales))
+    {
+        sAtlasMapZoom++;changed=TRUE;
+        if (sAtlasMapZoom==ARRAY_COUNT(sScales)-1) sY=0; // fit both polar regions
+    }
     if (JOY_NEW(A_BUTTON)) AtlasWorld_GetPosition(&sX,&sY),changed=TRUE;
 #ifndef NDEBUG
     if (JOY_NEW(SELECT_BUTTON)) {sAdminView=!sAdminView;if (!sAdminView) sAtlasMapLayer=LAYER_TERRAIN;changed=TRUE;}

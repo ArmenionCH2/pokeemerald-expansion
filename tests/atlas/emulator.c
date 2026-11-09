@@ -269,7 +269,9 @@ int main(int argc,char **argv)
     bytes(statePtr,before,sizeof(before));shot("build/atlas-emulator/player-map.ppm");
     press(4);frames(0,180);shot("build/atlas-emulator/admin-map.ppm"); // SELECT admin
     for (unsigned zoom=0;zoom<7;zoom++) {press(256);assert(core->busRead8(core,symbol("sAtlasMapZoom"))==zoom+1);} // whole longitude span
-    frames(0,180);
+    frames(0,420); // finish coarse raster and resumable macro-river overlay
+    assert(core->busRead16(core,symbol("sAtlasMapRiver"))==4608);
+    shot("build/atlas-emulator/atlas-world-rivers.ppm");
     for (unsigned layer=1;layer<7;layer++)
     {
         press(8);frames(0,240);

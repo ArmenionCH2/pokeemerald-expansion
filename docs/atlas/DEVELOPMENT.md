@@ -88,6 +88,8 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   reads never mark discovery. START cycles seven diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with
   resumable water preparation and bounded sampling work to preserve input response.
+  Large terrain/elevation/basin views overlay major macro drainage paths with a
+  bounded node budget; player fog never uses that global overlay.
   GEO TP also verifies real forest/desert/tundra/wetland destinations and 3x3 final
   collision before travel. Developer teleport is not normal traversal.
 - Atlas reserves the upper 55,296 bytes of Expansion's existing 115,968-byte
