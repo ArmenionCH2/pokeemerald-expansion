@@ -162,7 +162,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     variant = (detail & 15) < 4 ? detail & 3 : 0;
     id = ATLAS_NATURE_GRASS_FIRST + variant;
     if (c->biome == ATLAS_TUNDRA) id = ATLAS_NATURE_SNOW_FIRST + variant;
-    else if (c->biome == ATLAS_DESERT || c->landform == ATLAS_COAST) id = 0x124; /* Native sand behavior. */
+    else if (c->biome == ATLAS_DESERT || c->landform == ATLAS_COAST) id = ATLAS_NATURE_SAND_FIRST + variant;
     else if (!clearCover && (c->biome == ATLAS_JUNGLE || c->biome == ATLAS_FOREST || c->biome == ATLAS_TAIGA || c->biome == ATLAS_GRASSLAND))
     {
         s32 threshold = c->biome == ATLAS_JUNGLE ? 125 : c->biome == ATLAS_TAIGA ? 165 : c->biome == ATLAS_FOREST ? 145 : 160;
@@ -175,7 +175,14 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     {
         if ((detail & 7) < 5) id = METATILE_General_TallGrass;
     }
-    else if (!clearCover && c->biome == ATLAS_SAVANNA && Noise(x, y, 6) < 85) id = 0x124;
+    else if (!clearCover && c->biome == ATLAS_SAVANNA && Noise(x, y, 6) < 85) id = ATLAS_NATURE_SAND_FIRST + variant;
+
+    // Reuse pass stones as sparse, walkable high-ground scree. Preserve tall
+    // grass, sand, water and every collision/elevation bit; no new sampler.
+    if (c->elevation>=175 && ((detail>>16)&63)==0
+     && ((id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4)
+      || (id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4)))
+        id=ATLAS_NATURE_PASS_FIRST+(c->biome==ATLAS_TUNDRA)+(((detail>>22)&1)<<1);
 
     return PACK_METATILE(id) | PACK_ELEVATION(3);
 }

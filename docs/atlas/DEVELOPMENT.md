@@ -102,6 +102,9 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   annotations of existing geography, not newly carved features or individually
   named components. No generation/save version change is needed. Regional queries
   do not prepare hydrology; map rendering uses a bounded two-pixel budget.
+  Ground presentation reuses sparse walkable stones on high grass/snow and four
+  sand variants. Sand behavior/layer matches the engine's original sand floor;
+  these details preserve collision/elevation and require no new world version.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
   reads never mark discovery. START cycles seven diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with

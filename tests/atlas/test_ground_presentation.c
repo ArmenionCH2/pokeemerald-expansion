@@ -36,7 +36,7 @@ int main(void)
 {
     struct AtlasCell c;
     u32 seed;
-    unsigned i,j,variants[4]={0},snow[4]={0},tall=0,shortCover=0;
+    unsigned i,j,variants[4]={0},snow[4]={0},sand[4]={0},stones=0,tall=0,shortCover=0;
     for(i=0;i<200000;i++)
     {
         u16 cells[9],floor=0x3001;
@@ -56,14 +56,25 @@ int main(void)
             AtlasTerrain_BaseTile(999999,123456,&c,FALSE);assert(a==AtlasTerrain_BaseTile(x,y,&c,FALSE));
             assert(!(a&0xC00));
             if((a&1023)==METATILE_General_TallGrass)tall++;
+            else if ((a&1023)>=ATLAS_NATURE_PASS_FIRST) stones++;
             else {unsigned v=(a&1023)-ATLAS_NATURE_GRASS_FIRST;assert(v<4);variants[v]++;shortCover++;}
             assert((AtlasTerrain_BaseTile(x,y,&c,TRUE)&1023)!=METATILE_General_TallGrass);
             c.biome=ATLAS_TUNDRA;a=AtlasTerrain_BaseTile(x,y,&c,FALSE);
             assert(a==AtlasTerrain_BaseTile(x-ATLAS_WORLD_WIDTH,y,&c,FALSE));assert(!(a&0xC00));
-            j=(a&1023)-ATLAS_NATURE_SNOW_FIRST;assert(j<4);snow[j]++;
+            if ((a&1023)>=ATLAS_NATURE_PASS_FIRST) stones++;
+            else {j=(a&1023)-ATLAS_NATURE_SNOW_FIRST;assert(j<4);snow[j]++;}
+            c.biome=ATLAS_DESERT;a=AtlasTerrain_BaseTile(x,y,&c,FALSE);
+            assert(!(a&0xC00) && (a>>12)==3);
+            j=(a&1023)-ATLAS_NATURE_SAND_FIRST;assert(j<4);sand[j]++;
         }
     }
-    for(i=0;i<4;i++)assert(variants[i]&&snow[i]);
+    for(i=0;i<4;i++)assert(variants[i]&&snow[i]&&sand[i]);
+    assert(stones>0 && stones<512);
+    // Compare imported sand behavior/layer against the actual native floor.
+    FILE *native=fopen("data/tilesets/primary/general/metatile_attributes.bin","rb");assert(native);
+    assert(!fseek(native,0x124*2,SEEK_SET));unsigned lo=fgetc(native),hi=fgetc(native);fclose(native);
+    assert(lo<256 && hi<256);
+    for (i=0;i<4;i++) assert(gAtlasNatureAttributes[ATLAS_NATURE_SAND_FIRST+i-512]==(lo|(hi<<8)));
     assert(tall&&shortCover);
     for(i=0;i<4;i++)
     {
@@ -73,6 +84,11 @@ int main(void)
         assert((AtlasTiles_Render(floor,cells)&1023)==ATLAS_NATURE_PASS_FIRST+i);
         assert(AtlasTiles_Render(0x3000,cells)==0x3000); /* sparse blank variant */
         assert(AtlasTiles_Render(0x3000|METATILE_General_TallGrass,cells)==(0x3000|METATILE_General_TallGrass));
+        for (j=0;j<4;j++)
+        {
+            u16 sandFloor=0x3000|(ATLAS_NATURE_SAND_FIRST+j);
+            assert(AtlasTiles_Render(sandFloor,cells)==sandFloor); // no green stone patch on a sand connector
+        }
         for(j=0;j<9;j++)cells[j]=cells[4];
         assert(AtlasTiles_Render(floor,cells)==floor); /* uniform interior */
         cells[4]|=ATLAS_RIVER;assert(AtlasTiles_Render(floor,cells)&0xC00);

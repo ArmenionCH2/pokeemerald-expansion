@@ -39,6 +39,8 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     {
         if (center & 0x80)
         {
+            u16 id=floor&1023;
+            if (id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4) return floor;
             /* Mark only a connector crossing a terrace change. Flat valley
              * reservations and broad saddle interiors keep their own floor.
              * Reuse sparse floor variants to avoid an artificial dotted line
