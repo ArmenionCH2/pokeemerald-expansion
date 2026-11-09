@@ -14,7 +14,7 @@ battle test framework. Do not describe a host mock as emulator evidence.
 | World seed, position, startup | `src/atlas_world.c`, `src/atlas_creation.c` |
 | Regional weather and atlas layers | `src/atlas_weather.c`, `src/atlas_map.c` |
 | Geography, hydrology, habitat | `src/atlas_plan.c`, `src/atlas_terrain.c`, `src/atlas_water.c`, `src/atlas_habitat.c` |
-| Streaming, rendering, art | `src/atlas_stream.c`, `src/atlas_tiles.c`, `src/atlas_tiles_data.c`, `assets/punyworld/` |
+| Streaming, rendering, art | `src/atlas_stream.c`, `src/atlas_tiles.c`, `src/atlas_tiles_data.c`, `assets/atlas-native/` |
 | Exploration journal and map | `src/atlas_state.c`, `src/atlas_map.c`, `include/atlas_state.h` |
 | Wildlife selection and ownership | `src/atlas_wildlife.c`, `src/atlas_pokemon.c`, `src/atlas_actor_*.c` |
 | Engine integration | `src/fieldmap.c`, `src/overworld.c`, `src/event_object_movement.c`, `src/main_menu.c`, `src/new_game.c`, `src/start_menu.c` |
@@ -29,8 +29,8 @@ autonomous ecology or relationships. No implementation-status mirror is maintain
 
 On Debian/Ubuntu, install `build-essential binutils-arm-none-eabi gcc-arm-none-eabi
 libnewlib-arm-none-eabi libpng-dev python3` using your environment's package manager.
-Host tests need a C compiler with AddressSanitizer and UBSan. Asset regeneration
-also needs Pillow (`python3-pil`, or a local virtual environment). Emulator checks
+Host tests need a C compiler with AddressSanitizer and UBSan. The native asset
+regeneration contract also needs Pillow (`python3-pil`, or a local virtual environment). Emulator checks
 use `libmgba-dev`. No private repository credential is required for normal development.
 
 Run the commands in README. For a built development ROM, run
@@ -45,9 +45,8 @@ Preserved tests exercise real Atlas C with host mocks. `dev_scripts/test_atlas.p
 compiles separate cases with sanitizers. New regressions should protect behavior
 or data integrity, not mirror source formatting. Use `git diff --check` before commit.
 
-Regenerate art with `python3 dev_scripts/compile_atlas_nature.py`; review the C,
-header and manifest diff. The PNG preview goes to `build/atlas/`. Preserve raw
-licensed art and credits. Do not add arbitrary art from other ROM hacks.
+Regenerate art with `python3 dev_scripts/compile_atlas_native.py`; review the C,
+header and manifest diff. The PNG preview and detailed role index go to `build/atlas-native/`. Preserve original native inputs and credits. Do not add arbitrary art from other ROM hacks.
 
 ## Compatibility contracts
 
@@ -104,10 +103,13 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   annotations of existing geography, not newly carved features or individually
   named components. No generation/save version change is needed. Regional queries
   do not prepare hydrology; map rendering uses a bounded two-pixel budget.
-  Ground presentation reuses sparse walkable stones on high grass/snow and four
+  Ground presentation uses native floor details on high grass/snow and four
   sand variants. Sand behavior/layer matches the engine's original sand floor;
   these details preserve collision/elevation and require no new world version.
-  Generation-7 forests/jungles/taiga can propose 3x3 groves from the existing CC0
+  Wetland ground cover uses native long-grass artwork with the existing grass
+  behavior, preserving running/bicycle rules rather than importing new restrictions.
+  It takes priority over generic coast sand on dry wetland cells.
+  Generation-7 forests/jungles/taiga can propose 3x3 groves from the native
   tree catalog. Whole footprints must be suitable, dry, flat and free of terrace
   connectors; incomplete proposals become ordinary grass, never partial canopies.
   Grove proposals leave periodic rows/columns free of tree collision. These are
@@ -115,8 +117,12 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   global route through pre-existing cliffs/water. Direct and ring rendering share
   footprint rules. The ring reads prepared semantics and retries within a two-tile
   radius as cells arrive; it adds no terrain query while rendering a grove.
+  Two native flowering ground tiles decorate suitable mild/moist clearings without
+  changing collision, elevation or normal-ground behavior. They retain native
+  animation references and fill the remaining two secondary metatile slots (512/512); future
+  catalog expansion needs reuse/bank planning, not an out-of-range tile index.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
-  reads never mark discovery. START cycles seven diagnostic layers in admin view.
+  reads never mark discovery. START cycles eight diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with
   resumable water preparation and bounded sampling work to preserve input response.
   Large terrain/elevation/basin views overlay major macro drainage paths with a

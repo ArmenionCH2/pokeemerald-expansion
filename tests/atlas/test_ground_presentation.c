@@ -75,6 +75,33 @@ int main(void)
     assert(!fseek(native,0x124*2,SEEK_SET));unsigned lo=fgetc(native),hi=fgetc(native);fclose(native);
     assert(lo<256 && hi<256);
     for (i=0;i<4;i++) assert(gAtlasNatureAttributes[ATLAS_NATURE_SAND_FIRST+i-512]==(lo|(hi<<8)));
+    unsigned flowers[2]={0};
+    memset(&c,0,sizeof(c));c.elevation=140;c.temperature=140;c.moisture=160;c.biome=ATLAS_GRASSLAND;c.valley=255;
+    for (i=0;i<8192;i++)
+    {
+        s32 x=i%128,y=(s32)(i/128)-32;
+        u16 tile=AtlasTerrain_BaseTile(x,y,&c,FALSE),id=tile&1023;
+        assert(!(tile&0xC00) && (tile>>12)==3);
+        assert(tile==AtlasTerrain_BaseTile(x-ATLAS_WORLD_WIDTH,y,&c,FALSE));
+        if (id>=ATLAS_NATURE_FLOWER_FIRST)
+        {
+            assert(id<ATLAS_NATURE_FLOWER_FIRST+2);flowers[id-ATLAS_NATURE_FLOWER_FIRST]++;
+            assert(gAtlasNatureAttributes[id-512]==gAtlasNatureAttributes[ATLAS_NATURE_GRASS_FIRST-512]);
+            assert((AtlasTerrain_BaseTile(x,y,&c,TRUE)&1023)<ATLAS_NATURE_FLOWER_FIRST);
+        }
+    }
+    assert(flowers[0] && flowers[1] && flowers[0]+flowers[1]<512);
+    unsigned marsh=0;
+    c.biome=ATLAS_WETLAND;c.moisture=230;c.landform=ATLAS_COAST;
+    for (i=0;i<1024;i++)
+    {
+        u16 tile=AtlasTerrain_BaseTile(i%64,(s32)(i/64)-8,&c,FALSE);
+        assert(!(tile&0xC00) && (tile>>12)==3);
+        marsh+=(tile&1023)==ATLAS_NATURE_MARSH_GRASS;
+        assert((AtlasTerrain_BaseTile(i%64,(s32)(i/64)-8,&c,TRUE)&1023)!=ATLAS_NATURE_MARSH_GRASS);
+    }
+    assert(marsh>512 && marsh<768);
+    assert((gAtlasNatureAttributes[ATLAS_NATURE_MARSH_GRASS-512]&255)==2); // legacy tall-grass behavior retained
     assert(tall&&shortCover);
     for(i=0;i<4;i++)
     {
@@ -93,6 +120,6 @@ int main(void)
         assert(AtlasTiles_Render(floor,cells)==floor); /* uniform interior */
         cells[4]|=ATLAS_RIVER;assert(AtlasTiles_Render(floor,cells)&0xC00);
     }
-    printf("PASS presentation: 200000 unchanged collision/elevation neighborhoods; periodic/order-stable grass/snow variants; mixed cover %u/%u; visible connectors, protected water and unmarked flat interiors\n",tall,shortCover);
+    printf("PASS presentation: 200000 unchanged collision/elevation neighborhoods; periodic/order-stable grass/snow variants; mixed cover %u/%u; protected connectors, protected water and unmarked flat interiors\n",tall,shortCover);
     return 0;
 }

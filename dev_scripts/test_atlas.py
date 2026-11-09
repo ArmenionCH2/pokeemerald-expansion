@@ -39,3 +39,4 @@ for modules, cases in groups.items():
         subprocess.run([str(exe)], cwd=R, check=True)
         print('PASS:', case, flush=True)
 subprocess.run(['python3', str(R / 'tests/atlas/test_object_script.py')], cwd=R, check=True)
+subprocess.run(['python3', str(R / 'tests/atlas/test_native_assets.py')], cwd=R, check=True)

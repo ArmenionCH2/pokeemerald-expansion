@@ -36,7 +36,10 @@ def verify():
     for name, digest in lock.items():
         assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest, name
     for url in git('remote','get-url','--push','--all','origin').splitlines(): guard(url)
-    print('PASS immutable recovery inputs, vision, licensed source art and origin destination')
+    art=json.loads((ROOT/'assets/atlas-native/manifest.json').read_text())
+    for name,digest in art['inputs'].items():
+        assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
+    print('PASS immutable recovery inputs, vision, native art inputs and origin destination')
 
 def recover(checkout, pristine):
     verify()

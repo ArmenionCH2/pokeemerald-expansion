@@ -9330,7 +9330,7 @@
       "width": 20,
       "height": 20,
       "primary_tileset": "gTileset_General",
-      "secondary_tileset": "gTileset_AtlasNature",
+      "secondary_tileset": "gTileset_AtlasNative",
       "border_filepath": "data/layouts/AtlasWorld/border.bin",
       "blockdata_filepath": "data/layouts/AtlasWorld/map.bin"
     }

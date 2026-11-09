@@ -1542,8 +1542,8 @@ const struct Tileset gTileset_HallOfFame =
 
 #endif // IS_FRLG
 
-/* CC0 Puny World by Shade, compiled for Atlas; primary General remains native. */
-const struct Tileset gTileset_AtlasNature =
+/* Atlas role catalogue compiled from native Emerald terrain assets. */
+const struct Tileset gTileset_AtlasNative =
 {
     .isCompressed = FALSE,
     .isSecondary = TRUE,

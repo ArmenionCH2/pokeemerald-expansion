@@ -1,0 +1,118 @@
+{
+  "source": "Original Emerald assets in this Expansion checkout; not open-source artwork",
+  "inputs": {
+    "data/tilesets/primary/general/tiles.png": "365ba5482e7564763e614a0009900d1c317790dcd9f7a06c4ab74c363a3ba2f5",
+    "data/tilesets/primary/general/metatiles.bin": "17974b0ba1bb9d105d5ba255c69a3b80d8484a26ea0b8ff22c6c6567c6c22910",
+    "data/tilesets/primary/general/metatile_attributes.bin": "06c9548a6c70d133b6d47638090f5d36f3fec92aace3d90deca758a4404cfa9b",
+    "data/tilesets/primary/general/palettes/00.pal": "e7fec32eef41a79d6d45e7f5af9dc74717a1d40ce07aa7cef37eeb7edd47f579",
+    "data/tilesets/primary/general/palettes/01.pal": "c17687ece4bb432d345b43b4e806ebba741553b1ed83b0f46207ce537db5d25c",
+    "data/tilesets/primary/general/palettes/02.pal": "6a2609b1c79e8489ed11182eb075edf0e25d80b5b3b7912c0de20dc5da594eb9",
+    "data/tilesets/primary/general/palettes/03.pal": "1556f735bbb61b32d99e9feba63441c83cfc25ea11d5aaa7c99ac3be92cc7a19",
+    "data/tilesets/primary/general/palettes/04.pal": "36f8de115ed9a96bab2035f4d3d10988ac2365e4fc2b530feb7ea2ef09772f68",
+    "data/tilesets/primary/general/palettes/05.pal": "8356b54b4d39ed880b83f39c82b61699dd720e28eb2ebc2d80a4bd360d8720e2",
+    "data/tilesets/primary/general/palettes/06.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/07.pal": "155f2285fb5c81cb4ca4258e37f647051b747542c2099a81102c7c46a975b3f5",
+    "data/tilesets/primary/general/palettes/08.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/09.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/10.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/11.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/12.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/13.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/14.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
+    "data/tilesets/primary/general/palettes/15.pal": "1579046ed0c59dcfa931c6d4b181f363f714dd2127fc04f960f74be95287195b"
+  },
+  "raw_tiles": 41,
+  "metatiles": 512,
+  "families": [
+    {
+      "first": 512,
+      "count": 47,
+      "role": "water_0_0"
+    },
+    {
+      "first": 559,
+      "count": 47,
+      "role": "water_0_1"
+    },
+    {
+      "first": 606,
+      "count": 47,
+      "role": "water_0_2"
+    },
+    {
+      "first": 653,
+      "count": 47,
+      "role": "water_0_3"
+    },
+    {
+      "first": 700,
+      "count": 47,
+      "role": "water_1_0"
+    },
+    {
+      "first": 747,
+      "count": 47,
+      "role": "water_1_1"
+    },
+    {
+      "first": 794,
+      "count": 47,
+      "role": "water_1_2"
+    },
+    {
+      "first": 841,
+      "count": 47,
+      "role": "water_1_3"
+    },
+    {
+      "first": 888,
+      "count": 4,
+      "role": "grass"
+    },
+    {
+      "first": 892,
+      "count": 4,
+      "role": "sand"
+    },
+    {
+      "first": 896,
+      "count": 4,
+      "role": "snow"
+    },
+    {
+      "first": 900,
+      "count": 1,
+      "role": "marsh_ground_cover"
+    },
+    {
+      "first": 901,
+      "count": 14,
+      "role": "cliff_catalog"
+    },
+    {
+      "first": 915,
+      "count": 9,
+      "role": "grove"
+    },
+    {
+      "first": 924,
+      "count": 47,
+      "role": "mountains"
+    },
+    {
+      "first": 971,
+      "count": 47,
+      "role": "snow_mountains"
+    },
+    {
+      "first": 1018,
+      "count": 4,
+      "role": "passes"
+    },
+    {
+      "first": 1022,
+      "count": 2,
+      "role": "flowers"
+    }
+  ]
+}

@@ -41,6 +41,6 @@ Engine documentation remains in `docs/`, [FEATURES.md](FEATURES.md),
 [INSTALL.md](INSTALL.md) and [CREDITS.md](CREDITS.md). Expansion is based on
 [pret/pokeemerald](https://github.com/pret/pokeemerald) and
 [rh-hideout/pokeemerald-expansion](https://github.com/rh-hideout/pokeemerald-expansion).
-Both are read-only sources for this project. Puny World artwork is by Shade under
-[CC0](assets/punyworld/CC0-1.0.txt); see its [source/credits](assets/punyworld/SOURCE.md).
-The CC0 grant applies to that artwork, not to Pokémon or all engine assets.
+Both are read-only sources for this project. Atlas terrain art is compiled from the original Emerald assets already present in this
+Expansion checkout. See [native asset provenance](assets/atlas-native/SOURCE.md).
+Original Pokémon artwork is not open-source art; existing engine/game credits apply.
