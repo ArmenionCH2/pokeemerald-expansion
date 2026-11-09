@@ -3811,7 +3811,10 @@ void SetObjectEventDirection(struct ObjectEvent *objectEvent, enum Direction dir
 
 static const u8 *GetObjectEventScriptPointerByLocalIdAndMap(u8 localId, u8 mapNum, u8 mapGroup)
 {
-    return GetObjectEventTemplateByLocalIdAndMap(localId, mapNum, mapGroup)->script;
+    const struct ObjectEventTemplate *object = GetObjectEventTemplateByLocalIdAndMap(localId, mapNum, mapGroup);
+    /* Transient objects (including Atlas wildlife) have no permanent map
+     * template. Interacting with them must not dereference a missing one. */
+    return object != NULL ? object->script : NULL;
 }
 
 const u8 *GetObjectEventScriptPointerByObjectEventId(u8 objectEventId)

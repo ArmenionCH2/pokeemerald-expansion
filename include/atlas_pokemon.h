@@ -14,7 +14,7 @@ enum AtlasPokemonRarity
 struct AtlasPokemonSpawn
 {
     u16 species;
-    u8 graphicsId;
+    u16 graphicsId;
     u8 rarity;
 };
 

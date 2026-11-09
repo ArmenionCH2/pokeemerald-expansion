@@ -34,6 +34,7 @@ static void CheckStableAndWrap(void)
         if (first)
         {
             seen++;
+            assert(a.graphicsId == (OBJ_EVENT_MON | a.species) && a.graphicsId > 255);
             assert(a.species != SPECIES_NONE && a.graphicsId != 0);
             assert(a.rarity < 4);
         }
@@ -62,20 +63,20 @@ static void CheckClimateAndGraphics(void)
     for (x = 0; x < 200000; x++)
     {
         s32 px = x % 1000, py = x / 1000;
-        assert(!AtlasPokemon_Select(px, py, 123, &dry, &result));
-        assert(!AtlasPokemon_Select(px, py, 123, &cold, &result));
+        assert(AtlasPokemon_Select(px, py, 123, &dry, &result) == AtlasPokemon_IsCandidate(px, py, 123));
+        assert(AtlasPokemon_Select(px, py, 123, &cold, &result) == AtlasPokemon_IsCandidate(px, py, 123));
         assert(!AtlasPokemon_Select(px, py, 123, &water, &result));
-        assert(!AtlasPokemon_Select(px, py, 123, &high, &result));
+        assert(AtlasPokemon_Select(px, py, 123, &high, &result) == AtlasPokemon_IsCandidate(px, py, 123));
         if (AtlasPokemon_Select(px, py, 123, &grass, &result))
         {
             if (result.rarity == ATLAS_POKEMON_COMMON)
-                common++, assert(result.species == SPECIES_ZIGZAGOON && result.graphicsId == OBJ_EVENT_GFX_ZIGZAGOON_2);
+                common++, assert(result.species == SPECIES_ZIGZAGOON && result.graphicsId == (OBJ_EVENT_MON | SPECIES_ZIGZAGOON));
             else if (result.rarity == ATLAS_POKEMON_UNCOMMON)
-                uncommon++, assert(result.species == SPECIES_POOCHYENA && result.graphicsId == OBJ_EVENT_GFX_POOCHYENA);
+                uncommon++, assert(result.species == SPECIES_POOCHYENA && result.graphicsId == (OBJ_EVENT_MON | SPECIES_POOCHYENA));
             else if (result.rarity == ATLAS_POKEMON_RARE)
-                rare++, assert(result.species == SPECIES_SKITTY && result.graphicsId == OBJ_EVENT_GFX_SKITTY);
+                rare++, assert(result.species == SPECIES_SKITTY && result.graphicsId == (OBJ_EVENT_MON | SPECIES_SKITTY));
             else
-                veryRare++, assert(result.species == SPECIES_PIKACHU && result.graphicsId == OBJ_EVENT_GFX_PIKACHU);
+                veryRare++, assert(result.species == SPECIES_PIKACHU && result.graphicsId == (OBJ_EVENT_MON | SPECIES_PIKACHU));
         }
         if (AtlasPokemon_Select(px, py, 123, &coast, &result))
         {
@@ -96,10 +97,43 @@ static void CheckClimateAndGraphics(void)
     printf("PASS climate roster: grass=%u/%u/%u/%u coast=%u wetland=%u\n",
            common, uncommon, rare, veryRare, coastCount, wetCount);
 }
+
+static void CheckExpansionHabitats(void)
+{
+    static const u16 rosters[3][4] = {
+        {SPECIES_SANDSHREW, SPECIES_TRAPINCH, SPECIES_CACNEA, SPECIES_BALTOY},
+        {SPECIES_SWINUB, SPECIES_SNORUNT, SPECIES_DELIBIRD, SPECIES_SNEASEL},
+        {SPECIES_GEODUDE, SPECIES_ARON, SPECIES_MACHOP, SPECIES_SKARMORY}
+    };
+    const struct AtlasCell habitats[] = {
+        Cell(ATLAS_DESERT, 200, 28, ATLAS_DRY, ATLAS_PLAIN, 130),
+        Cell(ATLAS_TUNDRA, 40, 100, ATLAS_DRY, ATLAS_MOUNTAIN, 210),
+        Cell(ATLAS_GRASSLAND, 100, 100, ATLAS_DRY, ATLAS_MOUNTAIN, 210)
+    };
+    unsigned h, x;
+    for (h = 0; h < 3; h++)
+    {
+        unsigned seen = 0;
+        for (x = 0; x < 200000; x++)
+        {
+            struct AtlasPokemonSpawn spawn, wrapped;
+            if (!AtlasPokemon_Select(x, 0, 123, &habitats[h], &spawn)) continue;
+            assert(spawn.species == rosters[h][spawn.rarity]);
+            assert(spawn.graphicsId == (OBJ_EVENT_MON | spawn.species));
+            assert(spawn.graphicsId > 255);
+            assert(AtlasPokemon_Select(x + ATLAS_WORLD_WIDTH, 0, 123, &habitats[h], &wrapped));
+            assert(wrapped.species == spawn.species && wrapped.graphicsId == spawn.graphicsId);
+            seen |= 1u << spawn.rarity;
+        }
+        assert(seen == 15); /* Every rarity is reachable in each habitat. */
+    }
+    puts("PASS twelve cold/desert/highland species, cold precedence, full-width graphics and seam replay");
+}
 int main(void)
 {
     CheckStableAndWrap();
     CheckClimateAndGraphics();
-    puts("PASS Atlas native overworld sprite IDs, climate gates, rarity, seam and deterministic seeds");
+    CheckExpansionHabitats();
+    puts("PASS Atlas Expansion species graphics, climate gates, rarity, seam and deterministic seeds");
     return 0;
 }

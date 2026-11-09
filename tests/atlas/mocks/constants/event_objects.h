@@ -5,6 +5,7 @@
  * The production ROM compiles against the real header; this prevents the
  * standalone host unit test from requiring generated map_event_ids.h. */
 /* Native Emerald special local IDs, source-checked against include/constants/event_objects.h. */
+#define OBJ_EVENT_MON (1u << 14)
 #define LOCALID_CAMERA 127
 #define LOCALID_BERRY_BLENDER_PLAYER_END 240
 #define LOCALID_PLAYER 255

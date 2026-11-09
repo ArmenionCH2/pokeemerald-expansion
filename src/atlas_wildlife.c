@@ -56,7 +56,7 @@ void AtlasWildlife_Tick(void)
     object.localId=100+slot;
     object.graphicsId=spawn.graphicsId;
     object.kind=OBJ_KIND_NORMAL;
-    object.elevation=3;
+    object.elevation=MapGridGetElevationAt(object.x+MAP_OFFSET,object.y+MAP_OFFSET);
     object.movementType=MOVEMENT_TYPE_WANDER_AROUND_SLOWER;
     object.movementRangeX=object.movementRangeY=1;
     if (!AtlasActorAdmission_Reserve(roster,&key,object.localId,freeObjects,freeSprites,2,4,&handle)) return;

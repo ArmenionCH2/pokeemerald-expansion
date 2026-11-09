@@ -3,9 +3,8 @@
 #include "constants/event_objects.h"
 #include "constants/species.h"
 
-/* Graphics here are genuine Emerald object-event graphics, NOT battle icons.
- * Restrict wild scenery to species whose existing sprites fit one map tile
- * (Poochyena is 32x32). Do not promote unmapped species to lookalikes. */
+/* Expansion's species graphics include directional walking frames and dynamic
+ * palettes. Keep the full 16-bit graphics identity through native spawning. */
 #define ATLAS_POKEMON_SPAWN_PER_MILLE 10
 
 static u32 Mix(u32 value)
@@ -39,7 +38,6 @@ bool8 AtlasPokemon_Select(s32 x, s32 y, u32 seed, const struct AtlasCell *cell, 
     u32 hash, roll;
     u8 rarity;
     u16 species = SPECIES_NONE;
-    u8 graphicsId = 0;
 
     if (out == NULL)
         return FALSE;
@@ -60,67 +58,74 @@ bool8 AtlasPokemon_Select(s32 x, s32 y, u32 seed, const struct AtlasCell *cell, 
            : roll < 920 ? ATLAS_POKEMON_UNCOMMON
            : roll < 990 ? ATLAS_POKEMON_RARE : ATLAS_POKEMON_VERY_RARE;
 
-    /* Roster is intentionally limited to verified native overworld art.
-     * Don't represent tropical creatures in arctic tundra or place aquatic
-     * species on dry ground. The final biome taxonomy is still research. */
-    if (cell->temperature < 75 || cell->elevation > 195)
-        return FALSE;
-    if (cell->landform == ATLAS_COAST)
+    /* These are transient land encounters, not aquatic spawning or persistent
+     * populations. Cold and high terrain take precedence over warm biomes. */
+    if (cell->temperature < 75)
+    {
+        static const u16 cold[] = {SPECIES_SWINUB, SPECIES_SNORUNT, SPECIES_DELIBIRD, SPECIES_SNEASEL};
+        species = cold[rarity];
+    }
+    else if (cell->elevation > 195)
+    {
+        static const u16 highland[] = {SPECIES_GEODUDE, SPECIES_ARON, SPECIES_MACHOP, SPECIES_SKARMORY};
+        species = highland[rarity];
+    }
+    else if (cell->landform == ATLAS_COAST)
     {
         if (rarity == ATLAS_POKEMON_COMMON)
-            species = SPECIES_WINGULL, graphicsId = OBJ_EVENT_GFX_WINGULL;
+            species = SPECIES_WINGULL;
         else if (rarity == ATLAS_POKEMON_UNCOMMON && cell->moisture >= 105)
-            species = SPECIES_AZURILL, graphicsId = OBJ_EVENT_GFX_AZURILL;
+            species = SPECIES_AZURILL;
     }
     else if (cell->biome == ATLAS_DESERT || cell->moisture < 70)
     {
-        /* Unmapped desert species: no misleading substitutes. */
-        return FALSE;
+        static const u16 desert[] = {SPECIES_SANDSHREW, SPECIES_TRAPINCH, SPECIES_CACNEA, SPECIES_BALTOY};
+        species = desert[rarity];
     }
     else if (cell->biome == ATLAS_WETLAND || cell->moisture >= 180)
     {
         if (rarity == ATLAS_POKEMON_COMMON)
-            species = SPECIES_AZURILL, graphicsId = OBJ_EVENT_GFX_AZURILL;
+            species = SPECIES_AZURILL;
         else if (rarity == ATLAS_POKEMON_UNCOMMON)
-            species = SPECIES_AZUMARILL, graphicsId = OBJ_EVENT_GFX_AZUMARILL;
+            species = SPECIES_AZUMARILL;
         else if (rarity == ATLAS_POKEMON_RARE && cell->temperature >= 135)
-            species = SPECIES_KECLEON, graphicsId = OBJ_EVENT_GFX_KECLEON;
+            species = SPECIES_KECLEON;
     }
     else if (cell->biome == ATLAS_JUNGLE || cell->biome == ATLAS_FOREST)
     {
         if (rarity == ATLAS_POKEMON_COMMON)
-            species = SPECIES_ZIGZAGOON, graphicsId = OBJ_EVENT_GFX_ZIGZAGOON_2;
+            species = SPECIES_ZIGZAGOON;
         else if (rarity == ATLAS_POKEMON_UNCOMMON)
-            species = SPECIES_SKITTY, graphicsId = OBJ_EVENT_GFX_SKITTY;
+            species = SPECIES_SKITTY;
         else if (rarity == ATLAS_POKEMON_RARE && cell->temperature >= 140)
-            species = SPECIES_KECLEON, graphicsId = OBJ_EVENT_GFX_KECLEON;
+            species = SPECIES_KECLEON;
         else if (rarity == ATLAS_POKEMON_VERY_RARE && cell->temperature < 185)
-            species = SPECIES_PIKACHU, graphicsId = OBJ_EVENT_GFX_PIKACHU;
+            species = SPECIES_PIKACHU;
     }
     else if (cell->biome == ATLAS_SAVANNA || cell->temperature > 190)
     {
         if (rarity == ATLAS_POKEMON_COMMON)
-            species = SPECIES_POOCHYENA, graphicsId = OBJ_EVENT_GFX_POOCHYENA;
+            species = SPECIES_POOCHYENA;
         else if (rarity == ATLAS_POKEMON_UNCOMMON)
-            species = SPECIES_ZIGZAGOON, graphicsId = OBJ_EVENT_GFX_ZIGZAGOON_2;
+            species = SPECIES_ZIGZAGOON;
         else if (rarity == ATLAS_POKEMON_RARE)
-            species = SPECIES_SKITTY, graphicsId = OBJ_EVENT_GFX_SKITTY;
+            species = SPECIES_SKITTY;
     }
     else
     {
         if (rarity == ATLAS_POKEMON_COMMON)
-            species = SPECIES_ZIGZAGOON, graphicsId = OBJ_EVENT_GFX_ZIGZAGOON_2;
+            species = SPECIES_ZIGZAGOON;
         else if (rarity == ATLAS_POKEMON_UNCOMMON)
-            species = SPECIES_POOCHYENA, graphicsId = OBJ_EVENT_GFX_POOCHYENA;
+            species = SPECIES_POOCHYENA;
         else if (rarity == ATLAS_POKEMON_RARE)
-            species = SPECIES_SKITTY, graphicsId = OBJ_EVENT_GFX_SKITTY;
+            species = SPECIES_SKITTY;
         else if (rarity == ATLAS_POKEMON_VERY_RARE && cell->moisture >= 110)
-            species = SPECIES_PIKACHU, graphicsId = OBJ_EVENT_GFX_PIKACHU;
+            species = SPECIES_PIKACHU;
     }
     if (species == SPECIES_NONE)
         return FALSE;
     out->species = species;
-    out->graphicsId = graphicsId;
+    out->graphicsId = OBJ_EVENT_MON | species;
     out->rarity = rarity;
     return TRUE;
 }
