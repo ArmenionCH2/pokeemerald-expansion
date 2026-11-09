@@ -27,6 +27,15 @@ the original long-grass movement restrictions. The previously unused catalogue
 slot 900 supplies this role; terrain and grove collision remain unchanged.
 Dry wetland cover also takes priority over the generic low-coast sand floor.
 
+Sand/grass ground boundaries assemble original General 0x118..0x12A quarters
+using the four cardinal neighbors. Roles 901..914 and reclaimed role 887 cover
+the fifteen border cases; full sand keeps its floor variant. Original sand
+behavior/layer (0x1021) is retained for every border. Full-water roles share
+their identical native animation references, freeing 887 without dropping a bank
+material. Water, rock and snow neighbors do not introduce a green fringe.
+This cardinal catalogue rounds outer corners; it does not yet treat diagonal-only
+concave notches or provide snow/grass, rock/grass and every other biome blend.
+
 Run `python3 dev_scripts/compile_atlas_native.py`. Generated C and manifest are
 reviewed source; the preview stays under `build/atlas-native/`. No PNG decoding,
 quantization or asset conversion takes place in the ROM. Original input files are

@@ -3,6 +3,7 @@
 #include "atlas_plan.h"
 #include "atlas_geo.h"
 #include "atlas_region.h"
+#include "atlas_tiles.h"
 #include <assert.h>
 #include <stdio.h>
 int main(void)
@@ -22,6 +23,11 @@ int main(void)
             assert(n<8000 && gAtlasGeoStatus==1);
             for(i=0;i<9;i++)assert(!(AtlasTerrain_Tile(gAtlasGeoResult.x+(s32)(i%3)-1,gAtlasGeoResult.y+(s32)(i/3)-1)&0xC00));
             if(type==ATLAS_GEO_LAND)assert(gAtlasGeoResult.landmass);
+            if(type==ATLAS_GEO_SAND_EDGE)
+            {
+                u16 id=AtlasTerrain_Tile(gAtlasGeoResult.x,gAtlasGeoResult.y)&1023;
+                assert(id==ATLAS_NATURE_SAND_EDGE_NORTH || (id>=ATLAS_NATURE_SAND_EDGE_FIRST && id<ATLAS_NATURE_SAND_EDGE_FIRST+ATLAS_NATURE_SAND_EDGE_COUNT));
+            }
             if(type>=ATLAS_GEO_FOREST && type<=ATLAS_GEO_WETLAND)
             {
                 struct AtlasCell c;AtlasTerrain_Sample(gAtlasGeoResult.x,gAtlasGeoResult.y,&c);

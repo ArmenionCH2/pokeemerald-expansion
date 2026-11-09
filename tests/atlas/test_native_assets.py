@@ -21,6 +21,9 @@ native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').
 for role,original in [(888,1),(892,0x124),(558,0xA1),(746,0x170),(1022,4),(900,0x15)]:
     assert metatiles[(role-512)*8:(role-511)*8]==list(native[original*8:(original+1)*8])
 assert attrs[900-512]&255==2
+for role in [887,*range(901,915)]:
+    assert attrs[role-512]==attrs[892-512]==0x1021
+assert any((w&1023)!=0 for w in metatiles[(887-512)*8:(888-512)*8])
 assert (R/'data/layouts/layouts.json').read_text().count('gTileset_AtlasNative')==1
 assert 'gTileset_AtlasNature' not in (R/'src/data/tilesets/headers.h').read_text()
 # Run the compiler in an isolated source fixture, never rewriting a live build.

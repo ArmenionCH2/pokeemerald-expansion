@@ -1,11 +1,13 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
 #define ATLAS_NATURE_WATER_FIRST 0x200
-#define ATLAS_NATURE_WATER_COUNT 376
+#define ATLAS_NATURE_WATER_COUNT 375
 #define ATLAS_NATURE_GRASS_FIRST 888
 #define ATLAS_NATURE_SAND_FIRST 892
 #define ATLAS_NATURE_SNOW_FIRST 896
-#define ATLAS_NATURE_CLIFF_FIRST 901
+#define ATLAS_NATURE_SAND_EDGE_FIRST 901
+#define ATLAS_NATURE_SAND_EDGE_COUNT 14
+#define ATLAS_NATURE_SAND_EDGE_NORTH 887
 #define ATLAS_NATURE_MARSH_GRASS 900
 #define ATLAS_NATURE_TREE_FIRST 915
 #define ATLAS_NATURE_OPTION_COUNT 512
@@ -15,6 +17,14 @@
 #define ATLAS_NATURE_FLOWER_FIRST 1022
 #define ATLAS_NATURE_FLOWER_COUNT 2
 struct AtlasCell;
+/* Only sand beside green land needs this stencil. Water continues the sand
+ * edge, so a beach never receives a green fringe along its ocean-facing side. */
+static inline bool8 AtlasTiles_SandEdge(u16 floor, u16 semantic)
+{
+    u16 id = floor & 1023;
+    return !(semantic & 3) && ((semantic >> 2) & 3) == 1
+        && id >= ATLAS_NATURE_SAND_FIRST && id < ATLAS_NATURE_SAND_FIRST + 4;
+}
 extern const u32 gAtlasNatureTiles[4096];
 extern const u16 gAtlasNaturePalettes[16][16];
 extern const u16 gAtlasNatureMetatiles[4096], gAtlasNatureAttributes[512];

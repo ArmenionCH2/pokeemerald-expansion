@@ -9,13 +9,16 @@
 void AtlasTiles_Reset(void) {}
 u16 AtlasTiles_Water(u8 mask, u8 material, u8 waterform)
 {
+    /* Full-water graphics are identical across bank materials. Share their
+     * native animated role; slot 887 now holds a sand ground border. */
+    if (mask == 255) return waterform == ATLAS_SEA ? 746 : 558;
     return ATLAS_NATURE_WATER_FIRST + (waterform == ATLAS_SEA ? 188 : 0) + material * 47 + gAtlasNatureMaskIndex[mask];
 }
 static u8 Material(const struct AtlasCell *c)
 {
     if (c->biome == ATLAS_TUNDRA) return 3;
     if (c->elevation > 205) return 2;
-    if (c->biome == ATLAS_DESERT || c->landform == ATLAS_COAST) return 1;
+    if (c->biome == ATLAS_DESERT || (c->landform == ATLAS_COAST && c->biome != ATLAS_WETLAND)) return 1;
     return 0;
 }
 static u16 Describe(s32 x, s32 y, const struct AtlasCell *c, u16 *floor)
@@ -30,6 +33,19 @@ u16 AtlasTiles_Describe(s32 x, s32 y, u16 *floor)
     AtlasTerrain_Sample(x, y, &c);
     return Describe(x, y, &c, floor);
 }
+static u16 Ground(u16 floor, const u16 *cells)
+{
+    static const u8 sides[4] = {1, 5, 7, 3}; /* N E S W */
+    u8 i, mask = 0;
+    if (!AtlasTiles_SandEdge(floor, cells[4])) return floor;
+    for (i = 0; i < 4; i++)
+    {
+        u16 neighbor = cells[sides[i]];
+        if ((neighbor & 3) || (neighbor & 12)) mask |= 1 << i;
+    }
+    if (mask == 15) return floor;
+    return (floor & ~1023) | (mask == 14 ? ATLAS_NATURE_SAND_EDGE_NORTH : ATLAS_NATURE_SAND_EDGE_FIRST + mask);
+}
 u16 AtlasTiles_Render(u16 floor, const u16 *cells)
 {
     if (AtlasVegetation_IsTree(floor)) floor=AtlasVegetation_Result(floor,FALSE);
@@ -42,7 +58,7 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
         if (center & 0x80)
         {
             u16 id=floor&1023;
-            if (id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4) return floor;
+            if (id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4) return Ground(floor,cells);
             /* Mark only a connector crossing a terrace change. Flat valley
              * reservations and broad saddle interiors keep their own floor.
              * Reuse sparse floor variants to avoid an artificial dotted line
@@ -55,13 +71,13 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
                         + ((floor & 1) << 1)) | PACK_ELEVATION(3);
             return floor;
         }
-        if (!tier) return floor;
+        if (!tier) return Ground(floor,cells);
         for (i = 0; i < 8; i++)
         {
-            if (cells[neighbors[i]] & 3) return floor;
+            if (cells[neighbors[i]] & 3) return Ground(floor,cells);
             if (((cells[neighbors[i]] >> 4) & 7) >= tier) mask |= 1 << i;
         }
-        if (mask == 255) return floor;
+        if (mask == 255) return Ground(floor,cells);
         return PACK_METATILE(ATLAS_NATURE_MOUNTAIN_FIRST + (((center >> 2) & 3) == 3 ? 47 : 0) + gAtlasNatureMaskIndex[mask]) | PACK_COLLISION(1) | PACK_ELEVATION(3);
     }
     for (i = 0; i < 8; i++)

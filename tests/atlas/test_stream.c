@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_plan.h"
+#include "atlas_geo.h"
 #include <assert.h>
 #include <stdio.h>
 static u16 map[1190];
@@ -45,6 +46,11 @@ int main(void)
     setbuf(stdout,NULL);
     assert(AtlasPlan_Begin(0));while(!AtlasPlan_Step(256));
     Walk(15654290,5327430);Walk(ATLAS_WORLD_WIDTH-30,-4090);Walk(4090,4090);Walk(7931504,212940);
+    AtlasGeo_Begin(ATLAS_GEO_SAND_EDGE);
+    unsigned search;
+    for(search=0;search<8000 && !AtlasGeo_Step();search++);
+    assert(gAtlasGeoStatus==1);
+    Walk(gAtlasGeoResult.x,gAtlasGeoResult.y);
     assert(!AtlasStream_ReadSemantics(0,ATLAS_WORLD_HALF_HEIGHT,&sentinel));
     assert(!AtlasStream_ReadSemantics(0,0,&sentinel)); // outside resident viewport
     AtlasStream_Reset();assert(!AtlasStream_ReadSemantics(7931504,212940,&sentinel));

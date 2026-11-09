@@ -19,6 +19,25 @@ EWRAM_DATA static u8 sSceneAt = 0, sSceneWalls = 0, sSceneTarget = 0;
 static s32 Abs(s32 n){return n<0?-n:n;}
 static s32 Wrap(s32 x){x%=ATLAS_WORLD_WIDTH;return x<0?x+ATLAS_WORLD_WIDTH:x;}
 static bool8 ReliefTarget(void){return sType==ATLAS_GEO_MOUNTAIN || sType==ATLAS_GEO_RIDGE || sType==ATLAS_GEO_FOOTHILLS;}
+static bool8 Sand(const struct AtlasCell *c)
+{
+    return !c->waterform && c->biome!=ATLAS_TUNDRA
+        && (c->biome==ATLAS_DESERT || (c->landform==ATLAS_COAST && c->biome!=ATLAS_WETLAND));
+}
+static bool8 Green(const struct AtlasCell *c)
+{
+    return !c->waterform && c->elevation<175 && c->biome!=ATLAS_TUNDRA && !Sand(c);
+}
+static void SandDirection(void)
+{
+    s32 distance=ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+    sWX=sCX;sWY=sCY;sDX=sCX;sDY=sCY;
+    if(sDirection==0)sDX+=distance;
+    if(sDirection==1)sDX-=distance;
+    if(sDirection==2)sDY+=distance;
+    if(sDirection==3)sDY-=distance;
+    sPhase=sDirection<4?21:0;
+}
 static bool8 Warm(s32 x,s32 y)
 {
     u8 i;
@@ -61,6 +80,7 @@ void AtlasGeo_Begin(u8 type)
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
     if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
     if (sType>=ATLAS_GEO_FOREST)
     {
@@ -91,6 +111,37 @@ u8 AtlasGeo_Step(void)
     u8 i;
     struct AtlasCell c;
     if(gAtlasGeoStatus)return gAtlasGeoStatus;
+    /* Bisect a dry sand/green interval, yielding after each prepared point.
+     * A water interruption rejects the ray rather than treating an aquatic
+     * bank as a ground transition. The final normal 3x3 collision gate still applies. */
+    if(sPhase==20)
+    {
+        if(!Warm(sCX,sCY))return 0;
+        AtlasTerrain_Sample(sCX,sCY,&c);
+        if(!Sand(&c)){sPhase=0;return 0;}
+        sDirection=0;SandDirection();return 0;
+    }
+    if(sPhase==21)
+    {
+        if(sDY<=-ATLAS_WORLD_HALF_HEIGHT+12 || sDY>=ATLAS_WORLD_HALF_HEIGHT-12)
+        {sDirection++;SandDirection();return 0;}
+        if(!Warm(sDX,sDY))return 0;
+        AtlasTerrain_Sample(sDX,sDY,&c);
+        if(!Green(&c)){sDirection++;SandDirection();return 0;}
+        sPhase=22;return 0;
+    }
+    if(sPhase==22)
+    {
+        if(Abs(sDX-sWX)+Abs(sDY-sWY)<=1)
+        {sLX=sWX;sLY=sWY;sCheck=sAttempt=0;sPhase=4;return 0;}
+        x=sWX+(sDX-sWX)/2;y=sWY+(sDY-sWY)/2;
+        if(!Warm(x,y))return 0;
+        AtlasTerrain_Sample(x,y,&c);
+        if(Sand(&c)){sWX=x;sWY=y;}
+        else if(Green(&c)){sDX=x;sDY=y;}
+        else{sDirection++;SandDirection();}
+        return 0;
+    }
     if (sPhase==18)
     {
         x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
@@ -109,6 +160,7 @@ u8 AtlasGeo_Step(void)
             if(!Candidate(sNode))continue;
             sCX=(u32)(sNode%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
             sCY=(sNode/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+            if(sType==ATLAS_GEO_SAND_EDGE){sPhase=20;return 0;}
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(sType==ATLAS_GEO_MOUTH){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
@@ -320,6 +372,7 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
+        if(sType==ATLAS_GEO_SAND_EDGE){sDirection++;SandDirection();return 0;}
         if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
         if(++sAttempt<4 && sType!=ATLAS_GEO_LAND && !ReliefTarget())
         {sLX+=sDX>sWX?3:sDX<sWX?-3:0;sLY+=sDY>sWY?3:sDY<sWY?-3:0;sCheck=0;return 0;}

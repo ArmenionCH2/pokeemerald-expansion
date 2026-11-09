@@ -79,13 +79,23 @@ def water(mask,sea,material):
   if material and w>>12==3:w=(w&4095)|([0,7,8,9][material]<<12)
   top.append(w)
  return base+top
+def sand_edge(mask):
+ words=[0]*8
+ for q,(a,b,d) in enumerate(corners):
+  vertical=bool(mask&(1<<a));horizontal=bool(mask&(1<<b))
+  n=0x124 if vertical and horizontal else ([0x118,0x11A,0x128,0x12A][q] if not vertical and not horizontal else (0x120 if q%2==0 else 0x122) if vertical else (0x119 if q<2 else 0x129))
+  src=meta(n);words[q]=src[q];words[q+4]=src[q+4]
+ return words
 for sea in range(2):
  for material in range(4):
-  for mask in masks:add(f'{"ocean" if sea else "freshwater"}_{material}_{mask:02x}',water(mask,sea,material),0x15 if sea else 0x10,source='General pond/ocean 0xA1/0x170 and 0xB0..0xC2 bank quarters')
+  for mask in masks:
+   if sea and material==3 and mask==255:
+    add('sand_ground_edge_e',sand_edge(14),behavior=0x21,source='General 0x118..0x12A grass/sand quarters; reclaimed duplicate full-water role')
+   else:add(f'{"ocean" if sea else "freshwater"}_{material}_{mask:02x}',water(mask,sea,material),0x15 if sea else 0x10,source='General pond/ocean 0xA1/0x170 and 0xB0..0xC2 bank quarters')
 for ground,n,changes,behavior in [('grass',1,{},0),('sand',0x124,{},0x21),('snow',1,{2:6},0)]:
  for variant in range(4):add(f'{ground}_{variant}',remap(flip(meta(n),variant&1,variant&2),changes),behavior,source=n)
 add('marsh_ground_cover',meta(0x15),behavior=2,source='General 0x15 long-grass art, retaining existing short-grass behavior')
-for i in range(1,15):add(f'cliff_catalog_{i}',meta(0x70+i),source=0x70+i)
+for mask in range(14):add(f'sand_ground_edge_{mask:01x}',sand_edge(mask),behavior=0x21,source='General 0x118..0x12A grass/sand quarters, cardinal topology')
 # Adapt one native two-column tree to Atlas's existing 3x3 collision footprint.
 # Ground colors become transparent so the unscaled native ground remains below.
 tree=Image.new('RGBA',(32,32))
@@ -138,8 +148,8 @@ lines.append('};')
 array('u16','gAtlasNatureMetatiles',4096,definitions);array('u16','gAtlasNatureAttributes',512,attrs);array('u8','gAtlasNatureMaskIndex',256,lookup)
 (R/'src/atlas_tiles_data.c').write_text('\n'.join(lines)+'\n')
 (OUT/'roles.json').write_text(json.dumps(roles,indent=2)+'\n')
-families=[dict(first=512+i*47,count=47,role=f'water_{i//4}_{i%4}') for i in range(8)]
-families += [dict(first=a,count=b,role=c) for a,b,c in [(888,4,'grass'),(892,4,'sand'),(896,4,'snow'),(900,1,'marsh_ground_cover'),(901,14,'cliff_catalog'),(915,9,'grove'),(924,47,'mountains'),(971,47,'snow_mountains'),(1018,4,'passes'),(1022,2,'flowers')]]
+families=[dict(first=512+i*47,count=46 if i==7 else 47,role=f'water_{i//4}_{i%4}') for i in range(8)]
+families += [dict(first=a,count=b,role=c) for a,b,c in [(887,1,'sand_ground_edge_north'),(888,4,'grass'),(892,4,'sand'),(896,4,'snow'),(900,1,'marsh_ground_cover'),(901,14,'sand_ground_edges'),(915,9,'grove'),(924,47,'mountains'),(971,47,'snow_mountains'),(1018,4,'passes'),(1022,2,'flowers')]]
 manifest=dict(source='Original Emerald assets in this Expansion checkout; not open-source artwork',inputs={str(p.relative_to(R)):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},raw_tiles=len(raw),metatiles=len(attrs),families=families)
 (ASSETS/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 sheet=Image.new('RGB',(16*40,32*44),'#303238');draw=ImageDraw.Draw(sheet)

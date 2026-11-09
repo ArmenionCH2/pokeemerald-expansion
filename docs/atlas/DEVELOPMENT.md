@@ -109,6 +109,14 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Wetland ground cover uses native long-grass artwork with the existing grass
   behavior, preserving running/bicycle rules rather than importing new restrictions.
   It takes priority over generic coast sand on dry wetland cells.
+  Its prepared bank material is green as well, matching the ground floor.
+  Sand/grass borders use cardinal neighbor semantics and native sand quarters,
+  preserving movement/elevation and the native sand behavior. The ring waits for
+  the already scheduled stencil; border rendering performs no terrain queries.
+  Fourteen spare roles plus one shared full-water duplicate supply the catalogue
+  within 512 slots. Diagonal-only notches and other biome blends remain future work.
+  GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
+  dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native
   tree catalog. Whole footprints must be suitable, dry, flat and free of terrace
   connectors; incomplete proposals become ordinary grass, never partial canopies.

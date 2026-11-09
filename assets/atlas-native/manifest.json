@@ -61,8 +61,13 @@
     },
     {
       "first": 841,
-      "count": 47,
+      "count": 46,
       "role": "water_1_3"
+    },
+    {
+      "first": 887,
+      "count": 1,
+      "role": "sand_ground_edge_north"
     },
     {
       "first": 888,
@@ -87,7 +92,7 @@
     {
       "first": 901,
       "count": 14,
-      "role": "cliff_catalog"
+      "role": "sand_ground_edges"
     },
     {
       "first": 915,
