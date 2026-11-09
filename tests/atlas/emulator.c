@@ -75,6 +75,31 @@ static unsigned settle(void)
     return elapsedFrames-start;
 }
 static void press(unsigned keys) {frames(keys,2);frames(0,30);}
+static void saveGame(void)
+{
+    uint32_t callback=symbol("sSaveDialogCallback"),counter=symbol("gSaveCounter");
+    uint32_t cursor=symbol("sStartMenuCursorPos"),before=core->busRead32(core,counter);
+    unsigned overwrite=0,defaultNo=0,waited;
+    press(8);
+    for(unsigned i=0;core->busRead8(core,cursor)!=1 && i<8;i++)press(128);
+    assert(core->busRead8(core,cursor)==1);press(1);
+    for(waited=0;waited<1800;waited++)
+    {
+        uint32_t step=core->busRead32(core,callback);
+        if(core->busRead32(core,counter)!=before &&
+           (step==(symbol("SaveSuccessCallback")|1) || step==(symbol("SaveReturnSuccessCallback")|1)))break;
+        if(step==(symbol("SaveConfirmInputCallback")|1))press(1);
+        else if(step==(symbol("SaveOverwriteInputCallback")|1))
+        {
+            overwrite=1;
+            if(core->busRead8(core,symbol("gDifferentSaveFile"))){defaultNo=1;press(64);}
+            press(1);
+        }
+        else frames(0,1);
+    }
+    assert(waited<1800);frames(0,180);settle();
+    printf("PASS native save completion counter %u -> %u, overwrite=%u default_no=%u\n",before,core->busRead32(core,counter),overwrite,defaultNo);
+}
 static void shot(const char *path)
 {
     FILE *f=fopen(path,"wb");assert(f);fprintf(f,"P6\n240 160\n255\n");
@@ -258,6 +283,7 @@ static void biomeTour(uint32_t savePointer)
         press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
+        if(waited>=6000)fprintf(stderr,"GEO timeout type=%u phase=%u visited=%u trial=%u node=%u\n",type,core->busRead8(core,symbol("sPhase")),core->busRead16(core,symbol("sVisited")),core->busRead16(core,symbol("sTrial")),core->busRead16(core,symbol("sNode")));
         assert(waited<6000);
         if (core->busRead8(core,status)==2)
         {
@@ -312,6 +338,7 @@ static void shoreTour(uint32_t savePointer)
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
+        if(waited>=6000)fprintf(stderr,"GEO timeout type=%u phase=%u visited=%u trial=%u node=%u\n",type,core->busRead8(core,symbol("sPhase")),core->busRead16(core,symbol("sVisited")),core->busRead16(core,symbol("sTrial")),core->busRead16(core,symbol("sNode")));
         assert(waited<6000);
         if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);frames(0,30);press(2);settle();continue;}
         assert(core->busRead8(core,status)==1);settle();frames(0,60);
@@ -423,13 +450,14 @@ int main(int argc,char **argv)
         FILE *f=fopen(argv[3],"wb");assert(f);
         bytes(statePtr,before,sizeof(before));assert(fwrite(before,1,sizeof(before),f)==sizeof(before));fclose(f);
         printf("SNAPSHOT schema=%u seed=%08x position=%u,%u\n",core->busRead16(core,statePtr+12),core->busRead32(core,statePtr+4),core->busRead16(core,savePtr),core->busRead16(core,savePtr+2));
+        printf("SNAPSHOT generation=%u ready_seconds=%.4f\n",core->busRead16(core,symbol("sAtlasGenerationVersion")),newGameFrames/59.72750057);
         uint32_t stats=symbol("gAtlasPlanStats");
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==7);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==8);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 7 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 8 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();
@@ -488,8 +516,8 @@ int main(int argc,char **argv)
     printf("PASS map return, with wildlife generation checks for mask %u\n",beforeMap.mask);
     frames(16,40);frames(0,30);actors();shot("build/atlas-emulator/movement.ppm");
     cachedCrossing(sav1);
-    // Save is second Atlas menu entry. Confirm overwrite and save prompts.
-    press(8);press(128);press(1);frames(0,60);press(1);frames(0,180);press(1);frames(0,900);
+    // Follow the real confirmation states, including an existing-file prompt.
+    saveGame();
     shot("build/atlas-emulator/save.ppm");
     savePtr=core->busRead32(core,sav1);statePtr=core->busRead32(core,sav3);
     uint16_t x=core->busRead16(core,savePtr),y=core->busRead16(core,savePtr+2);

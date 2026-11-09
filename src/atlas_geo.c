@@ -285,7 +285,7 @@ u8 AtlasGeo_Step(void)
         if (!Warm(x,y)) return 0;
         sTrial++;AtlasTerrain_Sample(x,y,&c);
         u8 target=sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
-        if (c.waterform || (sType==ATLAS_GEO_GROVE && (c.elevation>=175 || AtlasMountain_Relief(x,y,&c))) || (sType==ATLAS_GEO_PLATEAU
+        if (c.waterform || (sType==ATLAS_GEO_GROVE && (c.landform==ATLAS_COAST || c.elevation>=175 || AtlasMountain_Relief(x,y,&c))) || (sType==ATLAS_GEO_PLATEAU
             ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : c.biome!=target))
         {if (sTrial==1) sPhase=0;return 0;}
         sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;

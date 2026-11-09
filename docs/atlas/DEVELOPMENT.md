@@ -61,9 +61,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   vapor supply, inland vapor depletion, windward precipitation and lee drying, plus
   smooth equatorial/subtropical/storm-belt rainfall envelopes. Climate is ordinal,
   not measured mm/year; there is no ocean-current or numerical atmosphere solver.
+  Generation 8 preserves the macro land/ocean mask and component identities while
+  compressing the inland foundation and adding curved, tapering uplift belts tied
+  to the seeded continental frames. Belts vary their side and orientation. The
+  resulting heights feed climate and drainage before any local terrain is sampled.
+  Atmospheric rise from an ocean cell starts at sea level, not its underwater
+  floor, preventing ocean depth from manufacturing coastal orographic rainfall.
+  This is bounded macro morphology, not tectonics, physical erosion or measured
+  Earth hypsometry. Shelf bathymetry and more varied continental shapes remain work.
   Versions 4 onward normalize macro height to approximately 29.2% land before mountain
   uplift. Generation 7 adds vegetation collision, retaining generation 6's macro
-  height/climate/drainage rules. Existing versions 3 through 6 retain their original
+  height/climate/drainage rules. Existing versions 3 through 7 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

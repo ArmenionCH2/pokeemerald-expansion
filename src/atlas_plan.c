@@ -144,25 +144,55 @@ static void Advance(void) { sStage++; sAt = 0; }
  * distance is periodic; seeded offsets, aspect ratios and the former height
  * field give irregular coasts. This is a morphological model, not tectonics.
  * Evaluated only during macro creation, never during tile streaming. */
+static u32 ContinentalFrame(u16 id,unsigned i,s32 *dx,s32 *dy,s32 *rx,s32 *ry)
+{
+    u32 h=Mix(gAtlasWorldSeed^(0x434F4E54u+i*0x9E3779B1u));
+    s32 cx=(i*ATLAS_PLAN_WIDTH/5+(h%11)+ATLAS_PLAN_WIDTH-5)%ATLAS_PLAN_WIDTH;
+    s32 cy=8+(h>>8)%32;
+    *rx=11+(h>>16)%10;*ry=8+(h>>24)%8;
+    *dx=(s32)(id%ATLAS_PLAN_WIDTH)-cx;*dy=(s32)(id/ATLAS_PLAN_WIDTH)-cy;
+    if (*dx>ATLAS_PLAN_WIDTH/2) *dx-=ATLAS_PLAN_WIDTH;
+    if (*dx< -ATLAS_PLAN_WIDTH/2) *dx+=ATLAS_PLAN_WIDTH;
+    *dx+=*dy*((h&1)?1:-1)/3;
+    return h;
+}
 static u8 ContinentalHeight(u16 id,u8 detail)
 {
-    s32 x=id%ATLAS_PLAN_WIDTH,y=id/ATLAS_PLAN_WIDTH,best=-100000;
+    s32 best=-100000;
     unsigned i;
     for (i=0;i<5;i++)
     {
-        u32 h=Mix(gAtlasWorldSeed^(0x434F4E54u+i*0x9E3779B1u));
-        s32 cx=(i*ATLAS_PLAN_WIDTH/5+(h%11)+ATLAS_PLAN_WIDTH-5)%ATLAS_PLAN_WIDTH;
-        s32 cy=8+(h>>8)%32,rx=11+(h>>16)%10,ry=8+(h>>24)%8;
-        s32 dx=x-cx,dy=y-cy,score;
-        if (dx>ATLAS_PLAN_WIDTH/2) dx-=ATLAS_PLAN_WIDTH;
-        if (dx< -ATLAS_PLAN_WIDTH/2) dx+=ATLAS_PLAN_WIDTH;
-        // Slant the axes slightly so outlines are not aligned with the grid.
-        dx+=dy*((h&1)?1:-1)/3;
+        s32 dx,dy,rx,ry,score;
+        ContinentalFrame(id,i,&dx,&dy,&rx,&ry);
         score=220-(dx*dx*4096/(rx*rx)+dy*dy*4096/(ry*ry))/32;
         if (score>best) best=score;
     }
     best+=(detail-128)/3;
     return best<0?0:best>255?255:best;
+}
+/* Generation 8 ties curved uplift belts to the same seeded continental frames.
+ * Vary their side/orientation; taper inland at their ends. This inexpensive
+ * morphology is not plate motion, erosion or a geological history solver. */
+static u8 ContinentalUplift(u16 id)
+{
+    s32 best=0;
+    unsigned i;
+    for (i=0;i<5;i++)
+    {
+        s32 dx,dy,rx,ry,along,across,curve,score;
+        u32 h=ContinentalFrame(id,i,&dx,&dy,&rx,&ry);
+        dx=dx*256/rx;dy=dy*256/ry;
+        along=(h&2)?dx:dy;across=(h&2)?dy:dx;
+        if (along<0) along=-along;
+        if (along>=224) continue;
+        curve=150-along*along/512;
+        across-=((h&4)?curve:-curve);
+        if (across<0) across=-across;
+        score=88+(s32)((h>>12)%33)-across*2-along/3;
+        if (along>160) score=score*(224-along)/64;
+        if (score>best) best=score;
+    }
+    return best;
 }
 bool8 AtlasPlan_ImportHeights(const u8 *heights)
 {
@@ -233,7 +263,13 @@ bool8 AtlasPlan_Step(u16 work)
                 if (e<0) e=0;
             }
             else e=n->height;
-            if (e >= ATLAS_PLAN_SEA) { e += Mountain(id); gAtlasPlanStats.land++; }
+            if (e >= ATLAS_PLAN_SEA)
+            {
+                if (AtlasWorld_Generation()>=8)
+                    e=ATLAS_PLAN_SEA+(e-ATLAS_PLAN_SEA)*3/5+ContinentalUplift(id);
+                else e+=Mountain(id);
+                gAtlasPlanStats.land++;
+            }
             if (e > 255) e = 255;
             n->height = e;
             if (++sAt == ATLAS_PLAN_COUNT) Advance();
@@ -271,7 +307,9 @@ bool8 AtlasPlan_Step(u16 work)
             if (row > ATLAS_PLAN_HEIGHT * 2 / 5 && row < ATLAS_PLAN_HEIGHT * 3 / 5) precipitation += 35;
             if (precipitation > 255) precipitation = 255;
             if (AtlasWorld_Generation()>=6)
-                AtlasClimate_Transport(row,n->height,gAtlasPlan[upstream].height,
+                AtlasClimate_Transport(row,n->height,
+                    AtlasWorld_Generation()>=8 && gAtlasPlan[upstream].height<ATLAS_PLAN_SEA
+                        ? ATLAS_PLAN_SEA : gAtlasPlan[upstream].height,
                     gAtlasPlan[upstream].humidity,sDryRow,&n->humidity,&n->rain);
             else {n->rain = precipitation;n->humidity = rain;}
             sWindAt = Neighbor(sWindAt, upDir ^ 1);
