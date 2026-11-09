@@ -54,11 +54,15 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   The original Atlas engine was a different pret/pokeemerald revision. Do not
   copy its allocator, linker script, sprite engine or save code over Expansion.
 - World generation version and save-journal version are separate identities.
-  New version-5 worlds form five seeded, periodic continental cores with varying
+  New worlds retain version 5's five seeded, periodic continental cores with varying
   aspect ratios, slanted axes and irregular coast detail. This morphological model
   replaces fragmented short-wavelength outlines; it is not a tectonic simulation.
-  Versions 4 and 5 normalize macro height to approximately 29.2% land before mountain
-  uplift. Version-3 and version-4 saves retain their original algorithms and
+  Version 6 adds symmetric trade/westerly/polar wind belts, latitude-dependent ocean
+  vapor supply, inland vapor depletion, windward precipitation and lee drying, plus
+  smooth equatorial/subtropical/storm-belt rainfall envelopes. Climate is ordinal,
+  not measured mm/year; there is no ocean-current or numerical atmosphere solver.
+  Versions 4 onward normalize macro height to approximately 29.2% land before mountain
+  uplift. Version-3 through version-5 saves retain their original algorithms and
   checksums; never rewrite a saved generation tag to upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing
   node field, without increasing permanent plan storage.

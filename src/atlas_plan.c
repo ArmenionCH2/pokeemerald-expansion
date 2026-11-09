@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_plan.h"
+#include "atlas_climate.h"
 #include "malloc.h"
 
 #ifndef __arm__
@@ -241,6 +242,7 @@ bool8 AtlasPlan_Step(u16 work)
         {
             u16 row = sAt / ATLAS_PLAN_WIDTH, upstream;
             u8 upDir = row < ATLAS_PLAN_HEIGHT / 3 || row >= 2 * ATLAS_PLAN_HEIGHT / 3 ? 0 : 1;
+            if (AtlasWorld_Generation()>=6) upDir=AtlasClimate_Upwind(row);
             s32 rain, rise, precipitation;
             /* Ocean cells reset vapor to 230. Walking downwind from one ocean
              * solves the periodic row exactly; an all-land row settles at 12.
@@ -268,8 +270,10 @@ bool8 AtlasPlan_Step(u16 work)
             if (rise > 0 && n->height >= ATLAS_PLAN_SEA) precipitation += rise;
             if (row > ATLAS_PLAN_HEIGHT * 2 / 5 && row < ATLAS_PLAN_HEIGHT * 3 / 5) precipitation += 35;
             if (precipitation > 255) precipitation = 255;
-            n->rain = precipitation;
-            n->humidity = rain;
+            if (AtlasWorld_Generation()>=6)
+                AtlasClimate_Transport(row,n->height,gAtlasPlan[upstream].height,
+                    gAtlasPlan[upstream].humidity,sDryRow,&n->humidity,&n->rain);
+            else {n->rain = precipitation;n->humidity = rain;}
             sWindAt = Neighbor(sWindAt, upDir ^ 1);
             if (++sAt % ATLAS_PLAN_WIDTH == 0) sRainPass++;
             if (sAt == ATLAS_PLAN_COUNT) Advance();

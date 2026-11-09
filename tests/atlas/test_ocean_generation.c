@@ -14,6 +14,7 @@ static void Generate(u32 seed,u16 version,u16 batch)
 int main(void)
 {
     const u32 seeds[]={0,1,0xFFFFFFFFu,0xDEADBEEFu,4220706268u,123456789};
+    const u32 version5[]={0xfa6b6928u,0xe2628f10u,0x88be887eu,0x1e0b8eb0u,0x646bfdaeu,0x0cf60e1eu};
     unsigned i,id;
     Generate(0,3,256);
     assert(gAtlasPlanStats.checksum==0xEDDF7C74u);
@@ -22,7 +23,8 @@ int main(void)
     for (i=0;i<sizeof(seeds)/sizeof(seeds[0]);i++)
     {
         unsigned land=0,mountains=0;
-        Generate(seeds[i],5,256);
+        Generate(seeds[i],5,256);assert(gAtlasPlanStats.checksum==version5[i]);
+        Generate(seeds[i],6,256);
         for (id=0;id<ATLAS_PLAN_COUNT;id++)
         {
             u16 at=id;unsigned steps=0;
@@ -45,14 +47,14 @@ int main(void)
         printf("Continental structure seed=%u largest=%u substantial=%u\n",seeds[i],largest,large);
         assert(largest>=180 && large>=2);
         u32 checksum=gAtlasPlanStats.checksum;
-        Generate(seeds[i],5,31);assert(checksum==gAtlasPlanStats.checksum);
+        Generate(seeds[i],6,31);assert(checksum==gAtlasPlanStats.checksum);
         s32 x,y;assert(AtlasTerrain_FindSpawn(&x,&y));
         for (unsigned p=0;p<9;p++) assert(!(AtlasTerrain_Tile(x+(s32)(p%3)-1,y+(s32)(p/3)-1)&0xC00));
         printf("PASS ocean generation seed=%u land=%u/%u mountains=%u checksum=%08x\n",seeds[i],land,ATLAS_PLAN_COUNT,mountains,checksum);
     }
-    assert(!AtlasWorld_SetGeneration(99) && AtlasWorld_Generation()==5);
+    assert(!AtlasWorld_SetGeneration(99) && AtlasWorld_Generation()==6);
     Generate(0,4,31);assert(!memcmp(balanced,gAtlasPlan,sizeof(balanced)));
     Generate(0,3,31);assert(!memcmp(legacy,gAtlasPlan,sizeof(legacy)));
-    puts("PASS generation 5 continental structure, ocean balance, drainage, spawn, batch determinism and unchanged generations 3/4");
+    puts("PASS generation 6 climate/continental structure, drainage, spawn, batch determinism and unchanged generations 3/4/5");
     return 0;
 }

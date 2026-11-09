@@ -8,19 +8,20 @@ import subprocess
 R = Path(__file__).resolve().parents[1]
 OUT = R / 'build/atlas-tests'
 OUT.mkdir(parents=True, exist_ok=True)
-world = ['terrain','mountain','tiles','tiles_data','stream','plan','habitat','water','geo']
+world = ['terrain','mountain','tiles','tiles_data','stream','plan','climate','habitat','water','geo']
 groups = {
+    'climate': ['climate'],
     'place': ['place'],
     'state weather': ['state','state_codec','weather'],
     'pokemon': ['atlas_pokemon', 'atlas_pokemon_boundaries'],
     'actor_identity': ['atlas_actor_identity', 'actor_identity_property'],
     'actor_identity actor_admission': ['actor_admission'],
     'actor_identity actor_admission actor_runtime': ['actor_runtime'],
-    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation'],
+    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','climate_transport'],
     'habitat': ['habitat_equivalence'],
     'mountain tiles tiles_data': ['atlas_tiles'],
     '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions'],
-    'plan': ['plan_cache_native'],
+    'plan climate': ['plan_cache_native'],
 }
 for modules, cases in groups.items():
     for case in cases:
