@@ -272,8 +272,9 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    for (unsigned type=2;type<=4;type++)
+    for (unsigned visit=0;visit<4;visit++)
     {
+        unsigned type=visit<3?visit+2:16;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
@@ -285,8 +286,8 @@ static void shoreTour(uint32_t savePointer)
         assert(waited<6000);
         if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);press(2);settle();continue;}
         assert(core->busRead8(core,status)==1);settle();frames(0,60);
-        unsigned reached=0;
-        for (unsigned step=0;step<40;step++)
+        unsigned reached=type==16;
+        for (unsigned step=0;step<40 && type!=16;step++)
         {
             unsigned key=nextMapKey(core->busRead32(core,savePointer),type==4?2:1);
             if (key==1024) {reached=1;break;}
@@ -296,9 +297,9 @@ static void shoreTour(uint32_t savePointer)
         frames(0,300);actors();fieldWeather();
         if (reached)
         {
-            unsigned expected=type==2?2:type==3?1:3;
+            unsigned expected=type==16?13:type==2?2:type==3?1:3;
             assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
-            printf("PASS native dry shore location type %u follows nearby rendered water\n",type);
+            printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
@@ -379,9 +380,18 @@ int main(int argc,char **argv)
     frames(0,420); // finish coarse raster and resumable macro-river overlay
     assert(core->busRead16(core,symbol("sAtlasMapRiver"))==4608);
     shot("build/atlas-emulator/atlas-world-rivers.ppm");
-    for (unsigned layer=1;layer<7;layer++)
+    for (unsigned layer=1;layer<8;layer++)
     {
         press(8);frames(0,240);
+        if (layer==7)
+        {
+            unsigned row=core->busRead8(core,symbol("sAtlasMapRow"));
+            press(16); // short pan must be accepted while regional rendering runs
+            assert(core->busRead8(core,symbol("sAtlasMapRow"))<row);
+            unsigned waited=0;
+            while (core->busRead8(core,symbol("sAtlasMapRow"))<25 && waited++<1200) frames(0,1);
+            printf("Regional relief raster completed after %u additional frames; short pan accepted\n",waited);
+        }
         assert(core->busRead8(core,symbol("sAtlasMapLayer"))==layer);
         assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/admin-layer-%u.ppm",layer);shot(path);

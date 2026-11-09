@@ -8,9 +8,10 @@ import subprocess
 R = Path(__file__).resolve().parents[1]
 OUT = R / 'build/atlas-tests'
 OUT.mkdir(parents=True, exist_ok=True)
-world = ['terrain','mountain','tiles','tiles_data','stream','plan','climate','habitat','water','geo']
+world = ['terrain','mountain','tiles','tiles_data','stream','plan','climate','region','habitat','water','geo']
 groups = {
     'climate': ['climate'],
+    'region': ['region'],
     'place': ['place'],
     'state weather': ['state','state_codec','weather'],
     'pokemon': ['atlas_pokemon', 'atlas_pokemon_boundaries'],

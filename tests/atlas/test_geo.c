@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_geo.h"
+#include "atlas_region.h"
 #include <assert.h>
 #include <stdio.h>
 int main(void)
@@ -21,12 +22,13 @@ int main(void)
             assert(n<8000 && gAtlasGeoStatus==1);
             for(i=0;i<9;i++)assert(!(AtlasTerrain_Tile(gAtlasGeoResult.x+(s32)(i%3)-1,gAtlasGeoResult.y+(s32)(i/3)-1)&0xC00));
             if(type==ATLAS_GEO_LAND)assert(gAtlasGeoResult.landmass);
-            if(type>=ATLAS_GEO_FOREST)
+            if(type>=ATLAS_GEO_FOREST && type<=ATLAS_GEO_WETLAND)
             {
                 struct AtlasCell c;AtlasTerrain_Sample(gAtlasGeoResult.x,gAtlasGeoResult.y,&c);
                 u8 target=type==ATLAS_GEO_FOREST?ATLAS_FOREST:type==ATLAS_GEO_DESERT?ATLAS_DESERT:type==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
                 assert(c.waterform==ATLAS_DRY && c.biome==target);
             }
+            if(type==ATLAS_GEO_PLATEAU) assert(AtlasRegion_At(gAtlasGeoResult.x,gAtlasGeoResult.y)==ATLAS_REGION_PLATEAU);
             if(type==ATLAS_GEO_TRIBUTARY)assert(AtlasWater_IsTributary(gAtlasGeoResult.node));
             if(type==ATLAS_GEO_MOUTH)
             {

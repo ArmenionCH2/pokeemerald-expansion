@@ -5,6 +5,7 @@
 #include "atlas_state.h"
 #include "atlas_place.h"
 #include "atlas_weather.h"
+#include "atlas_region.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "main.h"
@@ -21,18 +22,18 @@
 #define WIDTH 56
 #define HEIGHT 25
 #define TOP 28
-enum {LAYER_TERRAIN,LAYER_ELEVATION,LAYER_TEMPERATURE,LAYER_HUMIDITY,LAYER_MOISTURE,LAYER_BASINS,LAYER_WEATHER,LAYER_COUNT};
+enum {LAYER_TERRAIN,LAYER_ELEVATION,LAYER_TEMPERATURE,LAYER_HUMIDITY,LAYER_MOISTURE,LAYER_BASINS,LAYER_WEATHER,LAYER_REGIONS,LAYER_COUNT};
 static const u32 sScales[] = {1, 4, 20, 100, 1000, 10000, 100000, (2*ATLAS_WORLD_HALF_HEIGHT)/HEIGHT};
 static const struct BgTemplate sBg[] = {{.bg=0, .charBaseIndex=0, .mapBaseIndex=31, .screenSize=0, .paletteMode=0, .priority=0, .baseTile=0}};
 static const struct WindowTemplate sWindows[] = {{.bg=0,.tilemapLeft=1,.tilemapTop=0,.width=28,.height=20,.paletteNum=15,.baseBlock=1},DUMMY_WIN_TEMPLATE};
 static const u16 sPalette[16] = {RGB_BLACK, RGB_WHITE, RGB(10,20,30), RGB(4,20,6), RGB(24,21,8), RGB(22,27,29), RGB(15,14,12), RGB(8,25,16), RGB(31,10,8), RGB(4,8,22), RGB(30,28,15), RGB(30,17,5), RGB(23,4,4), RGB(4,22,25), RGB(21,9,24), RGB(24,24,24)};
 static const u8 sColors[] = {0,1,0};
 static const u8 sTitle[] = _("ATLAS EXPLORATION");
-static const u8 *const sAtlasMapLayers[] = {COMPOUND_STRING("ATLAS - TERRAIN"),COMPOUND_STRING("ATLAS - ELEVATION"),COMPOUND_STRING("ATLAS - TEMPERATURE"),COMPOUND_STRING("ATLAS - HUMIDITY"),COMPOUND_STRING("ATLAS - SOIL MOISTURE"),COMPOUND_STRING("ATLAS - DRAINAGE BASINS"),COMPOUND_STRING("ATLAS - WEATHER FRONTS")};
+static const u8 *const sAtlasMapLayers[] = {COMPOUND_STRING("ATLAS - TERRAIN"),COMPOUND_STRING("ATLAS - ELEVATION"),COMPOUND_STRING("ATLAS - TEMPERATURE"),COMPOUND_STRING("ATLAS - HUMIDITY"),COMPOUND_STRING("ATLAS - SOIL MOISTURE"),COMPOUND_STRING("ATLAS - DRAINAGE BASINS"),COMPOUND_STRING("ATLAS - WEATHER FRONTS"),COMPOUND_STRING("ATLAS - REGIONAL RELIEF")};
 static const u8 sHelp[] = _("D-pad: pan  L/R: zoom  A: home  B: back");
 static const u8 sAdminHelp[] = _("L/R zoom  START layer  SELECT player");
 static const u8 sUnknown[] = _("Unexplored");
-static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue")};
+static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue"),COMPOUND_STRING("Plateau: gold Valley: green Ridge: pink")};
 static const u8 sFull[] = _("Journal space low - visits retained");
 static const u8 sClear[] = _("Clear");
 static const u8 sRain[] = _("Rain");
@@ -76,6 +77,11 @@ static struct AtlasCell Sample(s32 x, s32 y)
 }
 static u8 Color(s32 x, s32 y)
 {
+    if (sAtlasMapLayer==LAYER_REGIONS)
+    {
+        static const u8 colors[]={9,4,3,11,6,10,7,14,0};
+        return colors[AtlasRegion_At(x,y)];
+    }
     struct AtlasCell cell=Sample(x,y);
     if (sAtlasMapLayer==LAYER_TEMPERATURE)
         return cell.temperature<45?5:cell.temperature<85?9:cell.temperature<135?7:cell.temperature<175?4:cell.temperature<210?11:8;
@@ -105,7 +111,7 @@ static bool8 Pixel(u32 px, u32 py, s32 x, s32 y)
 {
     u32 bit = py * WIDTH + px;
     if (sPainted[bit / 8] & (1 << (bit % 8))) return TRUE;
-    if ((!sAdminView || sScales[sAtlasMapZoom]<100) && !AtlasWater_Prewarm(x,y)) return FALSE;
+    if (sAtlasMapLayer!=LAYER_REGIONS && (!sAdminView || sScales[sAtlasMapZoom]<100) && !AtlasWater_Prewarm(x,y)) return FALSE;
     sPainted[bit / 8] |= 1 << (bit % 8);
     FillWindowPixelRect(0, PIXEL_FILL(Color(x,y)), px*4, TOP+py*4, 4, 4);
     return TRUE;
@@ -199,7 +205,7 @@ static void Paint(void)
              || (sAtlasMapLayer!=LAYER_TERRAIN && sAtlasMapLayer!=LAYER_ELEVATION && sAtlasMapLayer!=LAYER_BASINS)) return;
             RiverOverlay();
         }
-        unsigned budget=sScales[sAtlasMapZoom]>=100?8:1;
+        unsigned budget=sAtlasMapLayer==LAYER_REGIONS?2:sScales[sAtlasMapZoom]>=100?8:1;
         while (budget-- && sAtlasMapRow<HEIGHT)
         {
             y = sY + ((s32)sAtlasMapRow-HEIGHT/2) * (s32)sScales[sAtlasMapZoom];

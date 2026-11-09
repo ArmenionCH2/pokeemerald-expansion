@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_place.h"
+#include "atlas_region.h"
 #include "script.h"
 #include "map_name_popup.h"
 #include "constants/characters.h"
@@ -51,6 +52,13 @@ void AtlasLocation_Tick(void)
         struct AtlasCell cell;
         AtlasTerrain_Sample(x, y, &cell);
         sPositionValid = AtlasPlace_Identify(x, y, &cell, &sPlace);
+        if (sPositionValid && cell.waterform==ATLAS_DRY && cell.landform!=ATLAS_COAST)
+        {
+            u8 region=AtlasRegion_At(x,y);
+            if (region==ATLAS_REGION_PLATEAU) sPlace.kind=ATLAS_PLACE_PLATEAU;
+            else if (region==ATLAS_REGION_VALLEY) sPlace.kind=ATLAS_PLACE_VALLEY;
+            else if (region==ATLAS_REGION_RIDGE) sPlace.kind=ATLAS_PLACE_RIDGE;
+        }
         if (sPositionValid && cell.waterform==ATLAS_DRY)
         {
             unsigned distance,direction;

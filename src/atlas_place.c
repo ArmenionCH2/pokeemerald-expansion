@@ -81,11 +81,11 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
     static const char *const first[] = {"Al","Bel","Cor","Dar","El","Fal","Gal","Har","Is","Kel","Lor","Mar","Nor","Or","Pel","Syl"};
     static const char *const middle[] = {"a","e","i","o","u","an","en","in","or","el","ar","ir","al","on","un","es"};
     static const char *const last[] = {"dor","len","mir","ran","sil","tor","ven","wyn","bar","del","fin","gar","hel","ith","jor","kas","lin","mor","nar","ond","por","quil","rin","sar","tal","ul","val","wer","xel","yor","zan","den"};
-    static const char *const feature[] = {"Ocean","Riverbank","Lake shore","Coast","Highlands","Foothills","Forest","Taiga","Tundra","Desert","Wetland","Savanna","Plains"};
+    static const char *const feature[] = {"Ocean","Riverbank","Lake shore","Coast","Highlands","Foothills","Forest","Taiga","Tundra","Desert","Wetland","Savanna","Plains","Plateau","Valley","Ridge"};
     u32 code, id, i, count = 0;
     if (out == NULL) return FALSE;
     out[0] = 0;
-    if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_PLAIN
+    if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_RIDGE
      || (place->landmass & ~ATLAS_OCEAN_COMPONENT) > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT) return FALSE;
     if (level == 2) {Append(out, feature[place->kind]);return TRUE;}
     id = level == 0 ? place->landmass & ~ATLAS_OCEAN_COMPONENT : place->basin;

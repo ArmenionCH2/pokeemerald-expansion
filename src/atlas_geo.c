@@ -3,6 +3,7 @@
 #include "atlas_plan.h"
 #include "atlas_geo.h"
 #include "atlas_tiles.h"
+#include "atlas_region.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -58,6 +59,7 @@ void AtlasGeo_Begin(u8 type)
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
     if (sType>=ATLAS_GEO_FOREST)
     {
         struct AtlasHabitat habitat;
@@ -219,7 +221,9 @@ u8 AtlasGeo_Step(void)
         if (!Warm(x,y)) return 0;
         sTrial++;AtlasTerrain_Sample(x,y,&c);
         u8 target=sType==ATLAS_GEO_FOREST?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
-        if (c.waterform || c.biome!=target) {if (sTrial==1) sPhase=0;return 0;}
+        if (c.waterform || (sType==ATLAS_GEO_PLATEAU
+            ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : c.biome!=target))
+        {if (sTrial==1) sPhase=0;return 0;}
         sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
     }
     if(sPhase==10)

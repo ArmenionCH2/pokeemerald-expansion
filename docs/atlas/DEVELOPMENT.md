@@ -10,6 +10,7 @@ battle test framework. Do not describe a host mock as emulator evidence.
 | Task | Entry points |
 | --- | --- |
 | Physical location names and boundary announcements | `src/atlas_place.c`, `src/atlas_location.c` |
+| Contextual regional relief | `src/atlas_region.c`, `src/atlas_map.c`, `src/atlas_geo.c` |
 | World seed, position, startup | `src/atlas_world.c`, `src/atlas_creation.c` |
 | Regional weather and atlas layers | `src/atlas_weather.c`, `src/atlas_map.c` |
 | Geography, hydrology, habitat | `src/atlas_plan.c`, `src/atlas_terrain.c`, `src/atlas_water.c`, `src/atlas_habitat.c` |
@@ -95,6 +96,12 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   a debounce/cooldown. This adds no terrain or save identity change.
   Dry riverbanks/lake shores/coasts use nearby prepared terrain semantics, within
   three tiles, without generating geography or changing discovery during the query.
+  Regional plateau/valley/ridge descriptions compare an interpolated 400 km
+  neighborhood. The eight-layer admin atlas exposes this relief classification;
+  GEO TP can locate a classified plateau with a safe final 3x3 landing. These are
+  annotations of existing geography, not newly carved features or individually
+  named components. No generation/save version change is needed. Regional queries
+  do not prepare hydrology; map rendering uses a bounded two-pixel budget.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
   reads never mark discovery. START cycles seven diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with
