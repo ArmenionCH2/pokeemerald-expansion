@@ -150,7 +150,7 @@ static void Draw(void)
     AddTextPrinterParameterized3(0,FONT_SMALL,0,132,sColors,TEXT_SKIP_DRAW,
         AtlasState_UsedBytes(state) > ATLAS_JOURNAL_BYTES - 57 ? sFull
         : sAdminView && sAtlasMapLayer!=LAYER_TERRAIN ? sLegends[sAtlasMapLayer]
-        : sWeather[AtlasState_Weather(state,x,y,cell.temperature,cell.humidity)]);
+        : sWeather[AtlasWeather_Regional(state,x,y)]);
     sAtlasMapRow = sAtlasMapColumn = sChunk = sTile = sAtlasMapRiver = 0;
     CopyWindowToVram(0,COPYWIN_FULL);
 }

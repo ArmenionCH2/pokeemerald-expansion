@@ -2,6 +2,8 @@
 #include "atlas_world.h"
 #include "atlas_state.h"
 #include "atlas_weather.h"
+#include "atlas_plan.h"
+#include "constants/weather.h"
 
 static u32 Mix(u32 n)
 {
@@ -50,4 +52,29 @@ u8 AtlasState_Weather(const struct AtlasSaveState *state,s32 x,s32 y,u8 temperat
         return temperature<80?ATLAS_WEATHER_SNOW:ATLAS_WEATHER_RAIN;
     if (humidity>=180 && temperature<150 && potential>195) return ATLAS_WEATHER_FOG;
     return ATLAS_WEATHER_CLEAR;
+}
+
+u8 AtlasWeather_Regional(const struct AtlasSaveState *state,s32 x,s32 y)
+{
+    struct AtlasPlanSample plan;
+    struct AtlasHabitat habitat;
+    u8 waterform;
+    if (!gAtlasPlanReady || !state || y < -ATLAS_WORLD_HALF_HEIGHT || y >= ATLAS_WORLD_HALF_HEIGHT)
+        return ATLAS_WEATHER_CLEAR;
+    x%=ATLAS_WORLD_WIDTH;if (x<0) x+=ATLAS_WORLD_WIDTH;
+    AtlasPlan_SampleDetail(x,y,&plan);
+    waterform=plan.height<ATLAS_PLAN_SEA?ATLAS_SEA:plan.lake==1?ATLAS_LAKE:ATLAS_DRY;
+    AtlasHabitat_Sample(y,plan.height,plan.rain,plan.humidity,waterform,&habitat);
+    return AtlasState_Weather(state,x,y,habitat.temperature,habitat.humidity);
+}
+
+u8 AtlasWeather_Native(u8 weather)
+{
+    switch (weather)
+    {
+    case ATLAS_WEATHER_RAIN: return WEATHER_RAIN;
+    case ATLAS_WEATHER_SNOW: return WEATHER_SNOW;
+    case ATLAS_WEATHER_FOG: return WEATHER_FOG_HORIZONTAL;
+    default: return WEATHER_SUNNY;
+    }
 }

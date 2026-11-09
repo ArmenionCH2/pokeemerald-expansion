@@ -11,6 +11,8 @@
 #include "wild_encounter.h"
 #include "atlas_geo.h"
 #include "atlas_state.h"
+#include "atlas_weather.h"
+#include "field_weather.h"
 #include "field_screen_effect.h"
 #include "constants/maps.h"
 #include "constants/vars.h"
@@ -29,6 +31,7 @@ static const struct MapConnection sConnections[] = {
 };
 static const struct MapConnections sConnectionHeader = {4, sConnections};
 static struct MapHeader sHeader;
+static u8 sAtlasWeatherCadence;
 static s32 ReadCoord(u16 low)
 {
     return (s32)((u32)VarGet(low) | ((u32)VarGet(low + 1) << 16));
@@ -51,6 +54,12 @@ const struct MapHeader *AtlasWorld_Header(const struct MapHeader *base)
     sHeader.connections = &sConnectionHeader;
     sHeader.showMapName = FALSE;
     sHeader.allowRunning = TRUE;
+    if (gAtlasPlanReady)
+    {
+        s32 x,y;
+        AtlasWorld_GetPosition(&x,&y);
+        sHeader.weather=AtlasWeather_Native(AtlasWeather_Regional(&gSaveBlock3Ptr->atlas,x,y));
+    }
     return &sHeader;
 }
 void AtlasWorld_Fill(void)
@@ -88,7 +97,17 @@ void AtlasWorld_Tick(void)
         AtlasStream_Tick(ReadCoord(VAR_ATLAS_CHUNK_X_LOW), ReadCoord(VAR_ATLAS_CHUNK_Y_LOW), gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y);
         AtlasWorld_GetPosition(&x, &y);
         if (!ArePlayerFieldControlsLocked())
+        {
             AtlasState_Tick(&gSaveBlock3Ptr->atlas);
+            // One cheap macro query per second, without touching hydrology.
+            // Let the engine finish/release its previous effect normally.
+            if (++sAtlasWeatherCadence>=60 && gAtlasPlanReady)
+            {
+                u8 weather=AtlasWeather_Native(AtlasWeather_Regional(&gSaveBlock3Ptr->atlas,x,y));
+                sAtlasWeatherCadence=0;
+                if (GetSavedWeather()!=weather) SetWeather(weather);
+            }
+        }
         AtlasState_Visit(&gSaveBlock3Ptr->atlas, x, y);
     }
 }

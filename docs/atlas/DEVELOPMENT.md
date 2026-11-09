@@ -76,9 +76,11 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
 - The saved clock advances during overworld simulation, pauses in menus, and
   saturates instead of wrapping. Regional weather is deterministic from
   seed, place, saved time and climate. A longitude-periodic field drifts and blends
-  over six-hour epochs, avoiding arbitrary hourly/grid rerolls. It currently informs
-  the map, not animated
-  precipitation, terrain changes or a complete seasons/ecology simulation.
+  over six-hour epochs, avoiding arbitrary hourly/grid rerolls. Regional macro
+  climate drives native rain, snow or fog effects, checked once per unpaused
+  overworld second and on map entry. Weather queries never prepare remote detailed
+  hydrology. The atlas footer uses the same regional model. This does not implement
+  terrain changes or a complete seasons/ecology simulation.
 - Physical names derive from connected macro landmasses, water bodies and drainage catchments.
   The local label describes the terrain inside that catchment; individual forests,
   ridges and river branches are not separately component-labelled. Names are seed

@@ -13,6 +13,7 @@ static struct mCore *core;
 static const char *symbolFile;
 static unsigned elapsedFrames;
 static uint32_t rosterAddr, objectsAddr, spritesAddr;
+static unsigned weatherMask;
 struct ActorView { uint32_t generation[3]; uint16_t x[3], y[3]; unsigned mask; };
 
 /* Pinned ARM layouts: AtlasActorAdmissionSlot=28, ObjectEvent=0x24,
@@ -74,6 +75,34 @@ static void shot(const char *path)
     for(unsigned i=0;i<240*160;i++) {unsigned char rgb[3]={pixels[i]&255,(pixels[i]>>8)&255,(pixels[i]>>16)&255};fwrite(rgb,1,3,f);} fclose(f);
 }
 static void bytes(uint32_t addr,void *out,unsigned size) {for(unsigned i=0;i<size;i++)((uint8_t*)out)[i]=core->busRead8(core,addr+i);}
+static unsigned fieldWeather(void)
+{
+    // ARM Weather: 512-byte sprite union, currWeather at 528; rain and snow
+    // counts at 538/548. Validate real effect ownership alongside the actors.
+    uint32_t weather=symbol("gWeather");
+    unsigned current=core->busRead8(core,weather+528),next=core->busRead8(core,weather+529);
+    assert(current==2 || current==3 || current==4 || current==6);
+    assert(next==2 || next==3 || next==4 || next==6);
+    weatherMask|=1u<<current;
+    if (current==3 || current==4 || current==6)
+    {
+        unsigned count=core->busRead8(core,weather+(current==3?538:current==4?548:571));
+        assert(count<=(current==3?24:current==4?16:1));
+        if (current==6) count*=20;
+        for (unsigned i=0;i<count;i++)
+        {
+            uint32_t sprite=core->busRead32(core,weather+(current==4?96:0)+i*4);
+            assert(sprite>=spritesAddr && sprite<spritesAddr+64*0x44 && !((sprite-spritesAddr)%0x44));
+            assert(core->busRead8(core,sprite+0x3e)&1);
+            // Weather effects never borrow a live wildlife sprite.
+            for (unsigned j=0;j<3;j++)
+                if (core->busRead8(core,rosterAddr+j*28+25)==2)
+                    assert(sprite!=spritesAddr+core->busRead8(core,rosterAddr+j*28+21)*0x44);
+        }
+    }
+    printf("PASS native regional field weather %u -> %u and particle ownership\n",current,next);
+    return current;
+}
 static void placeNames(void)
 {
     uint32_t popup=symbol("sAtlasLocationPopup");
@@ -153,12 +182,36 @@ static void cachedCrossing(uint32_t savePtr)
     }
     else printf("NOTE no reachable chunk exit in this spawn viewport; crossing coverage not exercised\n");
 }
+static void weatherMapRoundTrip(void)
+{
+    unsigned char before[1456],after[1456];
+    uint32_t cursor=symbol("sStartMenuCursorPos"),save=symbol("gSaveBlock3Ptr");
+    struct ActorView previous=actors();
+    press(8);
+    bytes(core->busRead32(core,save),before,sizeof(before));
+    for (unsigned i=0;core->busRead8(core,cursor)!=0 && i<8;i++) press(64);
+    assert(core->busRead8(core,cursor)==0);press(1);frames(0,120);
+    assert(core->busRead8(core,symbol("gAtlasMapActive")));
+    bytes(core->busRead32(core,save),after,sizeof(after));
+    assert(!memcmp(before,after,sizeof(before)));
+    press(2);frames(0,180);press(2);frames(0,120);
+    struct ActorView current=actors();fieldWeather();
+    for (unsigned i=0;i<3;i++)
+        if (previous.mask&(1u<<i)) assert((current.mask&(1u<<i)) && current.generation[i]==previous.generation[i]);
+    shot("build/atlas-emulator/field-weather-after-map.ppm");
+    printf("PASS native weather/map round trip preserves journal, effect ownership and wildlife generations\n");
+}
 static void biomeTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus"),result=symbol("gAtlasGeoResult");
-    for (unsigned type=12;type<16;type++)
+    unsigned mapChecked=0;
+    for (unsigned visit=0;visit<12;visit++)
     {
+        // Additional genuine destinations exercise weather without patching
+        // the clock, save, climate or effect state. Coverage may vary by seed.
+        unsigned type=visit<4?12+visit:visit<8?14:12;
+        if (visit>=4 && (weatherMask&(1u<<(type==14?4:3)))) continue;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
@@ -175,7 +228,11 @@ static void biomeTour(uint32_t savePointer)
             printf("NOTE biome TP type %u has no safe destination in this seed\n",type);press(2);settle();continue;
         }
         assert(core->busRead8(core,status)==1 && core->busRead8(core,result+12)==type);
-        settle();frames(0,60);actors();
+        settle();frames(0,120);actors();unsigned weather=fieldWeather();
+        if (weather!=2)
+        {
+            char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/field-weather-%u.ppm",weather);shot(path);
+        }
         if (type==13 || type==14)
         {
             char label[21];unsigned n;
@@ -196,7 +253,10 @@ static void biomeTour(uint32_t savePointer)
             assert(!(core->busRead16(core,map+((y+dy)*35+x+dx)*2)&0xC00));
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/geo-biome-%u.ppm",type);shot(path);
         printf("PASS native biome teleport type %u, third menu page and safe 3x3 landing\n",type);
+        if (weather!=2 && !mapChecked) {weatherMapRoundTrip();mapChecked=1;}
     }
+    printf("Weather effects observed (native IDs): mask 0x%x; rain=3, snow=4, fog=6\n",weatherMask);
+    if (!(weatherMask&(1u<<4))) printf("NOTE no natural snow front encountered during this seed's bounded cold-region tour\n");
 }
 int main(int argc,char **argv)
 {
@@ -241,6 +301,7 @@ int main(int argc,char **argv)
     assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==4);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
     printf("PASS native generation 4 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    fieldWeather();
     placeNames();
     struct ActorView initial=actors();
     for (unsigned i=0;i<600&&!initial.mask;i++) {frames(0,1);initial=actors();}
@@ -307,6 +368,7 @@ int main(int argc,char **argv)
     unsigned continueFrames=elapsedFrames-generating;
     assert(continueFrames<1791); // thirty seconds from entering Atlas restoration
     frames(0,60);actors();shot("build/atlas-emulator/continue.ppm");
+    fieldWeather();
     savePtr=core->busRead32(core,sav1);statePtr=core->busRead32(core,sav3);
     bytes(statePtr,after,sizeof(after));
     printf("restored position %d,%d; saved %d,%d; seeds %08x/%08x\n",core->busRead16(core,savePtr),core->busRead16(core,savePtr+2),x,y,*(uint32_t*)(before+4),*(uint32_t*)(after+4));
