@@ -60,6 +60,14 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
     return TRUE;
 }
 
+void AtlasPlace_ApplyShore(struct AtlasPlace *place,u8 watermask)
+{
+    if (!place || place->kind==ATLAS_PLACE_OCEAN) return;
+    if (watermask&(1<<ATLAS_LAKE)) place->kind=ATLAS_PLACE_LAKE;
+    else if (watermask&(1<<ATLAS_RIVER)) place->kind=ATLAS_PLACE_RIVER;
+    else if (watermask&(1<<ATLAS_SEA)) place->kind=ATLAS_PLACE_COAST;
+}
+
 static void Append(char *out, const char *text)
 {
     unsigned at = 0;

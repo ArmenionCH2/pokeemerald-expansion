@@ -51,6 +51,25 @@ void AtlasLocation_Tick(void)
         struct AtlasCell cell;
         AtlasTerrain_Sample(x, y, &cell);
         sPositionValid = AtlasPlace_Identify(x, y, &cell, &sPlace);
+        if (sPositionValid && cell.waterform==ATLAS_DRY)
+        {
+            unsigned distance,direction;
+            u8 watermask=0;
+            // Read the resident stencil only. Even at a water-cache boundary,
+            // announcing a shore must not synchronously prepare more terrain.
+            for (distance=1;distance<=3 && !watermask;distance++)
+            {
+                static const s8 offsets[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
+                for (direction=0;direction<4;direction++)
+                {
+                    u16 semantic;
+                    if (AtlasStream_ReadSemantics(x+offsets[direction][0]*(s32)distance,
+                        y+offsets[direction][1]*(s32)distance,&semantic) && (semantic&3))
+                        watermask|=1<<(semantic&3);
+                }
+            }
+            AtlasPlace_ApplyShore(&sPlace,watermask);
+        }
         sX = x; sY = y;
     }
     if (!sPositionValid) return;

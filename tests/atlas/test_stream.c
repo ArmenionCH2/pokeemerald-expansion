@@ -27,6 +27,10 @@ static void Walk(s32 x,s32 y)
             u16 actual=map[(y-cy*20+7+dy)*35+x-cx*20+7+dx], expected=AtlasTerrain_Tile(x+dx,y+dy);
             if(actual!=expected)fprintf(stderr,"MISMATCH at %d,%d leg=%u step=%u offset=%d,%d map=%04x direct=%04x\n",x,y,leg,step,dx,dy,actual,expected);
             assert(actual==expected);
+            u16 semantic,ignored;
+            assert(AtlasStream_ReadSemantics(x+dx,y+dy,&semantic));
+            assert(semantic==AtlasTiles_Describe(x+dx,y+dy,&ignored));
+            assert(AtlasStream_ReadSemantics(x+dx-ATLAS_WORLD_WIDTH,y+dy,&ignored) && ignored==semantic);
         }
         for(frame=0;frame<8;frame++)AtlasStream_Tick(cx,cy,x-cx*20,y-cy*20);
     }
@@ -35,9 +39,15 @@ static void Walk(s32 x,s32 y)
 }
 int main(void)
 {
+    u16 sentinel=0xCAFE;
+    assert(!AtlasStream_ReadSemantics(0,0,&sentinel) && sentinel==0xCAFE);
+    assert(!AtlasStream_ReadSemantics(0,0,NULL));
     setbuf(stdout,NULL);
     assert(AtlasPlan_Begin(0));while(!AtlasPlan_Step(256));
     Walk(15654290,5327430);Walk(ATLAS_WORLD_WIDTH-30,-4090);Walk(4090,4090);Walk(7931504,212940);
+    assert(!AtlasStream_ReadSemantics(0,ATLAS_WORLD_HALF_HEIGHT,&sentinel));
+    assert(!AtlasStream_ReadSemantics(0,0,&sentinel)); // outside resident viewport
+    AtlasStream_Reset();assert(!AtlasStream_ReadSemantics(7931504,212940,&sentinel));
     puts("PASS: native-sized visible entries match direct geography throughout running, corners, reversals, bucket boundaries and X wrap");
     return 0;
 }

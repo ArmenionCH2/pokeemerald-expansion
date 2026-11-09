@@ -86,6 +86,8 @@ licensed art and credits. Do not add arbitrary art from other ROM hacks.
   ridges and river branches are not separately component-labelled. Names are seed
   stable, cross chunk boundaries and announce only changed hierarchy levels after
   a debounce/cooldown. This adds no terrain or save identity change.
+  Dry riverbanks/lake shores/coasts use nearby prepared terrain semantics, within
+  three tiles, without generating geography or changing discovery during the query.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
   reads never mark discovery. START cycles seven diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with

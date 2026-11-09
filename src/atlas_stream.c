@@ -50,6 +50,15 @@ static bool8 IsReady(s32 x, s32 y)
     s32 i = Index(x,y);
     return i >= 0 && (sEntries[i] & READY);
 }
+bool8 AtlasStream_ReadSemantics(s32 x,s32 y,u16 *out)
+{
+    s32 index;
+    if (!sActive || !out || y < -ATLAS_WORLD_HALF_HEIGHT || y >= ATLAS_WORLD_HALF_HEIGHT) return FALSE;
+    x%=ATLAS_WORLD_WIDTH;if (x<0) x+=ATLAS_WORLD_WIDTH;
+    index=Index(Unwrap(x),y);
+    if (index<0 || !(sEntries[index]&READY)) return FALSE;
+    *out=sSemantics[index];return TRUE;
+}
 static void Render(s32 x, s32 y)
 {
     s32 index = Index(x,y), dx,dy,i,col,row,c,r;

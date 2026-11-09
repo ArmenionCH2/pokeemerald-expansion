@@ -34,6 +34,8 @@ void AtlasWorld_NewGame(void);
 bool8 AtlasStream_Load(u16 *map, s32 x, s32 y);
 void AtlasStream_Tick(s32 x, s32 y, s32 localX, s32 localY);
 void AtlasStream_Reset(void);
+/* Read an already rendered ring entry; never generate, schedule or mark a visit. */
+bool8 AtlasStream_ReadSemantics(s32 x,s32 y,u16 *out);
 extern u32 gAtlasCacheHits, gAtlasCacheMisses;
 u8 AtlasMountain_Relief(s32 x, s32 y, const struct AtlasCell *cell);
 void AtlasMountain_Center(s32 x, s32 y, s32 *cx, s32 *cy);

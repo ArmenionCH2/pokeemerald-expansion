@@ -40,6 +40,13 @@ int main(void)
     assert(AtlasPlace_Name(&a, 0, name));
     assert(strstr(name, "Continent"));
     assert(AtlasPlace_Name(&a, 1, name));assert(strstr(name, "Basin"));
+    b=a;AtlasPlace_ApplyShore(&b,1<<ATLAS_LAKE);
+    assert(b.kind==ATLAS_PLACE_LAKE && b.landmass==a.landmass && b.basin==a.basin);
+    assert(AtlasPlace_Name(&b,2,name) && !strcmp(name,"Lake shore"));
+    b=a;AtlasPlace_ApplyShore(&b,1<<ATLAS_RIVER);assert(b.kind==ATLAS_PLACE_RIVER);
+    b=a;AtlasPlace_ApplyShore(&b,1<<ATLAS_SEA);assert(b.kind==ATLAS_PLACE_COAST);
+    b=a;AtlasPlace_ApplyShore(&b,0);assert(!memcmp(&a,&b,sizeof(a)));
+    b.kind=ATLAS_PLACE_OCEAN;AtlasPlace_ApplyShore(&b,1<<ATLAS_RIVER);assert(b.kind==ATLAS_PLACE_OCEAN);
     for (i = 1; i <= ATLAS_PLAN_COUNT; i++)
     {
         b = a; b.basin = i;

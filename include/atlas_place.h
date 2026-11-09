@@ -19,6 +19,9 @@ struct AtlasPlaceTracker
  * forest patch or mountain ridge has already been component-labelled. */
 bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct AtlasPlace *out);
 bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_PLACE_NAME_BYTES]);
+/* Nearby-water bits use 1 << AtlasWaterform. A dry bank keeps its actual
+ * landmass/catchment identity while acquiring the shoreline descriptor. */
+void AtlasPlace_ApplyShore(struct AtlasPlace *place,u8 watermask);
 /* A new parent includes its descendants; unchanged parents are omitted.
  * Call at a fixed cadence. Four observations debounce a boundary; twenty
  * observations separate announcements. No save or exploration mutation. */

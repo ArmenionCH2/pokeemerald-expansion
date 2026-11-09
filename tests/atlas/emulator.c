@@ -130,7 +130,7 @@ static void placeNames(void)
     assert(names==3);
     printf("PASS native physical location breadcrumbs: landmass, catchment and local terrain\n");
 }
-static unsigned nextExitKey(uint32_t save)
+static unsigned nextMapKey(uint32_t save,unsigned shore)
 {
     uint32_t layout=symbol("gBackupMapLayout"),map=core->busRead32(core,layout+8);
     int width=core->busRead32(core,layout),height=core->busRead32(core,layout+4);
@@ -147,8 +147,18 @@ static unsigned nextExitKey(uint32_t save)
     while (head<tail)
     {
         int at=queue[head++],cx=at%width,cy=at/width;
-        if (at!=start && (cx<7 || cx>=27 || cy<7 || cy>=27))
+        unsigned goal=!shore && at!=start && (cx<7 || cx>=27 || cy<7 || cy>=27);
+        if (shore)
+            for (unsigned d=0;d<4;d++) for (int distance=1;distance<=3;distance++)
+            {
+                int nx=cx+dx[d]*distance,ny=cy+dy[d]*distance;
+                if (nx<0 || ny<0 || nx>=width || ny>=height) continue;
+                unsigned id=core->busRead16(core,map+(ny*width+nx)*2)&1023;
+                if (id>=512 && id<888 && ((id-512>=188)==(shore==2))) goal=1;
+            }
+        if (goal)
         {
+            if (at==start) return 1024; // already on a reachable bank
             while (parent[at]!=start) at=parent[at];
             return keys[at];
         }
@@ -171,7 +181,7 @@ static void cachedCrossing(uint32_t savePtr)
     unsigned initial=core->busRead32(core,hits),misses=core->busRead32(core,miss),waits=core->busRead32(core,wait);
     for (unsigned step=0;step<80 && core->busRead32(core,hits)==initial;step++)
     {
-        unsigned key=nextExitKey(core->busRead32(core,savePtr));
+        unsigned key=nextMapKey(core->busRead32(core,savePtr),0);
         if (!key) break;
         frames(key,8);frames(0,20);actors();
     }
@@ -257,6 +267,42 @@ static void biomeTour(uint32_t savePointer)
     }
     printf("Weather effects observed (native IDs): mask 0x%x; rain=3, snow=4, fog=6\n",weatherMask);
     if (!(weatherMask&(1u<<4))) printf("NOTE no natural snow front encountered during this seed's bounded cold-region tour\n");
+}
+static void shoreTour(uint32_t savePointer)
+{
+    uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
+    uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
+    for (unsigned type=2;type<=4;type++)
+    {
+        press(8);
+        for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
+        assert(core->busRead8(core,cursor)==3);press(1);
+        assert(core->busRead32(core,main+4)==(geo|1));
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<16;i++) press(128);
+        assert(core->busRead8(core,choice)==type);press(1);
+        unsigned waited=0;
+        while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
+        assert(waited<6000);
+        if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);press(2);settle();continue;}
+        assert(core->busRead8(core,status)==1);settle();frames(0,60);
+        unsigned reached=0;
+        for (unsigned step=0;step<40;step++)
+        {
+            unsigned key=nextMapKey(core->busRead32(core,savePointer),type==4?2:1);
+            if (key==1024) {reached=1;break;}
+            if (!key) break;
+            frames(key,8);frames(0,20);actors();
+        }
+        frames(0,300);actors();fieldWeather();
+        if (reached)
+        {
+            unsigned expected=type==2?2:type==3?1:3;
+            assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
+            printf("PASS native dry shore location type %u follows nearby rendered water\n",type);
+        }
+        else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
+        char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
+    }
 }
 int main(int argc,char **argv)
 {
@@ -381,5 +427,6 @@ int main(int argc,char **argv)
     fprintf(timing,"{\"new_game_frames\":%u,\"new_game_seconds\":%.4f,\"continue_frames\":%u,\"continue_seconds\":%.4f,\"phone_measured\":false,\"timing_origin\":\"Atlas generation screen entry\"}\n",newGameFrames,newGameFrames/59.72750057,continueFrames,continueFrames/59.72750057);fclose(timing);
     printf("PASS ready-to-walk timing: New Game %.3f s; Continue %.3f s at full GBA speed (phones unmeasured)\n",newGameFrames/59.72750057,continueFrames/59.72750057);
     biomeTour(sav1);
+    shoreTour(sav1);
     core->deinit(core);return 0;
 }
