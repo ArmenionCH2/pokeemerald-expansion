@@ -3,6 +3,7 @@
 #include "atlas_plan.h"
 #include "atlas_volcano.h"
 #include "atlas_mesa.h"
+#include "atlas_karst.h"
 
 /* Continuous periodic fields, not one independent mound per owner cell.
  * Macro elevation bounds the relief; existing rivers carve its cross-section.
@@ -24,6 +25,7 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     bool8 pass;
     struct AtlasVolcano volcano;
     if(c->waterform!=ATLAS_DRY)return 0;
+    if(c->landform==ATLAS_SINKHOLE){struct AtlasKarst karst;return AtlasKarst_Sample(x,y,&karst)?karst.relief:0;}
     if(c->landform==ATLAS_ROCK_COAST)return 0x60;
     if(c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST)return c->landform==ATLAS_DUNE_CREST?0x50:0x40;
     if(c->valley==255 && AtlasVolcano_Sample(x,y,&volcano))return volcano.relief;

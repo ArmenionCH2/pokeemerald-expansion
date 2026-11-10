@@ -8,6 +8,7 @@
 #include "atlas_region.h"
 #include "atlas_volcano.h"
 #include "atlas_mesa.h"
+#include "atlas_karst.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "main.h"
@@ -35,7 +36,7 @@ static const u8 *const sAtlasMapLayers[] = {COMPOUND_STRING("ATLAS - TERRAIN"),C
 static const u8 sHelp[] = _("D-pad: pan  L/R: zoom  A: home  B: back");
 static const u8 sAdminHelp[] = _("L/R zoom  START layer  SELECT player");
 static const u8 sUnknown[] = _("Unexplored");
-static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue"),COMPOUND_STRING("Plateau: gold Valley: green Ridge: pink"),COMPOUND_STRING("Low: green Raised: gold Cliffs: gray")};
+static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue"),COMPOUND_STRING("Plateau: gold Valley: green Ridge: pink"),COMPOUND_STRING("Raised: gold Pits: pink Cliffs: gray")};
 static const u8 sFull[] = _("Journal space low - visits retained");
 static const u8 sClear[] = _("Clear");
 static const u8 sRain[] = _("Rain");
@@ -68,13 +69,14 @@ static struct AtlasCell Sample(s32 x, s32 y)
         // A continental pixel summarizes macro notes, not a remote metre of
         // detailed riverbank geometry. Never use this shortcut for player fog.
         AtlasPlan_SampleDetail(Wrap(x),y,&plan);
-        cell.elevation=plan.height;bool8 mesaGround=FALSE;
+        cell.elevation=plan.height;bool8 mesaGround=FALSE,karstGround=FALSE;
         cell.waterform=plan.height<ATLAS_PLAN_SEA?ATLAS_SEA:plan.lake?ATLAS_LAKE:ATLAS_DRY;
         if(cell.waterform==ATLAS_DRY && sScales[sAtlasMapZoom]<=1000)
         {
             struct AtlasVolcano volcano;
+            struct AtlasKarst karst;karstGround=AtlasKarst_Sample(x,y,&karst);
             struct AtlasMesa mesa;mesaGround=AtlasMesa_Sample(x,y,&mesa) && mesa.uplift>0;
-            if(AtlasVolcano_Sample(x,y,&volcano) || mesaGround)
+            if(AtlasVolcano_Sample(x,y,&volcano) || mesaGround || karstGround)
             {
                 struct AtlasPlanSample ground;
                 cell.elevation=AtlasTerrain_GroundHeight(x,y,&ground);
@@ -83,6 +85,7 @@ static struct AtlasCell Sample(s32 x, s32 y)
         AtlasHabitat_Sample(y,cell.elevation,plan.rain,plan.humidity,cell.waterform,&habitat);
         cell.temperature=habitat.temperature;cell.humidity=habitat.humidity;cell.moisture=habitat.moisture;
         cell.landform=cell.elevation<128?ATLAS_COAST:cell.elevation>185?ATLAS_MOUNTAIN:cell.elevation>155?ATLAS_HILL:ATLAS_PLAIN;
+        if(karstGround){cell.landform=ATLAS_SINKHOLE;cell.valley=255;}
         if(mesaGround){cell.landform=ATLAS_MESA;cell.valley=255;}
         cell.biome=cell.waterform==ATLAS_SEA?ATLAS_OCEAN:cell.waterform!=ATLAS_DRY?ATLAS_WETLAND
             :cell.temperature<45?ATLAS_TUNDRA:cell.temperature<85?ATLAS_TAIGA
@@ -105,8 +108,9 @@ static u8 Color(s32 x, s32 y)
     if(sAtlasMapLayer==LAYER_LOCAL_RELIEF)
     {
         if(cell.waterform)return 2;
-        if(MacroSummary() && cell.landform!=ATLAS_MESA)return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
+        if(MacroSummary() && cell.landform!=ATLAS_MESA && cell.landform!=ATLAS_SINKHOLE)return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
         unsigned tier=(AtlasMountain_Relief(x,y,&cell)>>4)&7;
+        if(tier==7)return 14;
         if(tier==6)return 6;
         if(tier>=4)return tier>=5?11:4;
         return tier==3?6:tier==2?11:tier==1?4:3;

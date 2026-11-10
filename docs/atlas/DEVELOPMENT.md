@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts` or `--tour rock-sand`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` or `--tour karst`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
@@ -314,7 +314,34 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   axes at running cadence, comparing visible terrain afterward to avoid oracle
   prewarming. Diagnostic tours can retry exhausted headwater/coast search batches
   through real menu input; each game search remains bounded and cancellable.
-  Existing versions 3 through 21 retain their original
+  Generation 23 adds rare closed surface depressions on wet, warm lower uplands
+  (macro height 145–175, rain at least 132, moisture at least 128 and temperature
+  at least 100), excluding flooded centres, qualifying river nodes and dormant
+  cone/mesa sites. Seeded selection produces 512–1280-tile warped octagonal bowls
+  with a subdued inner quarter and 16–31 ordinal units of potential lowering.
+  Actual lowering is capped at eight units above sea level. One owner descriptor
+  and exact repeated-point memo add 60 static bytes including the inspector cursor;
+  no world-sized depression list, new graphic tiles or saved fields are needed.
+  Direct ground and final terrain use the same cut before normal water/bank
+  ownership. Macro climate/drainage notes remain generation 22's. This is bounded
+  karst-like surface morphology, not limestone chemistry, groundwater transport,
+  sinkhole collapse, new lake impoundment or an underground cave implementation.
+  Dry, uncarved bowl cells use relief tag 7; native rock contours face lower actual
+  eight-unit height bands. Existing river/lake openings retain priority. A clear
+  axial corridor crosses the contours; humid floor cover stays, but groves do not
+  hide the depression. Physical naming identifies Sinkhole, and close local-relief
+  views show pits in pink. The sixth inspector page bisects a real contour just
+  outside the walkable axis and validates safe landing plus visible rock walls.
+  Bisection follows that off-axis column, avoiding errors from a warped outline
+  shifting the centreline contour outside the camera. A 64-seed search contract
+  checks inspection coverage; worlds without suitable karst sites can legitimately
+  report no safe destination. Searches remain bounded and cancellable.
+  Native QA checks actual walls, naming, safe approach, journal-isolated atlas,
+  cached crossing and cold Continue. Six-seed streaming checks compare visible
+  words after 15360 camera steps, without oracle prewarming. Older-world native
+  snapshots check visible tiles, macro/habitat checksums and the unchanged journal.
+  Focused emulator tours fail if they never reach an actual matching feature.
+  Existing versions 3 through 22 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

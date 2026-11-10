@@ -68,6 +68,20 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     u8 i, mask = 0, material = 0, count[4] = {0};
     if (!water)
     {
+        if(AtlasWorld_Generation()>=23 && tier==7)
+        {
+            if(center&0x80)return Ground(floor,cells);
+            for(i=0;i<8;i++)
+            {
+                u16 next=cells[neighbors[i]];
+                /* Actual height contours descend toward the closed floor.
+                 * River/lake openings remain owned by hydrology. */
+                if((next&3) || (next>>8)/8>=(center>>8)/8)mask|=1<<i;
+            }
+            if(mask==255)return Ground(floor,cells);
+            u16 first=((center>>2)&3)==3?ATLAS_NATURE_MOUNTAIN_FIRST+47:ATLAS_ROCK_CLIFF_FIRST;
+            return PACK_METATILE(first+gAtlasNatureMaskIndex[mask])|PACK_COLLISION(1)|PACK_ELEVATION(3);
+        }
         if(AtlasWorld_Generation()>=22 && tier==6)
         {
             for(i=0;i<8;i++)

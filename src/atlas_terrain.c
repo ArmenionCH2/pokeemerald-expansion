@@ -6,6 +6,7 @@
 #include "atlas_dune.h"
 #include "atlas_mesa.h"
 #include "atlas_coast.h"
+#include "atlas_karst.h"
 #include "constants/metatile_labels.h"
 
 /* Geographic generation 1 for box 3, not the missing historical generator. */
@@ -22,13 +23,14 @@ static EWRAM_DATA struct {
     u16 node,radius;
     u8 peak;
     bool8 valid,active;
-} sVolcanoCache={0},sMesaCache={0};
+} sVolcanoCache={0},sMesaCache={0},sKarstCache={0};
 static EWRAM_DATA struct {s32 x,y;struct AtlasMesa value;bool8 valid;} sMesaLast={0};
+static EWRAM_DATA struct {s32 x,y;struct AtlasKarst value;bool8 valid,active;} sKarstLast={0};
 void AtlasTerrain_SetSeed(u32 seed)
 {
     gAtlasWorldSeed = seed;
     memset(sNoise, 0, sizeof(sNoise));
-    sVolcanoCache.valid=sMesaCache.valid=sMesaLast.valid=FALSE;
+    sVolcanoCache.valid=sMesaCache.valid=sMesaLast.valid=sKarstCache.valid=sKarstLast.valid=FALSE;
     AtlasTiles_Reset();
     AtlasPlan_ResetSample();
 }
@@ -246,6 +248,74 @@ bool8 AtlasMesa_Sample(s32 x,s32 y,struct AtlasMesa *out)
     if(!out || !AtlasMesa_Region(x,y,&site) || site.distance>=site.radius)return FALSE;
     *out=site;return TRUE;
 }
+bool8 AtlasKarst_Site(u16 node,struct AtlasKarst *out)
+{
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<23 || node>=ATLAS_PLAN_COUNT)return FALSE;
+    const struct AtlasPlanNode *n=&gAtlasPlan[node];
+    if(n->height<145 || n->height>175 || n->water>n->height || n->runoff>=240 || n->rain<132)return FALSE;
+    u32 hash=Hash(node,0,0x4B415253u);if(hash%5)return FALSE;
+    s32 y=(node/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+    struct AtlasHabitat habitat;AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
+    if(habitat.temperature<100 || habitat.moisture<128)return FALSE;
+    /* Dormant cones retain their own floor and rim ownership. Dry mesas have
+     * incompatible climate, but the explicit exclusion preserves that contract. */
+    struct AtlasVolcano volcano;struct AtlasMesa mesa;
+    if(AtlasVolcano_Site(node,&volcano) || AtlasMesa_Site(node,&mesa))return FALSE;
+    out->x=(u32)(node%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;out->y=y;
+    out->radius=512+((hash>>8)&3)*256;out->cut=16+((hash>>18)&15);out->relief=0;return TRUE;
+}
+bool8 AtlasKarst_Sample(s32 x,s32 y,struct AtlasKarst *out)
+{
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<23 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
+    x=Wrap(x);
+    if(sKarstLast.valid && sKarstLast.x==x && sKarstLast.y==y)
+    {if(sKarstLast.active)*out=sKarstLast.value;return sKarstLast.active;}
+    struct AtlasKarst site={0};bool8 active=FALSE;
+    if(!sKarstCache.valid || x<sKarstCache.x0 || x>=sKarstCache.x1 || y<sKarstCache.y0 || y>=sKarstCache.y1)
+    {
+        u32 col=((u32)x*ATLAS_PLAN_WIDTH+ATLAS_WORLD_WIDTH/2)/ATLAS_WORLD_WIDTH;
+        u32 row=((u32)(y+ATLAS_WORLD_HALF_HEIGHT)*(ATLAS_PLAN_HEIGHT-1)+ATLAS_WORLD_HALF_HEIGHT)/(2*ATLAS_WORLD_HALF_HEIGHT);
+        sKarstCache.node=row*ATLAS_PLAN_WIDTH+col%ATLAS_PLAN_WIDTH;
+        sKarstCache.cx=col*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+        sKarstCache.cy=row*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        sKarstCache.x0=sKarstCache.cx-ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sKarstCache.x1=sKarstCache.cx+ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sKarstCache.y0=sKarstCache.cy-ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sKarstCache.y1=sKarstCache.cy+ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sKarstCache.active=AtlasKarst_Site(sKarstCache.node,&site);
+        if(sKarstCache.active){sKarstCache.radius=site.radius;sKarstCache.peak=site.cut;}
+        sKarstCache.valid=TRUE;
+    }
+    if(sKarstCache.active)
+    {
+        s32 dx=x-sKarstCache.cx,dy=y-sKarstCache.cy,axis=dx<0?-dx:dx;
+        s32 ax=axis,ay=dy<0?-dy:dy;
+        if(ax+ay<2*sKarstCache.radius+256)
+        {
+            dx+=(Noise(x,y,8)-128)/2;dy+=(Noise(Wrap(x+17777),y,8)-128)/2;
+            if(dx<0)dx=-dx;
+            if(dy<0)dy=-dy;
+            s32 r=(dx>dy?dx:dy)+(dx>dy?dy:dx)/2;
+            if(r<sKarstCache.radius)
+            {
+                site.x=Wrap(sKarstCache.cx);site.y=sKarstCache.cy;site.radius=sKarstCache.radius;
+                unsigned core=site.radius/4;
+                site.cut=r<=(s32)core?sKarstCache.peak:sKarstCache.peak*(site.radius-r)/(site.radius-core);
+                site.relief=0x70|(axis<=5?0x80:0);active=site.cut>0;
+            }
+        }
+    }
+    sKarstLast.x=x;sKarstLast.y=y;sKarstLast.value=site;sKarstLast.active=active;sKarstLast.valid=TRUE;
+    if(active)*out=site;
+    return active;
+}
+static u8 KarstCut(s32 x,s32 y,u8 height)
+{
+    struct AtlasKarst karst;
+    if(height<=ATLAS_PLAN_SEA+8 || !AtlasKarst_Sample(x,y,&karst))return 0;
+    unsigned room=height-ATLAS_PLAN_SEA-8;
+    return karst.cut>room?room:karst.cut;
+}
 /* Coherent erg availability is independent of humidity noise. A smooth
  * envelope fades the local relief at its substrate/climate margins. */
 u8 AtlasDune_Envelope(s32 x,s32 y,const struct AtlasPlanSample *plan)
@@ -338,6 +408,7 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
     if(!plan->lake && AtlasMesa_Sample(x,y,&mesa))height=Clamp(height+mesa.uplift);
     if(!plan->lake && AtlasWorld_Generation()>=22)height=Clamp(height+AtlasCoast_Rise(x,y,plan,height));
     if(!plan->lake)height=Clamp(height+AtlasDune_Rise(x,y,plan));
+    if(!plan->lake && AtlasWorld_Generation()>=23)height-=KarstCut(x,y,height);
     return height;
 }
 void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
@@ -347,7 +418,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     u8 water = ATLAS_DRY, surface = 0;
     struct AtlasBankProfile bank={0};
     bool8 coastalGround=TRUE;
-    bool8 lakeBank=FALSE,dune=FALSE,mesaGround=FALSE,rockCoast=FALSE;
+    bool8 lakeBank=FALSE,dune=FALSE,mesaGround=FALSE,rockCoast=FALSE,karstGround=FALSE;
     u8 duneRise=0;
     if (!cell) return;
     cell->valley = 255;
@@ -369,6 +440,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         unsigned coastRise=AtlasWorld_Generation()>=22?AtlasCoast_Rise(x,y,&plan,e):0;rockCoast=coastRise>=8;e=Clamp(e+coastRise);
         unsigned duneWeight=AtlasDune_Envelope(x,y,&plan);dune=duneWeight>0;
         if(dune){duneRise=DuneScore(x,y)*6*duneWeight/(254*128);e=Clamp(e+duneRise);}
+        if(!plan.lake && AtlasWorld_Generation()>=23){unsigned cut=KarstCut(x,y,e);karstGround=cut>0;e-=cut;}
         rain = Clamp(plan.rain + (Noise(x, y, 4) - 128) / 8); vapor = plan.humidity;
         if(AtlasWorld_Generation()>=9)
         {
@@ -416,6 +488,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     if(dune && water==ATLAS_DRY && !bank.wetness && cell->valley==255)
         cell->landform=duneRise>=3?ATLAS_DUNE_CREST:ATLAS_DUNE;
     if(mesaGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_MESA;
+    if(karstGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_SINKHOLE;
     if(rockCoast && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_ROCK_COAST;
 }
 
@@ -434,7 +507,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
       || (c->landform==ATLAS_ROCK_COAST && c->moisture<110) || AtlasVolcano_Bare(x,y)))
         return PACK_METATILE(ATLAS_ROCK_FLOOR_FIRST+((detail&15)<4?(detail&3):0))|PACK_ELEVATION(3);
     if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
-     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST
+     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST && c->landform!=ATLAS_SINKHOLE
      && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE || c->biome==ATLAS_TAIGA))
     {
         s32 cy=AtlasTerrain_FloorDiv(y,5),cx=x/5;

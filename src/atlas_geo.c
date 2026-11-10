@@ -8,6 +8,7 @@
 #include "atlas_volcano.h"
 #include "atlas_dune.h"
 #include "atlas_mesa.h"
+#include "atlas_karst.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -98,6 +99,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_SINKHOLE && AtlasWorld_Generation()<23)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_SEA_CLIFF && AtlasWorld_Generation()<22)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_HEADWATER && AtlasWorld_Generation()<21)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_MESA && AtlasWorld_Generation()<20)gAtlasGeoStatus=3;
@@ -128,6 +130,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
     if(sType==ATLAS_GEO_SEA_CLIFF)return n->height>=ATLAS_PLAN_SEA && n->height<136 && !(n->basin&ATLAS_LAKE_FLAG);
+    if(sType==ATLAS_GEO_SINKHOLE){struct AtlasKarst karst;return AtlasKarst_Site(id,&karst);}
     if(sType==ATLAS_GEO_MESA){struct AtlasMesa mesa;return AtlasMesa_Site(id,&mesa);}
     if(sType==ATLAS_GEO_ROCK_SAND)
     {struct AtlasVolcano volcano;struct AtlasMesa mesa;return n->height>205 || AtlasVolcano_Site(id,&volcano) || AtlasMesa_Site(id,&mesa);}
@@ -220,6 +223,17 @@ u8 AtlasGeo_Step(void)
         if(AtlasTiles_IsCliff(id))
         {sPhase=9;return 0;}
         if(++sSceneAt>=117)sPhase=0;
+        return 0;
+    }
+    if(sPhase==35)
+    {
+        if(sDX-sWX<=1)
+        {sLX=sCX+3;sLY=sCY+sDX;sCheck=sAttempt=0;sPhase=4;return 0;}
+        /* Bisect the first rock column outside the walkable axis. Its warped
+         * contour may be several tiles away from the centreline contour. */
+        s32 distance=sWX+(sDX-sWX)/2;struct AtlasPlanSample plan;
+        unsigned height=AtlasTerrain_GroundHeight(sCX+6,sCY+distance,&plan);
+        if(height/8<(unsigned)sMouthDX)sWX=distance;else sDX=distance;
         return 0;
     }
     if(sPhase==31)
@@ -335,6 +349,13 @@ u8 AtlasGeo_Step(void)
                 /* Approach the second cone terrace through its radial gap. */
                 sLX=v.x;sLY=v.y+v.radius-32*(v.radius-v.radius/4)/v.uplift;
                 sCheck=sAttempt=0;sPhase=4;return 0;
+            }
+            if(sType==ATLAS_GEO_SINKHOLE)
+            {
+                struct AtlasKarst karst;struct AtlasPlanSample plan;
+                AtlasKarst_Site(sNode,&karst);sCX=karst.x;sCY=karst.y;
+                sMouthDX=AtlasTerrain_GroundHeight(sCX+6,sCY,&plan)/8+1;
+                sWX=0;sDX=karst.radius+128;sPhase=35;return 0;
             }
             if(sType==ATLAS_GEO_MESA)
             {
@@ -577,7 +598,7 @@ u8 AtlasGeo_Step(void)
     {
         if(sType==ATLAS_GEO_SEA_CLIFF)
         {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
-        if(sType==ATLAS_GEO_VOLCANO || sType==ATLAS_GEO_MESA){sPhase=0;return 0;}
+        if(sType==ATLAS_GEO_VOLCANO || sType==ATLAS_GEO_MESA || sType==ATLAS_GEO_SINKHOLE){sPhase=0;return 0;}
         if(GroundBoundary()){sDirection++;SandDirection();return 0;}
         if(sType==ATLAS_GEO_DUNES){sPhase=27;return 0;}
         if(sType==ATLAS_GEO_CREEK || sType==ATLAS_GEO_HEADWATER){sPhase=25;return 0;}
@@ -598,6 +619,12 @@ u8 AtlasGeo_Step(void)
             if(c.waterform || c.landform!=ATLAS_ROCK_COAST)
             {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
             sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=33;return 0;
+        }
+        if(sType==ATLAS_GEO_SINKHOLE)
+        {
+            AtlasTerrain_Sample(sLX,sLY,&c);
+            if(c.waterform || c.landform!=ATLAS_SINKHOLE){sPhase=0;return 0;}
+            sSceneAt=0;sPhase=24;return 0;
         }
         if(sType==ATLAS_GEO_MESA)
         {

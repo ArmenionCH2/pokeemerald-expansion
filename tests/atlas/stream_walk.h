@@ -12,7 +12,7 @@ static void Walk(s32 x,s32 y,bool8 vertical)
     {
         bool8 forward=step<160 || step>=480;
         u8 direction=vertical?(forward?1:2):(forward?4:3);
-        if(!AtlasStream_CanStep(direction))fprintf(stderr,"headwater frontier wait at %d,%d vertical=%u step=%u\n",x,y,vertical,step);
+        if(!AtlasStream_CanStep(direction))fprintf(stderr,"terrain frontier wait at %d,%d vertical=%u step=%u\n",x,y,vertical,step);
         assert(!gAtlasStreamWaits);
         if(vertical)y+=forward?1:-1;else x+=forward?1:-1;
         cx=AtlasTerrain_FloorDiv(x,20);cy=AtlasTerrain_FloorDiv(y,20);
