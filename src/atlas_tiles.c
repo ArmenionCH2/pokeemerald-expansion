@@ -18,7 +18,8 @@ u16 AtlasTiles_Water(u8 mask, u8 material, u8 waterform)
 static u8 Material(const struct AtlasCell *c)
 {
     if (c->biome == ATLAS_TUNDRA) return 3;
-    if (c->elevation > 205 || c->landform==ATLAS_MESA) return 2;
+    if (c->elevation > 205 || c->landform==ATLAS_MESA
+     || (c->landform==ATLAS_ROCK_COAST && c->moisture<110)) return 2;
     if (c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST || c->biome == ATLAS_DESERT || (c->landform == ATLAS_COAST && c->biome != ATLAS_WETLAND)) return 1;
     return 0;
 }
@@ -60,6 +61,20 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     u8 i, mask = 0, material = 0, count[4] = {0};
     if (!water)
     {
+        if(AtlasWorld_Generation()>=22 && tier==6)
+        {
+            for(i=0;i<8;i++)
+            {
+                u16 next=cells[neighbors[i]];
+                /* Only the seaward face blocks walking. Inland shoulders stay
+                 * traversable and do not acquire a false enclosing cliff. */
+                if((next&3)==ATLAS_SEA && (center>>8)>=(next>>8)+8)continue;
+                mask|=1<<i;
+            }
+            if(mask==255)return Ground(floor,cells);
+            u16 first=((center>>2)&3)==3?ATLAS_NATURE_MOUNTAIN_FIRST+47:ATLAS_ROCK_CLIFF_FIRST;
+            return PACK_METATILE(first+gAtlasNatureMaskIndex[mask])|PACK_COLLISION(1)|PACK_ELEVATION(3);
+        }
         if(AtlasWorld_Generation()>=19 && tier>=4)
         {
             if(tier==4)return Ground(floor,cells);
@@ -104,7 +119,12 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     }
     for (i = 0; i < 8; i++)
         if (cells[neighbors[i]] & 3) mask |= 1 << i;
-        else count[(cells[neighbors[i]] >> 2) & 3]++;
+        else
+        {
+            u16 next=cells[neighbors[i]];u8 bank=(next>>2)&3;
+            if(AtlasWorld_Generation()>=22 && ((next>>4)&7)==6 && bank!=3)bank=2;
+            count[bank]++;
+        }
     for (i = 1; i < 4; i++) if (count[i] > count[material]) material = i;
     return PACK_METATILE(AtlasTiles_Water(mask, material, water)) | PACK_COLLISION(1) | PACK_ELEVATION(3);
 }

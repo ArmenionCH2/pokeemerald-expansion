@@ -97,6 +97,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_SEA_CLIFF && AtlasWorld_Generation()<22)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_HEADWATER && AtlasWorld_Generation()<21)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_MESA && AtlasWorld_Generation()<20)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_ROCK_EDGE && AtlasWorld_Generation()<14)gAtlasGeoStatus=3;
@@ -125,6 +126,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_ESTUARY)return AtlasWater_IsEstuary(id);
     if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
+    if(sType==ATLAS_GEO_SEA_CLIFF)return n->height>=ATLAS_PLAN_SEA && n->height<136 && !(n->basin&ATLAS_LAKE_FLAG);
     if(sType==ATLAS_GEO_MESA){struct AtlasMesa mesa;return AtlasMesa_Site(id,&mesa);}
     if(sType==ATLAS_GEO_ROCK_EDGE)
     {struct AtlasVolcano volcano;return n->height>205 || AtlasVolcano_Site(id,&volcano);}
@@ -266,6 +268,26 @@ u8 AtlasGeo_Step(void)
         if(++sSceneAt>=117)sPhase=27;
         return 0;
     }
+    if(sPhase==34)
+    {
+        if(!Warm(sCX,sCY))return 0;
+        AtlasTerrain_Sample(sCX,sCY,&c);
+        if(c.waterform){sPhase=0;return 0;}
+        sDirection=0;Direction();sPhase=5;return 0;
+    }
+    if(sPhase==33)
+    {
+        x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
+        if(!ReadyPoint(x,y))return 0;
+        u16 tile=AtlasTerrain_Tile(x,y);sSceneWalls+=AtlasTiles_IsCliff(tile&1023);
+        AtlasTerrain_Sample(x,y,&c);sSceneTarget+=c.waterform==ATLAS_SEA;
+        if(++sSceneAt>=117)
+        {
+            if(sSceneWalls && sSceneTarget)sPhase=9;
+            else if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;
+        }
+        return 0;
+    }
     if(sPhase==32)
     {
         if(!Warm(sLX,sLY))return 0;
@@ -316,6 +338,8 @@ u8 AtlasGeo_Step(void)
                 struct AtlasMesa mesa;AtlasMesa_Site(sNode,&mesa);
                 sCX=mesa.x;sCY=mesa.y;sWX=0;sDX=mesa.radius+512;sPhase=31;return 0;
             }
+            if(sType==ATLAS_GEO_SEA_CLIFF)
+            {sPhase=34;return 0;}
             if(GroundBoundary()){sPhase=20;return 0;}
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
@@ -436,7 +460,7 @@ u8 AtlasGeo_Step(void)
     {
         if(Abs(sDX-sWX)+Abs(sDY-sWY)<=1)
         {
-            s32 offset=sType==ATLAS_GEO_FLOODPLAIN?40:MouthTarget()?2:4;
+            s32 offset=sType==ATLAS_GEO_FLOODPLAIN?40:(MouthTarget() || sType==ATLAS_GEO_SEA_CLIFF)?2:4;
             sLX=sDX+(sDX>sWX?offset:sDX<sWX?-offset:0);sLY=sDY+(sDY>sWY?offset:sDY<sWY?-offset:0);
             sCheck=0;sAttempt=0;sPhase=4;return 0;
         }
@@ -539,6 +563,8 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
+        if(sType==ATLAS_GEO_SEA_CLIFF)
+        {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
         if(sType==ATLAS_GEO_VOLCANO || sType==ATLAS_GEO_MESA){sPhase=0;return 0;}
         if(GroundBoundary()){sDirection++;SandDirection();return 0;}
         if(sType==ATLAS_GEO_DUNES){sPhase=27;return 0;}
@@ -554,6 +580,13 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_SEA_CLIFF)
+        {
+            AtlasTerrain_Sample(sLX,sLY,&c);
+            if(c.waterform || c.landform!=ATLAS_ROCK_COAST)
+            {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
+            sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=33;return 0;
+        }
         if(sType==ATLAS_GEO_MESA)
         {
             AtlasTerrain_Sample(sLX,sLY,&c);

@@ -64,3 +64,7 @@ terrain height or saved state. General primary roles 0–383 remain byte-identic
 Atlas now uses all reclaimed primary roles as well as all secondary metatile slots.
 The borders use cardinal topology. Diagonal-only notches and transitions between
 two non-green materials still require additional catalogue planning.
+
+Generation-22 sea cliffs reuse the existing native rock/snow cliff masks and
+bank materials. Grassy tops retain their native ground artwork; exposed dry tops
+use the existing Cave-derived rock floor. This adds no graphics or metatile roles.

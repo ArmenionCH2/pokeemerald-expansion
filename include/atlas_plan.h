@@ -41,6 +41,8 @@ void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain);
 void AtlasPlan_SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample);
 void AtlasPlan_ResetSample(void);
 bool8 AtlasPlan_HasSea(s32 x,s32 y);
+/* Interpolated ocean contribution, 0..255; no detailed water preparation. */
+u8 AtlasPlan_SeaContext(s32 x,s32 y);
 bool8 AtlasPlan_IsIsland(u16 component);
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan);
 u8 AtlasTerrain_RawHeight(s32 x,s32 y);

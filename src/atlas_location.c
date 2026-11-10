@@ -59,6 +59,7 @@ void AtlasLocation_Tick(void)
             u8 region=AtlasRegion_At(x,y);
             if(AtlasVolcano_Sample(x,y,&volcano))
                 sPlace.kind=volcano.distance<volcano.radius/4?ATLAS_PLACE_CALDERA:ATLAS_PLACE_VOLCANO;
+            else if(cell.landform==ATLAS_ROCK_COAST)sPlace.kind=ATLAS_PLACE_ROCK_COAST;
             else if(cell.landform==ATLAS_MESA)sPlace.kind=ATLAS_PLACE_MESA;
             else if(cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST)sPlace.kind=ATLAS_PLACE_DUNES;
             else if(AtlasWorld_Generation()>=17 && cell.valley==0 && cell.elevation<155 && cell.moisture>=132)
@@ -85,6 +86,7 @@ void AtlasLocation_Tick(void)
                 }
             }
             AtlasPlace_ApplyShore(&sPlace,watermask);
+            if(sPlace.kind==ATLAS_PLACE_COAST && cell.landform==ATLAS_ROCK_COAST)sPlace.kind=ATLAS_PLACE_SEA_CLIFF;
             if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))
                 sPlace.kind=AtlasWater_HeadwaterNear(x,y,4)?ATLAS_PLACE_HEADWATER:ATLAS_PLACE_CREEK;
         }

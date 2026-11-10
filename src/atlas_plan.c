@@ -63,6 +63,7 @@ EWRAM_DATA static bool8 sLabeling = 0;
 EWRAM_DATA static struct AtlasPlanSample sSample = {0};
 EWRAM_DATA static s32 sSampleX0 = 0, sSampleX1 = 0, sSampleY0 = 0, sSampleY1 = 0;
 EWRAM_DATA static bool8 sSampleValid = 0;
+EWRAM_DATA static u8 sSampleSeaContext = 0;
 
 void AtlasPlan_ResetSample(void) { sSampleValid = FALSE; }
 
@@ -633,6 +634,8 @@ static void SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample)
     sSampleX1 = (col * ATLAS_WORLD_WIDTH + (fx == 255 ? ATLAS_WORLD_WIDTH : (fx + 1) * (ATLAS_WORLD_WIDTH / 256)) + ATLAS_PLAN_WIDTH - 1) / ATLAS_PLAN_WIDTH;
     sSampleY0 = (row * (2 * ATLAS_WORLD_HALF_HEIGHT) + fy * (2 * ATLAS_WORLD_HALF_HEIGHT / 256) + ATLAS_PLAN_HEIGHT - 2) / (ATLAS_PLAN_HEIGHT - 1) - ATLAS_WORLD_HALF_HEIGHT;
     sSampleY1 = (row * (2 * ATLAS_WORLD_HALF_HEIGHT) + (fy == 255 ? 2 * ATLAS_WORLD_HALF_HEIGHT : (fy + 1) * (2 * ATLAS_WORLD_HALF_HEIGHT / 256)) + ATLAS_PLAN_HEIGHT - 2) / (ATLAS_PLAN_HEIGHT - 1) - ATLAS_WORLD_HALF_HEIGHT;
+    sSampleSeaContext=Blend(a->height<ATLAS_PLAN_SEA?255:0,b->height<ATLAS_PLAN_SEA?255:0,
+        c->height<ATLAS_PLAN_SEA?255:0,d->height<ATLAS_PLAN_SEA?255:0,fx,fy);
     sample->height = Blend(a->height,b->height,c->height,d->height,fx,fy);
     sample->rain = Blend(a->rain,b->rain,c->rain,d->rain,fx,fy);
     sample->humidity = Blend(a->humidity,b->humidity,c->humidity,d->humidity,fx,fy);
@@ -704,6 +707,13 @@ bool8 AtlasPlan_HasSea(s32 x,s32 y)
         || gAtlasPlan[row*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA
         || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+col].height<ATLAS_PLAN_SEA
         || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA;
+}
+u8 AtlasPlan_SeaContext(s32 x,s32 y)
+{
+    if(!gAtlasPlanReady || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return 0;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    struct AtlasPlanSample ignored;AtlasPlan_SampleDetail(x,y,&ignored);
+    return sSampleSeaContext;
 }
 bool8 AtlasPlan_IsIsland(u16 component)
 {

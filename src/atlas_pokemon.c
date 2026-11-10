@@ -46,7 +46,7 @@ bool8 AtlasPokemon_Select(s32 x, s32 y, u32 seed, const struct AtlasCell *cell, 
     out->rarity = ATLAS_POKEMON_COMMON;
     if (cell == NULL || y < -ATLAS_WORLD_HALF_HEIGHT
      || y >= ATLAS_WORLD_HALF_HEIGHT || cell->biome > ATLAS_WETLAND
-     || cell->waterform > ATLAS_LAKE || cell->landform > ATLAS_MESA
+     || cell->waterform > ATLAS_LAKE || cell->landform > ATLAS_ROCK_COAST
      || cell->waterform != ATLAS_DRY)
         return FALSE;
 
@@ -70,7 +70,7 @@ bool8 AtlasPokemon_Select(s32 x, s32 y, u32 seed, const struct AtlasCell *cell, 
         static const u16 highland[] = {SPECIES_GEODUDE, SPECIES_ARON, SPECIES_MACHOP, SPECIES_SKARMORY};
         species = highland[rarity];
     }
-    else if (cell->landform == ATLAS_COAST)
+    else if (cell->landform == ATLAS_COAST || cell->landform == ATLAS_ROCK_COAST)
     {
         if (rarity == ATLAS_POKEMON_COMMON)
             species = SPECIES_WINGULL;

@@ -35,7 +35,7 @@ static const u8 *const sAtlasMapLayers[] = {COMPOUND_STRING("ATLAS - TERRAIN"),C
 static const u8 sHelp[] = _("D-pad: pan  L/R: zoom  A: home  B: back");
 static const u8 sAdminHelp[] = _("L/R zoom  START layer  SELECT player");
 static const u8 sUnknown[] = _("Unexplored");
-static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue"),COMPOUND_STRING("Plateau: gold Valley: green Ridge: pink"),COMPOUND_STRING("Low: green   High: gray")};
+static const u8 *const sLegends[] = {COMPOUND_STRING(""),COMPOUND_STRING("Deep: blue  Low: green  High: gray"),COMPOUND_STRING("Cold: blue   Hot: red"),COMPOUND_STRING("Dry: sand   Humid: blue"),COMPOUND_STRING("Dry: sand   Wet: blue"),COMPOUND_STRING("Colors separate drainage catchments"),COMPOUND_STRING("Dry front: sand   Wet front: blue"),COMPOUND_STRING("Plateau: gold Valley: green Ridge: pink"),COMPOUND_STRING("Low: green Raised: gold Cliffs: gray")};
 static const u8 sFull[] = _("Journal space low - visits retained");
 static const u8 sClear[] = _("Clear");
 static const u8 sRain[] = _("Rain");
@@ -107,6 +107,7 @@ static u8 Color(s32 x, s32 y)
         if(cell.waterform)return 2;
         if(MacroSummary() && cell.landform!=ATLAS_MESA)return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
         unsigned tier=(AtlasMountain_Relief(x,y,&cell)>>4)&7;
+        if(tier==6)return 6;
         if(tier>=4)return tier>=5?11:4;
         return tier==3?6:tier==2?11:tier==1?4:3;
     }
@@ -140,7 +141,8 @@ static u8 Color(s32 x, s32 y)
      || (AtlasWorld_Generation()>=18 && (sScales[sAtlasMapZoom]==4 || sScales[sAtlasMapZoom]==20)))
      && AtlasWater_RiverNear(x,y,(sScales[sAtlasMapZoom]*71+99)/100))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
-    if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA) return 6;
+    if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA
+     || (cell.landform==ATLAS_ROCK_COAST && cell.moisture<110)) return 6;
     if (cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST || cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;
     return cell.biome == ATLAS_WETLAND ? 7 : 3;
 }

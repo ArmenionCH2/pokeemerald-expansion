@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa` or `--tour headwaters`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters` or `--tour coasts`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
@@ -288,7 +288,33 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   streaming check runs across both 4 km water-cache axes and reverses direction;
   it compares visible tiles only after walking, so the direct oracle cannot warm
   hydrology ahead of the streaming scheduler and mask a readiness wait.
-  Existing versions 3 through 20 retain their original
+  Generation 22 adds a periodic 20 km coastal-exposure field over original dry
+  low coast ground (pre-modifier height 121–135), excluding lake context. Its
+  0–24 ordinal uplift fades inland. Interpolated ocean contribution from the same
+  four macro corners fades influence smoothly to zero at inland cell boundaries;
+  the sampler memo holds one extra byte, without a world-sized distance field.
+  This modifier never raises a floor below sea level. Mobile dunes yield to the
+  raised coastal material. Direct ground and final terrain use the same rise;
+  macro notes remain generation 21's. This is resistant-coast morphology, not
+  computed wave energy, tides, sediment transport or a coastal erosion solver.
+  New rocky-coast cells encode relief tier 6. Prepared stencils emit a blocking
+  native cliff only toward sea at least eight height units below, leaving inland
+  shoulders and river openings traversable. Grass/rock/snow tops and water priority
+  retain their behavior; humid tops keep native ground cover, while dry exposure
+  uses rock. Groves are excluded from this wind-exposed cliff context, avoiding
+  canopies that hide its edge. Water banks below grassy cliff tops use rock/snow
+  geology independently of the top's vegetation color. No new graphics are needed.
+  The native coastal wildlife selector admits the new landform using the existing
+  coast roster and climate precedence. Location popups distinguish Coastal upland
+  from Sea cliffs near actual ocean water. A fifth-page inspector bisects a dry/
+  sea interval, validates a safe inland 3x3 patch and scans the camera for both
+  real sea and native cliff faces. Close relief views show this local feature.
+  Native QA verifies blocked wall words, safe approach, journal-isolated map reads
+  and cold Continue. Host streaming fixtures cross the cliff and both 4 km cache
+  axes at running cadence, comparing visible terrain afterward to avoid oracle
+  prewarming. Diagnostic tours can retry exhausted headwater/coast search batches
+  through real menu input; each game search remains bounded and cancellable.
+  Existing versions 3 through 21 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing
