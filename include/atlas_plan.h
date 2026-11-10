@@ -36,6 +36,7 @@ bool8 AtlasPlan_Step(u16 work);
 u8 AtlasPlan_Stage(void);
 u8 AtlasPlan_Progress(void);
 bool8 AtlasPlan_Eroding(void);
+bool8 AtlasPlan_ShapingOceans(void);
 void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain);
 void AtlasPlan_SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample);
 void AtlasPlan_ResetSample(void);

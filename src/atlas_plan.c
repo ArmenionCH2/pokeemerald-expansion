@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_climate.h"
+#include "atlas_ocean.h"
 #include "malloc.h"
 
 #ifndef __arm__
@@ -30,6 +31,7 @@ static EWRAM_DATA u8 sSeaCutoff = 0;
 static EWRAM_DATA u16 sOceans = 0;
 static EWRAM_DATA bool8 sWaterPass = FALSE;
 static EWRAM_DATA bool8 sEroded = FALSE, sEroding = FALSE;
+static EWRAM_DATA bool8 sOceanReady = FALSE;
 u16 AtlasWorld_Generation(void) {return sAtlasGenerationVersion?sAtlasGenerationVersion:ATLAS_GENERATION_LEGACY;}
 bool8 AtlasWorld_SetGeneration(u16 version)
 {
@@ -92,6 +94,7 @@ static u16 Pop(void)
 bool8 AtlasPlan_Begin(u32 seed)
 {
     sEroded=sEroding=FALSE;
+    sOceanReady=FALSE;
     AtlasPlan_ResetSample();
     AtlasStream_Reset();
     if (sScratch) Free(sScratch);
@@ -215,6 +218,7 @@ bool8 AtlasPlan_ImportHeights(const u8 *heights)
     /* Imported notes already contain final eroded heights. Reconstruct their
      * climate/drainage once; never erode a saved recipe for a second time. */
     sEroded=AtlasWorld_Generation()>=10;
+    sOceanReady=AtlasWorld_Generation()>=11;
     sStage = 2;
     return TRUE;
 }
@@ -278,6 +282,11 @@ bool8 AtlasPlan_Step(u16 work)
             if (e > 255) e = 255;
             n->height = e;
             if (++sAt == ATLAS_PLAN_COUNT) Advance();
+        }
+        else if (sStage == 2 && AtlasWorld_Generation()>=11 && !sOceanReady)
+        {
+            if(n->height<ATLAS_PLAN_SEA)n->height=AtlasOcean_Height(sAt);
+            if(++sAt==ATLAS_PLAN_COUNT){sAt=0;sOceanReady=TRUE;}
         }
         else if (sStage == 2)
         {
@@ -378,9 +387,11 @@ bool8 AtlasPlan_Step(u16 work)
             if(n->runoff>=600 && height>ATLAS_PLAN_SEA+1 && parent<ATLAS_PLAN_COUNT
              && height>sScratch->rain[parent])
             {
-                unsigned discharge=n->runoff/600,strength=0,depth,base=sScratch->rain[parent]+1;
+                unsigned discharge=n->runoff/600,strength=0,depth,parentHeight=sScratch->rain[parent],base;
+                if(AtlasWorld_Generation()>=11 && parentHeight<ATLAS_PLAN_SEA)parentHeight=ATLAS_PLAN_SEA;
+                base=parentHeight+1;
                 while(discharge){strength++;discharge>>=1;}
-                depth=1+(height-sScratch->rain[parent])*strength/16;
+                depth=1+(height-parentHeight)*strength/16;
                 if(depth>12)depth=12;
                 if(base<ATLAS_PLAN_SEA+1)base=ATLAS_PLAN_SEA+1;
                 if(depth>height-base)depth=height-base;
@@ -500,6 +511,7 @@ bool8 AtlasPlan_Step(u16 work)
 }
 u8 AtlasPlan_Stage(void) { return sStage; }
 bool8 AtlasPlan_Eroding(void) { return sEroding; }
+bool8 AtlasPlan_ShapingOceans(void) { return sStage==2 && AtlasWorld_Generation()>=11 && !sOceanReady; }
 u8 AtlasPlan_Progress(void)
 {
     unsigned percent;

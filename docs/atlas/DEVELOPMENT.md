@@ -68,7 +68,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Atmospheric rise from an ocean cell starts at sea level, not its underwater
   floor, preventing ocean depth from manufacturing coastal orographic rainfall.
   This is bounded macro morphology, not tectonics, physical erosion or measured
-  Earth hypsometry. Shelf bathymetry and more varied continental shapes remain work.
+  Earth hypsometry. More varied continental shapes remain work.
   Versions 4 onward normalize macro height to approximately 29.2% land before mountain
   uplift. Generation 7 adds vegetation collision, retaining generation 6's macro
   height/climate/drainage rules. Generation 9 retains generation 8's macro atlas
@@ -90,7 +90,16 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   final height notes skips erosion, avoiding a second incision on restore.
   Creation progress accounts for both passes and land/ocean component labeling.
   This does not simulate transported sediment or repeated geological epochs.
-  Existing versions 3 through 9 retain their original
+  Generation 11 shapes submerged relief after land outlines: nearby land defines
+  shelf/slope bands, periodic broad noise defines basin-floor variation, and three
+  curved submerged ridge belts cross deep water. All outputs remain below sea
+  level and preserve the macro land mask. Atmospheric and fluvial rise from ocean
+  neighbors uses sea level, never floor depth. Imported final notes skip both
+  bathymetry and erosion; different creation batch sizes reproduce the same nodes.
+  The elevation atlas reads seabed heights in close sea views as well as distant
+  summaries. This remains coarse morphological bathymetry, not ocean circulation
+  or an underwater traversal layer.
+  Existing versions 3 through 10 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

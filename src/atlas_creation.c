@@ -32,6 +32,7 @@ static const u8 sRestore[] = _("ATLAS - RESTORING WORLD");
 static const u8 sLand[] = _("Outlining land and oceans");
 static const u8 sRanges[] = _("Shaping mountain ranges");
 static const u8 sErosion[] = _("Eroding regional river valleys");
+static const u8 sOceanFloor[] = _("Shaping shelves and ocean basins");
 static const u8 sClimate[] = _("Calculating climate");
 static const u8 sOutlets[] = _("Locating ocean outlets");
 static const u8 sBasins[] = _("Connecting drainage basins");
@@ -62,7 +63,10 @@ static void Draw(void)
     u8 stage = AtlasPlan_Stage(), percent = AtlasPlan_Progress();
     FillWindowPixelBuffer(0, PIXEL_FILL(1));
     Print(4, sRestoring ? sRestore : sTitle);
-    Print(30, sFailed ? (sInvalidSave ? sBadSave : sFailure) : AtlasPlan_Eroding()?sErosion:sStages[stage > ATLAS_PLAN_STAGES ? ATLAS_PLAN_STAGES : stage]);
+    const u8 *phase=sStages[stage > ATLAS_PLAN_STAGES ? ATLAS_PLAN_STAGES : stage];
+    if(AtlasPlan_Eroding())phase=sErosion;
+    else if(AtlasPlan_ShapingOceans())phase=sOceanFloor;
+    Print(30, sFailed ? (sInvalidSave ? sBadSave : sFailure) : phase);
     if (!sFailed)
     {
         end = ConvertIntToDecimalStringN(line, percent, STR_CONV_MODE_LEFT_ALIGN, 3);

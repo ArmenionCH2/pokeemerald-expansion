@@ -92,8 +92,15 @@ static u8 Color(s32 x, s32 y)
         return value<70?4:value<110?10:value<150?3:value<190?7:2;
     }
     if (sAtlasMapLayer==LAYER_ELEVATION)
+    {
+        if(cell.waterform==ATLAS_SEA && (!sAdminView || sScales[sAtlasMapZoom]<100))
+        {
+            struct AtlasPlanSample floor;
+            cell.elevation=AtlasTerrain_GroundHeight(x,y,&floor);
+        }
         return cell.waterform==ATLAS_SEA?(cell.elevation<60?9:cell.elevation<100?2:13)
              :cell.waterform!=ATLAS_DRY?2:cell.elevation<145?3:cell.elevation<170?4:cell.elevation<195?11:6;
+    }
     if (sAtlasMapLayer==LAYER_BASINS)
     {
         struct AtlasPlace place;

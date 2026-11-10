@@ -10,7 +10,9 @@ Generation 9 shapes dry riverbank floors and supplies local soil moisture from
 rivers and lake-relative shorelines; inland low ground no longer implies a beach.
 Generation 10 applies bounded runoff-driven regional erosion, then rebuilds
 climate and drainage from the eroded heights.
-Existing generation-3 through generation-9 worlds keep their original geography and walkability.
+Generation 11 shapes continental shelves, ocean slopes, abyssal basins and broad
+submerged ridge belts, with coastal river erosion referenced to sea level.
+Existing generation-3 through generation-10 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
