@@ -7,15 +7,15 @@ static u32 Mix(u32 n)
 {
     n^=n>>16;n*=0x7FEB352Du;n^=n>>15;n*=0x846CA68Bu;return n^(n>>16);
 }
-static u32 Grain(u32 x,u32 y)
+static u32 Grain(u32 x,u32 y,u32 salt,u32 mask)
 {
-    return Mix(gAtlasWorldSeed^0x42415448u^x*0x9E3779B1u^y*0x85EBCA77u)&31;
+    return Mix(gAtlasWorldSeed^salt^x*0x9E3779B1u^y*0x85EBCA77u)&mask;
 }
-static unsigned Noise(unsigned x,unsigned y)
+static unsigned Noise(unsigned x,unsigned y,u32 salt,u32 mask)
 {
     unsigned gx=x/8,gy=y/8,next=(gx+1)%(ATLAS_PLAN_WIDTH/8),fx=(x&7)*32,fy=(y&7)*32;
-    unsigned top=Grain(gx,gy)*(256-fx)+Grain(next,gy)*fx;
-    unsigned bottom=Grain(gx,gy+1)*(256-fx)+Grain(next,gy+1)*fx;
+    unsigned top=Grain(gx,gy,salt,mask)*(256-fx)+Grain(next,gy,salt,mask)*fx;
+    unsigned bottom=Grain(gx,gy+1,salt,mask)*(256-fx)+Grain(next,gy+1,salt,mask)*fx;
     return (top*(256-fy)+bottom*fy)>>16;
 }
 static bool8 Land(s32 x,s32 y)
@@ -48,7 +48,7 @@ u8 AtlasOcean_Height(u16 node)
     if(node>=ATLAS_PLAN_COUNT)return 0;
     if(gAtlasPlan[node].height>=ATLAS_PLAN_SEA)return gAtlasPlan[node].height;
     s32 x=node%ATLAS_PLAN_WIDTH,y=node/ATLAS_PLAN_WIDTH;
-    unsigned noise=Noise(x,y);
+    unsigned noise=Noise(x,y,0x42415448u,31);
     for(s32 radius=1;radius<=2;radius++)
         for(s32 dy=-radius;dy<=radius;dy++)for(s32 dx=-radius;dx<=radius;dx++)
         {
@@ -56,4 +56,17 @@ u8 AtlasOcean_Height(u16 node)
             if(Land(x+dx,y+dy))return radius==1?110+noise%9:75+noise%24;
         }
     return 6+noise+Ridge(x,y);
+}
+u8 AtlasOcean_MacroNoise(u16 node,u32 salt)
+{
+    if(node>=ATLAS_PLAN_COUNT)return 0;
+    return Noise(node%ATLAS_PLAN_WIDTH,node/ATLAS_PLAN_WIDTH,salt,255);
+}
+bool8 AtlasOcean_IslandCandidate(u16 node)
+{
+    if(node>=ATLAS_PLAN_COUNT)return FALSE;
+    unsigned x=node%ATLAS_PLAN_WIDTH,y=node/ATLAS_PLAN_WIDTH;
+    if(Ridge(x,y)<22)return FALSE;
+    return Mix(gAtlasWorldSeed^0x49534C41u^(y/4)*0x9E3779B1u^(x/16)*0x85EBCA77u)%3==0
+        && Mix(gAtlasWorldSeed^node^0x43484149u)%3==0;
 }

@@ -41,6 +41,7 @@ void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain);
 void AtlasPlan_SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample);
 void AtlasPlan_ResetSample(void);
 bool8 AtlasPlan_HasSea(s32 x,s32 y);
+bool8 AtlasPlan_IsIsland(u16 component);
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan);
 u8 AtlasTerrain_RawHeight(s32 x,s32 y);
 void AtlasHabitat_Sample(s32 y, u8 elevation, u8 rain, u8 vapor, u8 waterform, struct AtlasHabitat *out);

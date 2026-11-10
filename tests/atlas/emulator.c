@@ -14,6 +14,8 @@ static const char *symbolFile;
 static unsigned elapsedFrames;
 static uint32_t rosterAddr, objectsAddr, spritesAddr;
 static unsigned weatherMask;
+static uint32_t creationStateAddr,planStageAddr;
+static unsigned generationProfile[14],profilingGeneration;
 struct ActorView { uint32_t generation[3]; uint16_t x[3], y[3]; unsigned mask; };
 
 /* Pinned ARM layouts: AtlasActorAdmissionSlot=28, ObjectEvent=0x24,
@@ -55,7 +57,26 @@ static uint32_t symbol(const char *name)
         if (!strcmp(word,name)) {fclose(f);return addr;}
     fprintf(stderr,"missing symbol %s\n",name);abort();
 }
-static void frames(unsigned keys,unsigned count) {core->setKeys(core,keys);while(count--) {core->runFrame(core);elapsedFrames++;}}
+static void frames(unsigned keys,unsigned count)
+{
+    core->setKeys(core,keys);
+    while(count--)
+    {
+        core->runFrame(core);elapsedFrames++;
+        if(profilingGeneration)
+        {
+            unsigned state=core->busRead8(core,creationStateAddr);
+            unsigned slot=state==1?core->busRead8(core,planStageAddr):state==2?12:13;
+            if(state && slot<14)generationProfile[slot]++;
+        }
+    }
+}
+static void printGenerationProfile(const char *label)
+{
+    printf("GENERATION PROFILE %s macro stages:",label);
+    for(unsigned i=0;i<12;i++)printf(" %u",generationProfile[i]);
+    printf("; finish=%u field=%u real GBA frames\n",generationProfile[12],generationProfile[13]);
+}
 static void shot(const char *path);
 static unsigned settle(void)
 {
@@ -277,7 +298,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<19;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<20;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -326,7 +347,7 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit],isShore=type>=2 && type<=4;
@@ -334,13 +355,13 @@ static void shoreTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<19;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<20;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
         if(waited>=6000)fprintf(stderr,"GEO timeout type=%u phase=%u visited=%u trial=%u node=%u\n",type,core->busRead8(core,symbol("sPhase")),core->busRead16(core,symbol("sVisited")),core->busRead16(core,symbol("sTrial")),core->busRead16(core,symbol("sNode")));
         assert(waited<6000);
-        if (core->busRead8(core,status)==2) {printf("NOTE no safe shore TP type %u in this seed\n",type);frames(0,30);press(2);settle();continue;}
+        if (core->busRead8(core,status)==2) {printf("NOTE inspection type %u found no safe destination within this search\n",type);frames(0,30);press(2);settle();continue;}
         assert(core->busRead8(core,status)==1);settle();frames(0,60);
         unsigned reached=!isShore;
         for (unsigned step=0;step<40 && isShore;step++)
@@ -389,6 +410,13 @@ static void shoreTour(uint32_t savePointer)
                     if (dx>=-1 && dx<=1 && dy>=-1 && dy<=1) assert(!(tile&0xC00));
                 }
                 if(type==18){assert(edges);printf("PASS native sand/grass boundary: %u visible sand borders and safe 3x3 landing\n",edges);}
+                else if(type==19)
+                {
+                    unsigned component=core->busRead16(core,symbol("gAtlasGeoResult")+8),cells=0;
+                    uint32_t plan=symbol("gHeap")+60672;
+                    for(unsigned i=0;i<4608;i++)cells+=core->busRead16(core,plan+i*12+4)==component;
+                    assert(cells && cells<32);printf("PASS native island inspection: %u-cell landmass and safe 3x3 landing\n",cells);
+                }
                 else if(type==8){assert(water);printf("PASS native valley inspection: %u visible water tiles and safe carved bank landing\n",water);}
                 else{assert(walls);printf("PASS native terrain inspection type %u: %u visible cliff tiles and safe 3x3 landing\n",type,walls);}
             }
@@ -407,7 +435,7 @@ static void cancelGeoSearch(uint32_t savePointer)
     press(8);
     for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
     assert(core->busRead8(core,cursor)==3);press(1);
-    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<19;i++) press(128);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<20;i++) press(128);
     assert(core->busRead8(core,choice)==17);press(1);
     if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
     press(2);frames(0,30);
@@ -423,6 +451,7 @@ int main(int argc,char **argv)
     unsigned char before[1456],after[1456];
     assert(argc==3 || argc==4);setbuf(stdout,NULL);mLogSetDefaultLogger(&logger);symbolFile=argv[2];
     stage=symbol("gAtlasCreationState");sav1=symbol("gSaveBlock1Ptr");sav3=symbol("gSaveBlock3Ptr");mapActive=symbol("gAtlasMapActive");
+    creationStateAddr=stage;planStageAddr=symbol("sStage");profilingGeneration=1;
     rosterAddr=symbol("sAtlasActorRoster");objectsAddr=symbol("gObjectEvents");spritesAddr=symbol("gSprites");
     core=mCoreFind(argv[1]);assert(core&&core->init(core));mCoreInitConfig(core,NULL);
     core->setVideoBuffer(core,pixels,240);assert(mCoreLoadFile(core,argv[1]));assert(mCoreAutoloadSave(core));core->reset(core);
@@ -439,6 +468,7 @@ int main(int argc,char **argv)
     shot("build/atlas-emulator/startup.ppm");
     assert(frame<18000 && generating);settle();
     unsigned newGameFrames=elapsedFrames-generating;
+    profilingGeneration=0;printGenerationProfile("New Game");
     assert(newGameFrames<7167); // two minutes at GBA speed, including field readiness
     frames(0,60);
     savePtr=core->busRead32(core,sav1);statePtr=core->busRead32(core,sav3);
@@ -457,9 +487,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==11);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==12);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 11 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 12 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();
@@ -524,7 +554,7 @@ int main(int argc,char **argv)
     savePtr=core->busRead32(core,sav1);statePtr=core->busRead32(core,sav3);
     uint16_t x=core->busRead16(core,savePtr),y=core->busRead16(core,savePtr+2);
     bytes(statePtr,before,sizeof(before));
-    core->reset(core);generating=0;
+    core->reset(core);generating=0;memset(generationProfile,0,sizeof(generationProfile));profilingGeneration=1;
     for(frame=0;frame<18000;frame++)
     {
         unsigned keys=0;
@@ -535,6 +565,8 @@ int main(int argc,char **argv)
     }
     assert(frame<18000 && generating);settle();
     unsigned continueFrames=elapsedFrames-generating;
+    profilingGeneration=0;printGenerationProfile("Continue");
+    if(continueFrames>=1791)fprintf(stderr,"Continue exceeded budget: %u frames (%.3fs)\n",continueFrames,continueFrames/59.72750057);
     assert(continueFrames<1791); // thirty seconds from entering Atlas restoration
     frames(0,60);actors();shot("build/atlas-emulator/continue.ppm");
     fieldWeather();

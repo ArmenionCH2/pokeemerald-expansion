@@ -12,7 +12,9 @@ Generation 10 applies bounded runoff-driven regional erosion, then rebuilds
 climate and drainage from the eroded heights.
 Generation 11 shapes continental shelves, ocean slopes, abyssal basins and broad
 submerged ridge belts, with coastal river erosion referenced to sea level.
-Existing generation-3 through generation-10 worlds keep their original geography and walkability.
+Generation 12 warps continental outlines and their uplift frames together, and
+reserves part of the same land budget for sparse oceanic islands and chains.
+Existing generation-3 through generation-11 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
@@ -41,7 +43,7 @@ builds allow SELECT to toggle the admin map and START to cycle terrain, elevatio
 temperature, humidity, soil moisture, drainage, weather-front and regional-relief layers. GEO TP
 in the start menu can find landforms, waters and forest/desert/tundra/wetland
 locations, plus regional plateaus. Its fourth page also finds a sand/grass boundary
-for inspecting native ground edges. Physical location breadcrumbs name the landmass,
+for inspecting native ground edges, and islands for checking small landmasses. Physical location breadcrumbs name the landmass,
 catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
 The exploration journal has a fixed save capacity and warns when space is low.
 Use a fresh save for this port; back up saves from other engines/versions.

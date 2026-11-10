@@ -68,7 +68,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Atmospheric rise from an ocean cell starts at sea level, not its underwater
   floor, preventing ocean depth from manufacturing coastal orographic rainfall.
   This is bounded macro morphology, not tectonics, physical erosion or measured
-  Earth hypsometry. More varied continental shapes remain work.
+  Earth hypsometry.
   Versions 4 onward normalize macro height to approximately 29.2% land before mountain
   uplift. Generation 7 adds vegetation collision, retaining generation 6's macro
   height/climate/drainage rules. Generation 9 retains generation 8's macro atlas
@@ -99,7 +99,18 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   The elevation atlas reads seabed heights in close sea views as well as distant
   summaries. This remains coarse morphological bathymetry, not ocean circulation
   or an underwater traversal layer.
-  Existing versions 3 through 10 retain their original
+  Generation 12 applies a shared periodic domain warp to continental and uplift
+  frames. Sparse ridge-associated oceanic island seeds take land out of the same
+  1345-cell budget before the continental quantile; a deterministic fallback ensures
+  an island seed. Each seed feeds normal climate, erosion, drainage and component
+  labeling. This creates morphological chains, not a plate/hotspot simulation.
+  Island GEO TP uses the existing physical naming threshold (fewer than 32 connected
+  land cells) and validates a real dry 3x3 landing. Developer searches yield and
+  stop after 4096 steps; retry continues the search cursor, and cancellation remains
+  available. A failed bounded search does not establish that a feature is absent.
+  Continental seed descriptors are cached in creation scratch without changing
+  older generation results. The native test prints generation-stage frame costs.
+  Existing versions 3 through 11 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

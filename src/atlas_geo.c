@@ -9,6 +9,7 @@
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
 EWRAM_DATA static u16 sNext[ATLAS_GEO_COUNT] = {0}, sVisited = 0, sNode = 0, sLastLand = 0, sTrial = 0;
+EWRAM_DATA static u16 sWork=0;
 EWRAM_DATA static u16 sGeneration = 0;
 EWRAM_DATA static u8 sType = 0, sPhase = 0, sDirection = 0, sCheck = 0, sAttempt = 0;
 EWRAM_DATA static s32 sCX = 0, sCY = 0, sWX = 0, sWY = 0, sDX = 0, sDY = 0, sLX = 0, sLY = 0;
@@ -73,13 +74,15 @@ void AtlasGeo_Begin(u8 type)
         for(i=0;i<ATLAS_GEO_COUNT;i++)sNext[i]=ATLAS_PLAN_WIDTH*(ATLAS_PLAN_HEIGHT/2)+(gAtlasWorldSeed%ATLAS_PLAN_WIDTH)+i*13;
         sLastLand=0;sSeed=gAtlasWorldSeed;sGeneration=AtlasWorld_Generation();sInitialized=TRUE;
     }
-    sType=type;sPhase=0;sVisited=0;sDirection=0;
+    sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_VOLCANO && type!=ATLAS_GEO_RETURN?0:3;
     if (type==ATLAS_GEO_GROVE && AtlasWorld_Generation()<7) gAtlasGeoStatus=3;
+    if (type==ATLAS_GEO_ISLAND && AtlasWorld_Generation()<12) gAtlasGeoStatus=3;
 }
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
     if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
     if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
     if (sType>=ATLAS_GEO_FOREST)
@@ -111,6 +114,7 @@ u8 AtlasGeo_Step(void)
     u8 i;
     struct AtlasCell c;
     if(gAtlasGeoStatus)return gAtlasGeoStatus;
+    if(++sWork>=ATLAS_GEO_SEARCH_STEPS){gAtlasGeoStatus=2;return 2;}
     /* Bisect a dry sand/green interval, yielding after each prepared point.
      * A water interruption rejects the ray rather than treating an aquatic
      * bank as a ground transition. The final normal 3x3 collision gate still applies. */
@@ -286,7 +290,7 @@ u8 AtlasGeo_Step(void)
         sTrial++;AtlasTerrain_Sample(x,y,&c);
         u8 target=sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
         if (c.waterform || (sType==ATLAS_GEO_GROVE && (c.landform==ATLAS_COAST || c.elevation>=175 || AtlasMountain_Relief(x,y,&c))) || (sType==ATLAS_GEO_PLATEAU
-            ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : c.biome!=target))
+            ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : sType==ATLAS_GEO_ISLAND?FALSE:c.biome!=target))
         {if (sTrial==1) sPhase=0;return 0;}
         sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
     }

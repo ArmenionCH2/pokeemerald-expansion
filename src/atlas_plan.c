@@ -25,6 +25,12 @@ struct PlanScratch {
     u16 heap[ATLAS_PLAN_COUNT], order[ATLAS_PLAN_COUNT];
     u8 level[ATLAS_PLAN_COUNT], rain[ATLAS_PLAN_COUNT];
     u16 heights[256];
+    struct {u32 hash;s16 cx,cy,rx,ry;} cores[5];
+    bool8 coresValid;
+    u32 islandRank;
+    u16 fallbackIsland,warpNode;
+    s16 warpX,warpY;
+    bool8 warpValid;
 };
 static EWRAM_DATA u16 sAtlasGenerationVersion = 0, sCoastalTies = 0;
 static EWRAM_DATA u8 sSeaCutoff = 0;
@@ -32,6 +38,8 @@ static EWRAM_DATA u16 sOceans = 0;
 static EWRAM_DATA bool8 sWaterPass = FALSE;
 static EWRAM_DATA bool8 sEroded = FALSE, sEroding = FALSE;
 static EWRAM_DATA bool8 sOceanReady = FALSE;
+static EWRAM_DATA u16 sIslandCount=0;
+static EWRAM_DATA struct {u16 component;bool8 valid,island;} sIslandClass={0};
 u16 AtlasWorld_Generation(void) {return sAtlasGenerationVersion?sAtlasGenerationVersion:ATLAS_GENERATION_LEGACY;}
 bool8 AtlasWorld_SetGeneration(u16 version)
 {
@@ -95,6 +103,7 @@ bool8 AtlasPlan_Begin(u32 seed)
 {
     sEroded=sEroding=FALSE;
     sOceanReady=FALSE;
+    sIslandCount=0;sIslandClass.valid=FALSE;
     AtlasPlan_ResetSample();
     AtlasStream_Reset();
     if (sScratch) Free(sScratch);
@@ -113,6 +122,7 @@ bool8 AtlasPlan_Begin(u32 seed)
         return FALSE;
     }
     memset(gAtlasPlan, 0, sizeof(gAtlasPlan));
+    sScratch->islandRank=0xFFFFFFFFu;
     memset(&gAtlasPlanStats, 0, sizeof(gAtlasPlanStats));
     gAtlasWorldSeed = gAtlasPlanStats.seed = seed;
     AtlasTerrain_SetSeed(seed);
@@ -151,11 +161,35 @@ static void Advance(void) { sStage++; sAt = 0; }
  * Evaluated only during macro creation, never during tile streaming. */
 static u32 ContinentalFrame(u16 id,unsigned i,s32 *dx,s32 *dy,s32 *rx,s32 *ry)
 {
-    u32 h=Mix(gAtlasWorldSeed^(0x434F4E54u+i*0x9E3779B1u));
-    s32 cx=(i*ATLAS_PLAN_WIDTH/5+(h%11)+ATLAS_PLAN_WIDTH-5)%ATLAS_PLAN_WIDTH;
-    s32 cy=8+(h>>8)%32;
-    *rx=11+(h>>16)%10;*ry=8+(h>>24)%8;
-    *dx=(s32)(id%ATLAS_PLAN_WIDTH)-cx;*dy=(s32)(id/ATLAS_PLAN_WIDTH)-cy;
+    /* These descriptors depend only on the seed. Keep them in creation scratch
+     * rather than repeating their hashes and divisions for every node/pass. */
+    if(!sScratch->coresValid)
+    {
+        for(unsigned k=0;k<5;k++)
+        {
+            u32 h=Mix(gAtlasWorldSeed^(0x434F4E54u+k*0x9E3779B1u));
+            sScratch->cores[k].hash=h;
+            sScratch->cores[k].cx=(k*ATLAS_PLAN_WIDTH/5+(h%11)+ATLAS_PLAN_WIDTH-5)%ATLAS_PLAN_WIDTH;
+            sScratch->cores[k].cy=8+(h>>8)%32;
+            sScratch->cores[k].rx=11+(h>>16)%10;
+            sScratch->cores[k].ry=8+(h>>24)%8;
+        }
+        sScratch->coresValid=TRUE;
+    }
+    u32 h=sScratch->cores[i].hash;
+    *rx=sScratch->cores[i].rx;*ry=sScratch->cores[i].ry;
+    *dx=(s32)(id%ATLAS_PLAN_WIDTH)-sScratch->cores[i].cx;
+    *dy=(s32)(id/ATLAS_PLAN_WIDTH)-sScratch->cores[i].cy;
+    if(AtlasWorld_Generation()>=12)
+    {
+        if(!sScratch->warpValid || sScratch->warpNode!=id)
+        {
+            sScratch->warpX=((s32)AtlasOcean_MacroNoise(id,0x57415258u)-128)/32;
+            sScratch->warpY=((s32)AtlasOcean_MacroNoise(id,0x57415259u)-128)/32;
+            sScratch->warpNode=id;sScratch->warpValid=TRUE;
+        }
+        *dx+=sScratch->warpX;*dy+=sScratch->warpY;
+    }
     if (*dx>ATLAS_PLAN_WIDTH/2) *dx-=ATLAS_PLAN_WIDTH;
     if (*dx< -ATLAS_PLAN_WIDTH/2) *dx+=ATLAS_PLAN_WIDTH;
     *dx+=*dy*((h&1)?1:-1)/3;
@@ -238,12 +272,24 @@ bool8 AtlasPlan_Step(u16 work)
             detail=AtlasTerrain_RawHeight(x,y);
             n->height = detail; n->rain = 96; n->parent = 0xFFFF;
             if (AtlasWorld_Generation()>=5) n->height=ContinentalHeight(sAt,detail);
-            if (AtlasWorld_Generation()>=4) sScratch->heights[n->height]++;
+            if(AtlasWorld_Generation()>=12)
+            {
+                u32 rank=((u32)n->height<<24)|(Mix(gAtlasWorldSeed^sAt)&0xFFFFFFu);
+                if(rank<sScratch->islandRank){sScratch->islandRank=rank;sScratch->fallbackIsland=sAt;}
+                if(!n->height && sIslandCount<96 && AtlasOcean_IslandCandidate(sAt))
+                {n->parent=0xFFFE;sIslandCount++;}
+            }
+            if (AtlasWorld_Generation()>=4 && n->parent!=0xFFFE) sScratch->heights[n->height]++;
             if (++sAt == ATLAS_PLAN_COUNT)
             {
                 if (AtlasWorld_Generation()>=4)
                 {
-                    unsigned h,count=0,target=ATLAS_PLAN_COUNT*292u/1000;
+                    if(AtlasWorld_Generation()>=12 && !sIslandCount)
+                    {
+                        struct AtlasPlanNode *island=&gAtlasPlan[sScratch->fallbackIsland];
+                        sScratch->heights[island->height]--;island->parent=0xFFFE;sIslandCount=1;
+                    }
+                    unsigned h,count=0,target=ATLAS_PLAN_COUNT*292u/1000-sIslandCount;
                     for (h=255;h>0;h--)
                     {
                         if (count+sScratch->heights[h]>=target) break;
@@ -258,13 +304,15 @@ bool8 AtlasPlan_Step(u16 work)
         {
             u16 id=sAt;
             s32 e;
+            bool8 island=FALSE;
             if (AtlasWorld_Generation()>=4)
             {
                 // Coprime traversal distributes quantile ties across the globe,
                 // rather than assigning equal-height shoreline cells north-first.
                 id=((u32)sAt*2053+gAtlasWorldSeed%ATLAS_PLAN_COUNT)%ATLAS_PLAN_COUNT;
-                n=&gAtlasPlan[id];e=(s32)n->height-sSeaCutoff+ATLAS_PLAN_SEA;
-                if (n->height==sSeaCutoff)
+                n=&gAtlasPlan[id];island=AtlasWorld_Generation()>=12 && n->parent==0xFFFE;
+                e=island?ATLAS_PLAN_SEA+12+(s32)(Mix(gAtlasWorldSeed^id^0x49534C48u)&3):(s32)n->height-sSeaCutoff+ATLAS_PLAN_SEA;
+                if (!island && n->height==sSeaCutoff)
                 {
                     if (sCoastalTies) sCoastalTies--;
                     else e=ATLAS_PLAN_SEA-1;
@@ -274,13 +322,17 @@ bool8 AtlasPlan_Step(u16 work)
             else e=n->height;
             if (e >= ATLAS_PLAN_SEA)
             {
-                if (AtlasWorld_Generation()>=8)
-                    e=ATLAS_PLAN_SEA+(e-ATLAS_PLAN_SEA)*3/5+ContinentalUplift(id);
-                else e+=Mountain(id);
+                if(!island)
+                {
+                    if (AtlasWorld_Generation()>=8)
+                        e=ATLAS_PLAN_SEA+(e-ATLAS_PLAN_SEA)*3/5+ContinentalUplift(id);
+                    else e+=Mountain(id);
+                }
                 gAtlasPlanStats.land++;
             }
             if (e > 255) e = 255;
             n->height = e;
+            n->parent=0xFFFF;
             if (++sAt == ATLAS_PLAN_COUNT) Advance();
         }
         else if (sStage == 2 && AtlasWorld_Generation()>=11 && !sOceanReady)
@@ -623,4 +675,14 @@ bool8 AtlasPlan_HasSea(s32 x,s32 y)
         || gAtlasPlan[row*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA
         || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+col].height<ATLAS_PLAN_SEA
         || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA;
+}
+bool8 AtlasPlan_IsIsland(u16 component)
+{
+    if(!gAtlasPlanReady || !component || (component&ATLAS_OCEAN_COMPONENT))return FALSE;
+    if(sIslandClass.valid && sIslandClass.component==component)return sIslandClass.island;
+    unsigned count=0;
+    for(unsigned i=0;i<ATLAS_PLAN_COUNT;i++)
+        if(gAtlasPlan[i].continent==component && ++count>=32)break;
+    sIslandClass.component=component;sIslandClass.valid=TRUE;sIslandClass.island=count>0 && count<32;
+    return sIslandClass.island;
 }
