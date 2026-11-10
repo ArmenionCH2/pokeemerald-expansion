@@ -11,15 +11,20 @@
  * Local creeks add at most 32 pieces: near a macro grid vertex at most four
  * cardinal corridors approach a bucket, each considering six nearby branches.
  * Between vertices at most two adjacent parts approach it. Geometry is culled
- * before validation; the 128-piece bank reserves all main pieces first.
- * Older generation identities retain their original 24-piece admission cap. */
-#define WATER_SEGMENTS 128
+ * before validation. New generation21 banks reserve 96 main and 96 local slots;
+ * at most 32 local parents and two children apiece fit without evicting main
+ * channels. Older generation18-20 admission retains its original 128-piece cap.
+ * Generations3-14 retain their original 24-piece admission cap. */
+#define WATER_SEGMENTS 192
+#define LEGACY_CREEK_SEGMENTS 128
+#define HEADWATER_FLAG 0x80
 #define CREEK_FLAG 0x8000
 #define WATER_T_ONE 16777216
 #define COAST_ONE 1048576u
 #define COAST_QUARTER (COAST_ONE / 4)
 /* widthB's high bit marks a constant-width local creek. Bits 8–14 encode
- * its flat receiving fraction /128; TipWidth decodes its physical width. */
+ * its flat receiving fraction /128. Low bit 0x80 marks generation21 children;
+ * TipWidth reads the separate physical width and never treats flags as width. */
 struct RiverPiece { s16 ax, ay, bx, by; u16 ha, hb, width, widthB; };
 EWRAM_DATA static struct RiverPiece sPieceBank[4][WATER_SEGMENTS] = {{{0}}};
 struct CreekLine {s32 ax,ay,bx,by;u16 ha,hb;u8 width,join;};
@@ -27,7 +32,7 @@ struct WaterBucket {
     s32 x,y,col,row;u32 stamp,coastLo,coastHi;u16 coastNode;
     u8 count,cursor,coastPhase,coastPart;bool8 valid,ready;
     struct CreekLine creek;
-    u8 microSlot,microProbe;bool8 microPass;
+    u8 microSlot,microProbe,microPass,microStart,microEnd;
 };
 EWRAM_DATA static struct WaterBucket sBuckets[4] = {{0}};
 EWRAM_DATA static u8 sActive = 0;
@@ -86,7 +91,7 @@ static void AddTaper(s32 ax, s32 ay, s32 bx, s32 by, u16 ha, u16 hb, u16 width,u
     s32 first = 0, last = WATER_T_ONE, dx = bx - ax, dy = by - ay;
     struct RiverPiece *piece;
     s32 cacheMargin=AtlasWorld_Generation()>=17?2000:WATER_MARGIN;
-    if (sPieceCount >= (AtlasWorld_Generation()>=18?WATER_SEGMENTS:AtlasWorld_Generation()>=15?96:24)) return;
+    if (sPieceCount >= (AtlasWorld_Generation()>=21?WATER_SEGMENTS:AtlasWorld_Generation()>=18?LEGACY_CREEK_SEGMENTS:AtlasWorld_Generation()>=15?96:24)) return;
     ax -= sBucketX * WATER_BUCKET; bx -= sBucketX * WATER_BUCKET;
     ay -= sBucketY * WATER_BUCKET; by -= sBucketY * WATER_BUCKET;
     /* Reject before fixed-point clipping, keeping parameter calculations bounded. */
@@ -326,6 +331,7 @@ static bool8 CreekStep(struct WaterBucket *b,u16 id,u8 part,s32 shift)
             if(!CreekGeometry(id,part,index,b->microSlot&1,line)){b->microSlot++;continue;}
             line->ax+=shift;line->bx+=shift;
             s32 margin=line->width+BankReach(line->width);
+            if(AtlasWorld_Generation()>=21 && margin<1900)margin=1900;
             s32 left=b->x*WATER_BUCKET-margin,right=(b->x+1)*WATER_BUCKET+margin;
             s32 top=b->y*WATER_BUCKET-margin,bottom=(b->y+1)*WATER_BUCKET+margin;
             if((line->ax<left && line->bx<left) || (line->ax>right && line->bx>right)
@@ -368,9 +374,89 @@ static bool8 CreekStep(struct WaterBucket *b,u16 id,u8 part,s32 shift)
     }
     b->microSlot=0;return TRUE;
 }
+/* A second, bounded tributary level. Parent endpoints are retained whole,
+ * so root identity, receiving height and validation points agree in every bank. */
+static bool8 HeadwaterGeometry(const struct WaterBucket *b,const struct RiverPiece *parent,u8 slot,struct CreekLine *line)
+{
+    s32 dx=parent->bx-parent->ax,dy=parent->by-parent->ay;
+    s32 length=dx<0?-dx:dx;if((dy<0?-dy:dy)>length)length=dy<0?-dy:dy;
+    if(!length || slot>=2 || !(parent->widthB&CREEK_FLAG))return FALSE;
+    s32 lx=parent->ax+dx*(slot+1)/3,ly=parent->ay+dy*(slot+1)/3;
+    line->bx=b->x*WATER_BUCKET+lx;line->by=b->y*WATER_BUCKET+ly;
+    s32 wrapped=line->bx%ATLAS_WORLD_WIDTH;if(wrapped<0)wrapped+=ATLAS_WORLD_WIDTH;
+    u32 hash=Mix(gAtlasWorldSeed^(u32)wrapped*0x9E3779B1u^(u32)line->by*0x85EBCA77u^0x48454144u);
+    if((hash>>24)>=224)return FALSE;
+    s32 branch=512+(hash&1023),up=(hash>>10)&255,sign=(hash&0x10000)?1:-1;
+    /* Upstream is -parent direction: A is its head and B its receiver. */
+    line->ax=line->bx-(s64)dy*branch*sign/length-(s64)dx*up/length;
+    line->ay=line->by+(s64)dx*branch*sign/length-(s64)dy*up/length;
+    if(line->ay<=-ATLAS_WORLD_HALF_HEIGHT+16 || line->ay>=ATLAS_WORLD_HALF_HEIGHT-16)return FALSE;
+    s32 dot=(lx-parent->ax)*dx+(ly-parent->ay)*dy;
+    line->hb=PieceHeight(parent,dot,dx*dx+dy*dy)*256;line->ha=0;
+    line->width=1+parent->width/4;if(line->width>3)line->width=3;
+    unsigned join=(parent->width+BankReach(parent->width)+16)*128/branch;
+    line->join=join>64?64:join;return TRUE;
+}
+static void HeadwaterAdvance(struct WaterBucket *b)
+{
+    b->microProbe=0;
+    if(++b->microSlot==2){b->microSlot=0;b->cursor++;}
+}
+static void HeadwaterStep(struct WaterBucket *b)
+{
+    while(b->cursor<b->microEnd)
+    {
+        struct CreekLine *line=&b->creek;
+        if(!b->microProbe)
+        {
+            if(!HeadwaterGeometry(b,&sPieces[b->cursor],b->microSlot,line))
+            {HeadwaterAdvance(b);continue;}
+            s32 margin=line->width+BankReach(line->width);
+            s32 left=b->x*WATER_BUCKET-margin,right=(b->x+1)*WATER_BUCKET+margin;
+            s32 top=b->y*WATER_BUCKET-margin,bottom=(b->y+1)*WATER_BUCKET+margin;
+            if((line->ax<left && line->bx<left) || (line->ax>right && line->bx>right)
+             || (line->ay<top && line->by<top) || (line->ay>bottom && line->by>bottom))
+            {HeadwaterAdvance(b);continue;}
+            b->microProbe=17;
+        }
+        unsigned probe=b->microProbe;struct AtlasPlanSample plan;
+        if(probe==17)
+        {
+            unsigned height=AtlasTerrain_GroundHeight(line->bx,line->by,&plan);
+            if(plan.lake || plan.rain<96 || AtlasDune_Envelope(line->bx,line->by,&plan) || height*256<line->hb)
+                HeadwaterAdvance(b);
+            else b->microProbe=16;
+            return;
+        }
+        s32 x=line->bx+(s64)(line->ax-line->bx)*probe/16;
+        s32 y=line->by+(s64)(line->ay-line->by)*probe/16;
+        unsigned height=AtlasTerrain_GroundHeight(x,y,&plan);
+        if(probe==16 && height>=2)
+        {
+            u32 head=(height-2)*256,limit=line->hb+3*256;
+            line->ha=head<limit?head:limit;
+        }
+        unsigned along=probe*128,flat=line->join*16;
+        u32 surface=line->hb;
+        if(along>flat && line->ha>=line->hb)
+            surface+=(u32)(line->ha-line->hb)*(along-flat)/((128-line->join)*16);
+        if(plan.lake || AtlasDune_Envelope(x,y,&plan) || line->ha<line->hb+64 || height*256<surface+512)
+        {HeadwaterAdvance(b);return;}
+        if(!--b->microProbe)
+        {
+            unsigned before=sPieceCount;
+            AddTaper(line->ax,line->ay,line->bx,line->by,line->ha,line->hb,line->width,line->width);
+            if(sPieceCount>before)sPieces[before].widthB=CREEK_FLAG|HEADWATER_FLAG|((u16)line->join<<8)|line->width;
+            HeadwaterAdvance(b);
+        }
+        return;
+    }
+    b->ready=TRUE;
+}
 static void PreparePart(void)
 {
     struct WaterBucket *b = &sBuckets[sActive];
+    if(b->microPass==2){HeadwaterStep(b);return;}
     u8 cursor = b->cursor, part = cursor % 4, node = cursor / 4;
     s32 gx = b->col + node % 4 - 1, gy = b->row + node / 4 - 1, shift = 0;
     u16 id, width;bool8 fit;
@@ -423,7 +509,10 @@ static void PreparePart(void)
 next:
     if (++b->cursor == 64)
     {
-        if(AtlasWorld_Generation()>=18 && !b->microPass){b->cursor=0;b->microPass=TRUE;}
+        if(AtlasWorld_Generation()>=18 && !b->microPass)
+        {b->cursor=0;b->microPass=1;b->microStart=b->count;}
+        else if(AtlasWorld_Generation()>=21 && b->microPass==1)
+        {b->microEnd=b->count;b->cursor=b->microStart;b->microPass=2;b->microSlot=b->microProbe=0;}
         else b->ready=TRUE;
     }
 }
@@ -571,7 +660,7 @@ u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSamp
 /* Minimum-width cartographic stroke from prepared local channel geometry.
  * A bounded footprint prevents narrow rivers aliasing out of a close atlas.
  * No LRU touch, preparation, terrain query, or exploration write is allowed. */
-static bool8 RiverNear(s32 x,s32 y,u8 padding,bool8 creekOnly)
+static bool8 RiverNear(s32 x,s32 y,u8 padding,u8 creekOnly)
 {
     if(!gAtlasPlanReady || padding>80 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
     x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
@@ -585,6 +674,7 @@ static bool8 RiverNear(s32 x,s32 y,u8 padding,bool8 creekOnly)
         {
             const struct RiverPiece *p=&sPieceBank[bucket][i];
             if(creekOnly && !(p->widthB&CREEK_FLAG))continue;
+            if(creekOnly==2 && !(p->widthB&HEADWATER_FLAG))continue;
             u16 tip=TipWidth(p);
             s32 maximum=tip>p->width?tip:p->width;
             s32 margin=maximum+padding;
@@ -613,3 +703,32 @@ bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding)
 {return RiverNear(x,y,padding,FALSE);}
 bool8 AtlasWater_CreekNear(s32 x,s32 y,u8 padding)
 {return AtlasWorld_Generation()>=18 && RiverNear(x,y,padding,TRUE);}
+
+bool8 AtlasWater_HeadwaterNear(s32 x,s32 y,u8 padding)
+{return AtlasWorld_Generation()>=21 && RiverNear(x,y,padding,2);}
+/* Read only the resident bucket. The caller yields to prepare the returned
+ * destination before asking for its final terrain or walking patch. */
+bool8 AtlasWater_HeadwaterProbe(s32 x,s32 y,s32 *outX,s32 *outY)
+{
+    if(AtlasWorld_Generation()<21 || !outX || !outY)return FALSE;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    s32 bx=x/WATER_BUCKET,by=AtlasTerrain_FloorDiv(y,WATER_BUCKET);
+    for(unsigned bucket=0;bucket<4;bucket++)
+    {
+        const struct WaterBucket *b=&sBuckets[bucket];
+        if(!b->valid || !b->ready || b->x!=bx || b->y!=by)continue;
+        for(unsigned i=0;i<b->count;i++)
+        {
+            const struct RiverPiece *p=&sPieceBank[bucket][i];
+            if((p->widthB&(CREEK_FLAG|HEADWATER_FLAG))!=(CREEK_FLAG|HEADWATER_FLAG))continue;
+            s32 dx=p->bx-p->ax,dy=p->by-p->ay,length=dx<0?-dx:dx;
+            if((dy<0?-dy:dy)>length)length=dy<0?-dy:dy;
+            if(!length)continue;
+            s32 offset=p->width+3;
+            *outX=bx*WATER_BUCKET+(p->ax+p->bx)/2-(s64)dy*offset/length;
+            *outY=by*WATER_BUCKET+(p->ay+p->by)/2+(s64)dx*offset/length;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}

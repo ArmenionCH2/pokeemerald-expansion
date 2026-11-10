@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials` or `--tour mesa`,
+Focused native checks are available with `--tour materials`, `--tour mesa` or `--tour headwaters`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
@@ -260,7 +260,35 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   approach, then validates dry mesa ground, safe collision and visible native rock
   walls. Native QA checks cold Continue there independently. Older generations
   retain their terrain identity; never retag a save to add this feature.
-  Existing versions 3 through 19 retain their original
+  Generation 21 adds one smaller tributary level on validated local creeks.
+  Up to two seeded roots lie at thirds of each parent segment; branches are
+  nominal spans of 512–1535 tiles with a bounded upstream bias and channel
+  half-widths 1–3. Root rain must
+  be at least 96. One root check and 16 profile probes reject lake/dune crossings
+  and insufficient original ground clearance. Head rise is capped at three
+  ordinal units above its receiver; the flat join covers the parent bank apron.
+  Whole parent endpoints and canonical world-coordinate root hashes keep child
+  geometry, validation and receiving heights independent of the querying bucket.
+  Parent culling expands to 1900 tiles to include children reaching nearby banks.
+  Three preparation passes preserve main-river, parent-creek, then child ownership;
+  each step still evaluates at most one ground point, with state kept per bucket
+  for interleaved frontiers. New worlds admit 192 pieces (96 main/96 local), while
+  generations 18–20 retain their 128-piece admission limit. Permanent banks add
+  4096 bytes, and bucket bookkeeping adds 16 bytes. No save fields are added.
+  WidthB bit 0x80 marks a child alongside the existing 0x8000 creek flag; join
+  fraction bits 8–14 are unchanged. Always decode physical width with TipWidth.
+  A read-only resident-piece query supports a safe fifth-page Headwater inspector
+  and the Headwater creek descriptor. Close terrain-atlas strokes include the
+  new water without changing exploration. Macro drainage notes remain generation
+  20's; this is two bounded local tributary levels, not a complete fine watershed,
+  groundwater, discharge-conservation or spring model.
+  Native QA saves/resets/Continues at a child creek and checks actual resident
+  children, visible tiles, position, seed and journal. Legacy snapshots also
+  fingerprint the visible metatile words, in addition to macro/habitat checksums. A separate six-seed host
+  streaming check runs across both 4 km water-cache axes and reverses direction;
+  it compares visible tiles only after walking, so the direct oracle cannot warm
+  hydrology ahead of the streaming scheduler and mask a readiness wait.
+  Existing versions 3 through 20 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

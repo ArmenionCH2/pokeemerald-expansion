@@ -85,7 +85,8 @@ void AtlasLocation_Tick(void)
                 }
             }
             AtlasPlace_ApplyShore(&sPlace,watermask);
-            if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))sPlace.kind=ATLAS_PLACE_CREEK;
+            if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))
+                sPlace.kind=AtlasWater_HeadwaterNear(x,y,4)?ATLAS_PLACE_HEADWATER:ATLAS_PLACE_CREEK;
         }
         sX = x; sY = y;
     }
