@@ -173,7 +173,22 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   product and exact remainder correction. Signed frame calculations retain C's
   truncation toward zero. They use creation scratch only and preserve older
   macro outputs; the full-width arithmetic contract covers every frame divisor.
-  Existing versions 3 through 15 retain their original
+  Generation 17 scales the dry bank apron to 16 times the sampled channel half-
+  width, bounded to 80–1600 tiles. Eight distance bands retain the graded floor
+  and soil-moisture profile; broad rivers therefore have wider low, wet ground.
+  Tapered outlets use their local interpolated width. Cache clipping expands to
+  a 2000-tile apron so a wide floodplain survives a bucket boundary; older
+  generations retain their original 480-tile clipping and 80-tile bank reach.
+  This reuses the same piece storage and does not alter macro notes or add saved
+  fields. Low dry inner plains receive the physical Floodplain descriptor;
+  adjacent water still takes shoreline naming priority. GEO TP validates dry
+  low ground with actual valley/moisture semantics and a safe 3x3 landing beyond
+  the immediate bank. The close moisture atlas exposes the same sampled wetness.
+  Larger clipped geometry belongs to the new generation identity; no universal
+  bit-identity with an older generation's detailed raster is implied. This is
+  bounded incision/riparian moisture, not sediment deposition, levees, seasonal
+  inundation or a complete flood model.
+  Existing versions 3 through 16 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

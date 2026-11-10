@@ -71,20 +71,21 @@ static void AddTaper(s32 ax, s32 ay, s32 bx, s32 by, u16 ha, u16 hb, u16 width,u
 {
     s32 first = 0, last = WATER_T_ONE, dx = bx - ax, dy = by - ay;
     struct RiverPiece *piece;
+    s32 cacheMargin=AtlasWorld_Generation()>=17?2000:WATER_MARGIN;
     if (sPieceCount >= (AtlasWorld_Generation()>=15?WATER_SEGMENTS:24)) return;
     ax -= sBucketX * WATER_BUCKET; bx -= sBucketX * WATER_BUCKET;
     ay -= sBucketY * WATER_BUCKET; by -= sBucketY * WATER_BUCKET;
     /* Reject before fixed-point clipping, keeping parameter calculations bounded. */
-    if ((ax < -WATER_MARGIN && bx < -WATER_MARGIN) || (ax > WATER_BUCKET + WATER_MARGIN && bx > WATER_BUCKET + WATER_MARGIN)
-        || (ay < -WATER_MARGIN && by < -WATER_MARGIN) || (ay > WATER_BUCKET + WATER_MARGIN && by > WATER_BUCKET + WATER_MARGIN)) return;
+    if ((ax < -cacheMargin && bx < -cacheMargin) || (ax > WATER_BUCKET + cacheMargin && bx > WATER_BUCKET + cacheMargin)
+        || (ay < -cacheMargin && by < -cacheMargin) || (ay > WATER_BUCKET + cacheMargin && by > WATER_BUCKET + cacheMargin)) return;
     /* Short tapers retain their original endpoints. Re-clipping and rounding
      * their width ramp independently in adjacent buckets would create seams. */
     if(widthB)
     {
         if(dx< -3000 || dx>3000 || dy< -3000 || dy>3000)return;
     }
-    else if (!ClipAxis(ax, dx, -WATER_MARGIN, WATER_BUCKET + WATER_MARGIN, &first, &last)
-        || !ClipAxis(ay, dy, -WATER_MARGIN, WATER_BUCKET + WATER_MARGIN, &first, &last)) return;
+    else if (!ClipAxis(ax, dx, -cacheMargin, WATER_BUCKET + cacheMargin, &first, &last)
+        || !ClipAxis(ay, dy, -cacheMargin, WATER_BUCKET + cacheMargin, &first, &last)) return;
     piece = &sPieces[sPieceCount++];
     piece->ax = ax + (s64)dx * first / WATER_T_ONE; piece->ay = ay + (s64)dy * first / WATER_T_ONE;
     piece->bx = ax + (s64)dx * last / WATER_T_ONE; piece->by = ay + (s64)dy * last / WATER_T_ONE;
@@ -296,6 +297,12 @@ static u8 PieceHeight(const struct RiverPiece *p,s32 dot,s32 length)
         return (s64)(p->ha-p->hb)*dot < (s64)((p->ha&255)+1)*length ? p->ha >> 8 : p->hb >> 8;
     return (p->ha + (s64)((s32)p->hb - p->ha)*dot/length) >> 8;
 }
+static s32 BankReach(s32 width)
+{
+    if(AtlasWorld_Generation()<17)return 80;
+    s32 reach=width*16;
+    return reach<80?80:reach>1600?1600:reach;
+}
 static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley,struct AtlasBankProfile *bank)
 {
     s32 localX, localY; u8 i;
@@ -316,7 +323,7 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
         /* Once a previous piece has supplied a floor, only water can change
          * the answer. Reject remote pieces before any distance products. */
         if (terrainHeight > 155 && *valley) margin += 48;
-        if(bank && margin<maximum+80)margin=maximum+80;
+        if(bank && margin<maximum+BankReach(maximum))margin=maximum+BankReach(maximum);
         if (localX < minX - margin || localX > maxX + margin
             || localY < minY - margin || localY > maxY + margin) continue;
         dx = p->bx - p->ax; dy = p->by - p->ay;
@@ -347,11 +354,12 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
             if(bank && terrainHeight>=ATLAS_PLAN_SEA)
             {
                 unsigned band;
-                /* The 80-tile apron stays inside the existing 480-tile
-                 * cached-piece margin, including maximum-width rivers. */
+                s32 reach=BankReach(width);
+                /* River-scaled floodplains fit inside the creation epoch's
+                 * cache apron. Older worlds retain their 80-tile profile. */
                 for(band=1;band<=8;band++)
                 {
-                    s32 radius=width+band*10;
+                    s32 radius=width+reach*band/8;
                     if(metric<=(s64)radius*radius*unit)
                     {
                         unsigned bed=PieceHeight(p,dot,length),target=terrainHeight;

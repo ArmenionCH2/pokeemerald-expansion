@@ -298,7 +298,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<21;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<22;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -347,7 +347,7 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit],isShore=(type>=2 && type<=4) || type==20 || type==11;
@@ -355,7 +355,7 @@ static void shoreTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<21;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<22;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
@@ -436,6 +436,7 @@ static void shoreTour(uint32_t savePointer)
                     for(unsigned i=0;i<4608;i++)cells+=core->busRead16(core,plan+i*12+4)==component;
                     assert(cells && cells<32);printf("PASS native island inspection: %u-cell landmass and safe 3x3 landing\n",cells);
                 }
+                else if(type==21){assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==18);printf("PASS native named floodplain and safe dry soil landing\n");}
                 else if(type==8){assert(water);printf("PASS native valley inspection: %u visible water tiles and safe carved bank landing\n",water);}
                 else{assert(walls);printf("PASS native terrain inspection type %u: %u visible cliff tiles and safe 3x3 landing\n",type,walls);}
             }
@@ -459,7 +460,7 @@ static void shoreTour(uint32_t savePointer)
             assert(named);
         }
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
-        if(type==5 || type==20)
+        if(type==5 || type==20 || type==21)
         {
             unsigned char before[1456],after[1456];
             press(8);
@@ -469,13 +470,13 @@ static void shoreTour(uint32_t savePointer)
             uint32_t journal=core->busRead32(core,symbol("gSaveBlock3Ptr"));
             bytes(journal,before,sizeof(before));
             if(!core->busRead8(core,symbol("sAdminView")))press(4);
-            unsigned targetZoom=type==5?4:3,targetLayer=type==5?1:0;
+            unsigned targetZoom=type==5?4:3,targetLayer=type==5?1:type==21?4:0;
             for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapZoom"))!=targetZoom && i<8;i++)press(core->busRead8(core,symbol("sAtlasMapZoom"))<targetZoom?256:512);
             for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapLayer"))!=targetLayer && i<8;i++)press(8);
             unsigned painted=0;
             while(core->busRead8(core,symbol("sAtlasMapRow"))<25 && painted++<1800)frames(0,1);
             assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
-            shot(type==5?"build/atlas-emulator/volcano-elevation.ppm":"build/atlas-emulator/estuary-geography.ppm");
+            shot(type==5?"build/atlas-emulator/volcano-elevation.ppm":type==21?"build/atlas-emulator/floodplain-moisture.ppm":"build/atlas-emulator/estuary-geography.ppm");
             bytes(journal,after,sizeof(after));assert(!memcmp(before,after,sizeof(before)));
             press(2);frames(0,180);press(2);frames(0,60);
             printf("PASS native local feature %u atlas completes in %u frames and leaves journal unchanged\n",type,painted);
@@ -492,7 +493,7 @@ static void cancelGeoSearch(uint32_t savePointer)
     press(8);
     for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
     assert(core->busRead8(core,cursor)==3);press(1);
-    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<21;i++) press(128);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<22;i++) press(128);
     assert(core->busRead8(core,choice)==17);press(1);
     if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
     press(2);frames(0,30);
@@ -544,9 +545,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==16);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==17);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 16 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 17 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();
