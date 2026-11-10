@@ -36,6 +36,11 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
+Focused native checks are available with `--tour materials` or `--tour mesa`,
+optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
+saves and still uses genuine key input and emulation. Full tours allow up to ten
+minutes of host wall time as inspector coverage grows; GBA frame budgets are
+checked separately. Do not describe this host timeout as game loading time.
  `make` builds the Emerald target; other Expansion game
 targets are retained engine code, not supported Atlas releases. `make release`
 enables the engine's release/LTO mode. Build artifacts stay in `build/` or the
@@ -229,7 +234,25 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   preserving visible tiles, seed, position and discovery. Floodplain inspection
   additionally checks the location announcer's three-tile shoreline stencil and
   rejects volcanic precedence, so a curved bank is not mislabeled as a plain.
-  Existing versions 3 through 18 retain their original
+  Generation 20 adds rare flat-capped dry-country uplands on warm, relatively
+  dry macro nodes at heights 156–185, excluding flooded centres and main channels.
+  A seed predicate selects sites; 2–5 km bounded octagonal footprints receive
+  smooth local outline perturbations. The inner half-radius adds a constant
+  24–39 ordinal units; surrounding shoulders taper to zero. Existing small ground
+  variations remain, so a cap is locally subdued rather than a perfectly level
+  mathematical floor. The same uplift feeds direct ground and final habitat before
+  water carving. Riparian floors/water keep priority. Dunes fade outside the mesa
+  footprint rather than crossing the cap. Native rock ground and three contour
+  tiers follow uplift, with snow priority and a narrow walkable axial approach.
+  A single-owner descriptor cache, an exact repeated-point memo and existing noise
+  fields avoid a permanent site list, new graphics or saved fields. Macro climate/drainage notes remain generation
+  19's. This is bounded morphology, not stratigraphic geology, sediment transport
+  or a regional erosion reconstruction. Mesa naming, a fifth-page inspector and
+  close relief views use the actual feature. Inspection bisects a contour on the
+  approach, then validates dry mesa ground, safe collision and visible native rock
+  walls. Native QA checks cold Continue there independently. Older generations
+  retain their terrain identity; never retag a save to add this feature.
+  Existing versions 3 through 19 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

@@ -1,6 +1,8 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_volcano.h"
+#include "atlas_mesa.h"
+bool8 AtlasMesa_Sample(s32 x,s32 y,struct AtlasMesa *out){return FALSE;}
 bool8 AtlasVolcano_Bare(s32 x,s32 y){return FALSE;}
 u16 AtlasWorld_Generation(void){return 3;}
 bool8 AtlasVolcano_Sample(s32 x,s32 y,struct AtlasVolcano *out){return FALSE;}

@@ -7,6 +7,7 @@
 #include "atlas_vegetation.h"
 #include "atlas_volcano.h"
 #include "atlas_dune.h"
+#include "atlas_mesa.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -96,6 +97,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_MESA && AtlasWorld_Generation()<20)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_ROCK_EDGE && AtlasWorld_Generation()<14)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_DUNES && AtlasWorld_Generation()<19)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_CREEK && AtlasWorld_Generation()<18)gAtlasGeoStatus=3;
@@ -122,6 +124,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_ESTUARY)return AtlasWater_IsEstuary(id);
     if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
+    if(sType==ATLAS_GEO_MESA){struct AtlasMesa mesa;return AtlasMesa_Site(id,&mesa);}
     if(sType==ATLAS_GEO_ROCK_EDGE)
     {struct AtlasVolcano volcano;return n->height>205 || AtlasVolcano_Site(id,&volcano);}
     if(sType==ATLAS_GEO_SNOW_EDGE)
@@ -213,6 +216,15 @@ u8 AtlasGeo_Step(void)
         if(++sSceneAt>=117)sPhase=0;
         return 0;
     }
+    if(sPhase==31)
+    {
+        if(sDX-sWX<=1)
+        {sLX=sCX+3;sLY=sCY+sWX;sCheck=sAttempt=0;sPhase=4;return 0;}
+        s32 distance=sWX+(sDX-sWX)/2;struct AtlasMesa mesa;
+        if(AtlasMesa_Sample(sCX,sCY+distance,&mesa) && mesa.uplift>=12)sWX=distance;
+        else sDX=distance;
+        return 0;
+    }
     if(sPhase==30)
     {
         static const s8 offsets[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
@@ -286,6 +298,11 @@ u8 AtlasGeo_Step(void)
                 /* Approach the second cone terrace through its radial gap. */
                 sLX=v.x;sLY=v.y+v.radius-32*(v.radius-v.radius/4)/v.uplift;
                 sCheck=sAttempt=0;sPhase=4;return 0;
+            }
+            if(sType==ATLAS_GEO_MESA)
+            {
+                struct AtlasMesa mesa;AtlasMesa_Site(sNode,&mesa);
+                sCX=mesa.x;sCY=mesa.y;sWX=0;sDX=mesa.radius+512;sPhase=31;return 0;
             }
             if(GroundBoundary()){sPhase=20;return 0;}
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
@@ -510,7 +527,7 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
-        if(sType==ATLAS_GEO_VOLCANO){sPhase=0;return 0;}
+        if(sType==ATLAS_GEO_VOLCANO || sType==ATLAS_GEO_MESA){sPhase=0;return 0;}
         if(GroundBoundary()){sDirection++;SandDirection();return 0;}
         if(sType==ATLAS_GEO_DUNES){sPhase=27;return 0;}
         if(sType==ATLAS_GEO_CREEK){sPhase=25;return 0;}
@@ -525,6 +542,12 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_MESA)
+        {
+            AtlasTerrain_Sample(sLX,sLY,&c);
+            if(c.waterform || c.landform!=ATLAS_MESA){sPhase=0;return 0;}
+            sSceneAt=0;sPhase=24;return 0;
+        }
         if(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE)
         {
             u16 id=AtlasTerrain_Tile(sLX,sLY)&1023;

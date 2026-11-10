@@ -28,7 +28,9 @@ Generation 18 refines suitable inland reaches with deterministic, terrain-checke
 local tributary creeks, creekbank names and developer inspection.
 Generation 19 adds warm, dry dune fields with shared height sampling, walkable
 native sand ridges, physical naming and developer inspection.
-Existing generation-3 through generation-18 worlds keep their original geography and walkability.
+Generation 20 adds rare dry-country mesas with flat caps, warped shoulders,
+native rock contours, walkable approaches and developer inspection.
+Existing generation-3 through generation-19 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
@@ -59,8 +61,8 @@ in the start menu can find landforms, waters and forest/desert/tundra/wetland
 locations, plus regional plateaus. Its fourth page also finds a sand/grass boundary
 for inspecting native ground edges, islands for checking small landmasses, and
 dunes for checking actual sand relief. The fifth page locates rounded rock/grass
-and snow/grass ground borders. These presentation changes preserve terrain heights
-and walking collision in supported saves.
+and snow/grass ground borders, plus mesas. The border artwork preserves terrain
+heights and walking collision. Mesas require a new generation-20 world.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
 The exploration journal has a fixed save capacity and warns when space is low.

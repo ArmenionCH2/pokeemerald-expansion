@@ -12,8 +12,10 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--rom',type=Path,default=R/'pokeemerald.gba')
 parser.add_argument('--elf',type=Path,default=R/'pokeemerald.elf')
 parser.add_argument('--save',type=Path,help='Copy a test save; never alter the supplied file')
+parser.add_argument('--tour',choices=['materials','mesa'],help='Run a focused real-key geography tour instead of the complete smoke test')
 parser.add_argument('--snapshot',type=Path,help='Dump the live journal after world entry instead of the full smoke test')
 args=parser.parse_args()
+if args.tour and args.snapshot:parser.error('--tour and --snapshot are mutually exclusive')
 out=R/'build/atlas-emulator';out.mkdir(parents=True,exist_ok=True)
 rom=out/'atlas.gba'
 shutil.copyfile(args.rom,rom)
@@ -25,4 +27,4 @@ symbols=out/'symbols.txt'
 symbols.write_bytes(subprocess.check_output(['arm-none-eabi-nm',str(args.elf)]))
 exe=out/'emulator'
 subprocess.run([os.environ.get('CC','cc'),'-O2',str(R/'tests/atlas/emulator.c'),'-lmgba','-o',str(exe)],check=True)
-subprocess.run([str(exe),str(rom),str(symbols)]+([str(args.snapshot)] if args.snapshot else []),cwd=R,check=True,timeout=300)
+subprocess.run([str(exe),str(rom),str(symbols)]+([str(args.snapshot)] if args.snapshot else ['--'+args.tour] if args.tour else []),cwd=R,check=True,timeout=600)

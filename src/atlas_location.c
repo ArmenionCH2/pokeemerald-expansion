@@ -59,6 +59,7 @@ void AtlasLocation_Tick(void)
             u8 region=AtlasRegion_At(x,y);
             if(AtlasVolcano_Sample(x,y,&volcano))
                 sPlace.kind=volcano.distance<volcano.radius/4?ATLAS_PLACE_CALDERA:ATLAS_PLACE_VOLCANO;
+            else if(cell.landform==ATLAS_MESA)sPlace.kind=ATLAS_PLACE_MESA;
             else if(cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST)sPlace.kind=ATLAS_PLACE_DUNES;
             else if(AtlasWorld_Generation()>=17 && cell.valley==0 && cell.elevation<155 && cell.moisture>=132)
                 sPlace.kind=ATLAS_PLACE_FLOODPLAIN;

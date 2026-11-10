@@ -4,6 +4,7 @@
 #include "atlas_tiles.h"
 #include "atlas_volcano.h"
 #include "atlas_dune.h"
+#include "atlas_mesa.h"
 #include "constants/metatile_labels.h"
 
 /* Geographic generation 1 for box 3, not the missing historical generator. */
@@ -20,12 +21,13 @@ static EWRAM_DATA struct {
     u16 node,radius;
     u8 peak;
     bool8 valid,active;
-} sVolcanoCache={0};
+} sVolcanoCache={0},sMesaCache={0};
+static EWRAM_DATA struct {s32 x,y;struct AtlasMesa value;bool8 valid;} sMesaLast={0};
 void AtlasTerrain_SetSeed(u32 seed)
 {
     gAtlasWorldSeed = seed;
     memset(sNoise, 0, sizeof(sNoise));
-    sVolcanoCache.valid=FALSE;
+    sVolcanoCache.valid=sMesaCache.valid=sMesaLast.valid=FALSE;
     AtlasTiles_Reset();
     AtlasPlan_ResetSample();
 }
@@ -164,6 +166,75 @@ static s32 Noise(s32 x, s32 y, u32 channel)
     bottom = (n->c * (256 - fx) + n->d * fx) >> 8;
     return (top * (256 - fy) + bottom * fy) >> 8;
 }
+bool8 AtlasMesa_Site(u16 node,struct AtlasMesa *out)
+{
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<20 || node>=ATLAS_PLAN_COUNT)return FALSE;
+    const struct AtlasPlanNode *n=&gAtlasPlan[node];
+    if(n->height<156 || n->height>185 || n->water>n->height || n->runoff>=600)return FALSE;
+    u32 hash=Hash(node,0,0x4D455341u);if(hash%5)return FALSE;
+    s32 y=(node/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+    struct AtlasHabitat habitat;AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
+    if(habitat.temperature<155 || habitat.moisture>=110)return FALSE;
+    out->x=(u32)(node%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;out->y=y;
+    out->radius=2048+((hash>>8)&3)*1024;out->distance=0;
+    out->uplift=24+((hash>>18)&15);out->relief=0;return TRUE;
+}
+static bool8 MesaResult(s32 x,s32 y,const struct AtlasMesa *site,struct AtlasMesa *out)
+{
+    sMesaLast.x=x;sMesaLast.y=y;sMesaLast.value=*site;sMesaLast.valid=TRUE;
+    *out=*site;return TRUE;
+}
+bool8 AtlasMesa_Region(s32 x,s32 y,struct AtlasMesa *out)
+{
+    struct AtlasMesa site={0};
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<20 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
+    x=Wrap(x);
+    if(sMesaLast.valid && sMesaLast.x==x && sMesaLast.y==y){*out=sMesaLast.value;return TRUE;}
+    if(!sMesaCache.valid || x<sMesaCache.x0 || x>=sMesaCache.x1 || y<sMesaCache.y0 || y>=sMesaCache.y1)
+    {
+        u32 col=((u32)x*ATLAS_PLAN_WIDTH+ATLAS_WORLD_WIDTH/2)/ATLAS_WORLD_WIDTH;
+        u32 row=((u32)(y+ATLAS_WORLD_HALF_HEIGHT)*(ATLAS_PLAN_HEIGHT-1)+ATLAS_WORLD_HALF_HEIGHT)/(2*ATLAS_WORLD_HALF_HEIGHT);
+        sMesaCache.node=row*ATLAS_PLAN_WIDTH+col%ATLAS_PLAN_WIDTH;
+        sMesaCache.cx=col*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+        sMesaCache.cy=row*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        sMesaCache.x0=sMesaCache.cx-ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sMesaCache.x1=sMesaCache.cx+ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sMesaCache.y0=sMesaCache.cy-ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sMesaCache.y1=sMesaCache.cy+ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sMesaCache.active=AtlasMesa_Site(sMesaCache.node,&site);
+        if(sMesaCache.active){sMesaCache.radius=site.radius;sMesaCache.peak=site.uplift;}
+        sMesaCache.valid=TRUE;
+    }
+    if(!sMesaCache.active)return FALSE;
+    site.x=Wrap(sMesaCache.cx);site.y=sMesaCache.cy;site.radius=sMesaCache.radius;
+    site.uplift=site.relief=0;
+    s32 dx=x-sMesaCache.cx,dy=y-site.y,axis=dx<0?-dx:dx;
+    s32 ax=dx<0?-dx:dx,ay=dy<0?-dy:dy;
+    s32 far=(ax>ay?ax:ay)+(ax>ay?ay:ax)/2;
+    if(far>=site.radius*2+384)
+    {site.distance=far>65535?65535:far;return MesaResult(x,y,&site,out);}
+    /* Existing smooth relief fields perturb the outline, not the cap height. */
+    dx+=(Noise(x,y,8)-128)*2;dy+=(Noise(Wrap(x+17777),y,8)-128)*2;
+    if(dx<0)dx=-dx;
+    if(dy<0)dy=-dy;
+    s32 r=(dx>dy?dx:dy)+(dx>dy?dy:dx)/2;
+    site.distance=r>65535?65535:r;
+    if(r<site.radius)
+    {
+        s32 cap=site.radius/2;
+        site.uplift=r<=cap?sMesaCache.peak:sMesaCache.peak*(site.radius-r)/(site.radius-cap);
+        site.relief=(site.uplift>=36?3:site.uplift>=24?2:site.uplift>=12?1:0)<<4;
+        /* A narrow natural approach crosses the surrounding contours. */
+        if(axis<=5)site.relief|=0x80;
+    }
+    return MesaResult(x,y,&site,out);
+}
+bool8 AtlasMesa_Sample(s32 x,s32 y,struct AtlasMesa *out)
+{
+    struct AtlasMesa site;
+    if(!out || !AtlasMesa_Region(x,y,&site) || site.distance>=site.radius)return FALSE;
+    *out=site;return TRUE;
+}
 /* Coherent erg availability is independent of humidity noise. A smooth
  * envelope fades the local relief at its substrate/climate margins. */
 u8 AtlasDune_Envelope(s32 x,s32 y,const struct AtlasPlanSample *plan)
@@ -185,6 +256,13 @@ u8 AtlasDune_Envelope(s32 x,s32 y,const struct AtlasPlanSample *plan)
     {
         if(site.distance<=site.radius)return 0;
         edge=(site.distance-site.radius)*128/site.radius;
+        if(weight>edge)weight=edge;
+    }
+    struct AtlasMesa mesa;
+    if(AtlasMesa_Region(x,y,&mesa) && mesa.distance<mesa.radius*2)
+    {
+        if(mesa.distance<=mesa.radius)return 0;
+        edge=(mesa.distance-mesa.radius)*128/mesa.radius;
         if(weight>edge)weight=edge;
     }
     return weight;
@@ -240,6 +318,8 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
     s32 height=plan->lake?plan->height:Clamp(plan->height+(Noise(x,y,3)-128)/16);
     struct AtlasVolcano volcano;
     if(!plan->lake && AtlasVolcano_Sample(x,y,&volcano))height=Clamp(height+volcano.uplift);
+    struct AtlasMesa mesa;
+    if(!plan->lake && AtlasMesa_Sample(x,y,&mesa))height=Clamp(height+mesa.uplift);
     if(!plan->lake)height=Clamp(height+AtlasDune_Rise(x,y,plan));
     return height;
 }
@@ -250,7 +330,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     u8 water = ATLAS_DRY, surface = 0;
     struct AtlasBankProfile bank={0};
     bool8 coastalGround=TRUE;
-    bool8 lakeBank=FALSE,dune=FALSE;
+    bool8 lakeBank=FALSE,dune=FALSE,mesaGround=FALSE;
     u8 duneRise=0;
     if (!cell) return;
     cell->valley = 255;
@@ -267,6 +347,8 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         e = plan.lake ? plan.height : Clamp(plan.height + (Noise(x,y,3)-128)/16);
         struct AtlasVolcano volcano;
         if(!plan.lake && AtlasVolcano_Sample(x,y,&volcano))e=Clamp(e+volcano.uplift);
+        struct AtlasMesa mesa;
+        if(!plan.lake && AtlasMesa_Sample(x,y,&mesa)){e=Clamp(e+mesa.uplift);mesaGround=mesa.uplift>0;}
         unsigned duneWeight=AtlasDune_Envelope(x,y,&plan);dune=duneWeight>0;
         if(dune){duneRise=DuneScore(x,y)*6*duneWeight/(254*128);e=Clamp(e+duneRise);}
         rain = Clamp(plan.rain + (Noise(x, y, 4) - 128) / 8); vapor = plan.humidity;
@@ -315,6 +397,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     else cell->biome = ATLAS_GRASSLAND;
     if(dune && water==ATLAS_DRY && !bank.wetness && cell->valley==255)
         cell->landform=duneRise>=3?ATLAS_DUNE_CREST:ATLAS_DUNE;
+    if(mesaGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_MESA;
 }
 
 u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCover)
@@ -328,7 +411,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     /* Stateless native floor detail; no new lattice, cache or geographic query. */
     detail = Hash(x, y, 0x47524E44);
     if(AtlasWorld_Generation()>=14 && c->biome!=ATLAS_TUNDRA
-     && (c->elevation>205 || AtlasVolcano_Bare(x,y)))
+     && (c->elevation>205 || c->landform==ATLAS_MESA || AtlasVolcano_Bare(x,y)))
         return PACK_METATILE(ATLAS_ROCK_FLOOR_FIRST+((detail&15)<4?(detail&3):0))|PACK_ELEVATION(3);
     if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
      && c->landform!=ATLAS_COAST

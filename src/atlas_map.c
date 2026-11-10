@@ -7,6 +7,7 @@
 #include "atlas_weather.h"
 #include "atlas_region.h"
 #include "atlas_volcano.h"
+#include "atlas_mesa.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "main.h"
@@ -67,12 +68,13 @@ static struct AtlasCell Sample(s32 x, s32 y)
         // A continental pixel summarizes macro notes, not a remote metre of
         // detailed riverbank geometry. Never use this shortcut for player fog.
         AtlasPlan_SampleDetail(Wrap(x),y,&plan);
-        cell.elevation=plan.height;
+        cell.elevation=plan.height;bool8 mesaGround=FALSE;
         cell.waterform=plan.height<ATLAS_PLAN_SEA?ATLAS_SEA:plan.lake?ATLAS_LAKE:ATLAS_DRY;
         if(cell.waterform==ATLAS_DRY && sScales[sAtlasMapZoom]<=1000)
         {
             struct AtlasVolcano volcano;
-            if(AtlasVolcano_Sample(x,y,&volcano))
+            struct AtlasMesa mesa;mesaGround=AtlasMesa_Sample(x,y,&mesa) && mesa.uplift>0;
+            if(AtlasVolcano_Sample(x,y,&volcano) || mesaGround)
             {
                 struct AtlasPlanSample ground;
                 cell.elevation=AtlasTerrain_GroundHeight(x,y,&ground);
@@ -81,6 +83,7 @@ static struct AtlasCell Sample(s32 x, s32 y)
         AtlasHabitat_Sample(y,cell.elevation,plan.rain,plan.humidity,cell.waterform,&habitat);
         cell.temperature=habitat.temperature;cell.humidity=habitat.humidity;cell.moisture=habitat.moisture;
         cell.landform=cell.elevation<128?ATLAS_COAST:cell.elevation>185?ATLAS_MOUNTAIN:cell.elevation>155?ATLAS_HILL:ATLAS_PLAIN;
+        if(mesaGround){cell.landform=ATLAS_MESA;cell.valley=255;}
         cell.biome=cell.waterform==ATLAS_SEA?ATLAS_OCEAN:cell.waterform!=ATLAS_DRY?ATLAS_WETLAND
             :cell.temperature<45?ATLAS_TUNDRA:cell.temperature<85?ATLAS_TAIGA
             :cell.elevation<132 && cell.moisture>160?ATLAS_WETLAND
@@ -102,7 +105,7 @@ static u8 Color(s32 x, s32 y)
     if(sAtlasMapLayer==LAYER_LOCAL_RELIEF)
     {
         if(cell.waterform)return 2;
-        if(MacroSummary())return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
+        if(MacroSummary() && cell.landform!=ATLAS_MESA)return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
         unsigned tier=(AtlasMountain_Relief(x,y,&cell)>>4)&7;
         if(tier>=4)return tier>=5?11:4;
         return tier==3?6:tier==2?11:tier==1?4:3;
@@ -137,7 +140,7 @@ static u8 Color(s32 x, s32 y)
      || (AtlasWorld_Generation()>=18 && (sScales[sAtlasMapZoom]==4 || sScales[sAtlasMapZoom]==20)))
      && AtlasWater_RiverNear(x,y,(sScales[sAtlasMapZoom]*71+99)/100))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
-    if (cell.landform == ATLAS_MOUNTAIN) return 6;
+    if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA) return 6;
     if (cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST || cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;
     return cell.biome == ATLAS_WETLAND ? 7 : 3;
 }

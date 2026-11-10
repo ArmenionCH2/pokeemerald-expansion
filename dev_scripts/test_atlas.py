@@ -18,7 +18,7 @@ groups = {
     'actor_identity': ['atlas_actor_identity', 'actor_identity_property'],
     'actor_identity actor_admission': ['actor_admission'],
     'actor_identity actor_admission actor_runtime': ['actor_runtime'],
-    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','relief_generation','bank_generation','erosion_generation','bathymetry','island_generation','volcano','rock_ground','estuary_generation','small_network','floodplain_generation','creek_generation','dune_tiles','dune_generation','material_edges','frame_division','climate_transport','vegetation'],
+    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','relief_generation','bank_generation','erosion_generation','bathymetry','island_generation','volcano','rock_ground','estuary_generation','small_network','floodplain_generation','creek_generation','dune_tiles','dune_generation','material_edges','mesa','frame_division','climate_transport','vegetation'],
     'habitat': ['habitat_equivalence'],
     'mountain tiles tiles_data': ['atlas_tiles'],
     '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions','bank_profile','estuary_profile','floodplain_profile','creek_profile','creek_budget'],

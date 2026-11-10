@@ -18,7 +18,7 @@ u16 AtlasTiles_Water(u8 mask, u8 material, u8 waterform)
 static u8 Material(const struct AtlasCell *c)
 {
     if (c->biome == ATLAS_TUNDRA) return 3;
-    if (c->elevation > 205) return 2;
+    if (c->elevation > 205 || c->landform==ATLAS_MESA) return 2;
     if (c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST || c->biome == ATLAS_DESERT || (c->landform == ATLAS_COAST && c->biome != ATLAS_WETLAND)) return 1;
     return 0;
 }
