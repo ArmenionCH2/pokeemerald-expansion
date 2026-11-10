@@ -59,6 +59,12 @@ static bool8 MacroSummary(void)
     return sAdminView && sScales[sAtlasMapZoom]>=100
         && !(AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100);
 }
+static bool8 RiverStroke(s32 x,s32 y)
+{
+    return sAdminView && ((AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100)
+        || (AtlasWorld_Generation()>=18 && (sScales[sAtlasMapZoom]==4 || sScales[sAtlasMapZoom]==20)))
+        && AtlasWater_RiverNear(x,y,(sScales[sAtlasMapZoom]*71+99)/100);
+}
 static struct AtlasCell Sample(s32 x, s32 y)
 {
     struct AtlasCell cell={0};
@@ -107,10 +113,10 @@ static u8 Color(s32 x, s32 y)
     struct AtlasCell cell=Sample(x,y);
     if(sAtlasMapLayer==LAYER_LOCAL_RELIEF)
     {
-        if(cell.waterform)return 2;
+        if(cell.waterform || RiverStroke(x,y))return 2;
         if(MacroSummary() && cell.landform!=ATLAS_MESA && cell.landform!=ATLAS_SINKHOLE)return cell.elevation<155?3:cell.elevation<185?4:cell.elevation<215?11:6;
         unsigned tier=(AtlasMountain_Relief(x,y,&cell)>>4)&7;
-        if(tier==7)return 14;
+        if(tier==7)return cell.landform==ATLAS_CANYON?6:14;
         if(tier==6)return 6;
         if(tier>=4)return tier>=5?11:4;
         return tier==3?6:tier==2?11:tier==1?4:3;
@@ -141,11 +147,9 @@ static u8 Color(s32 x, s32 y)
         return 3+place.basin%13;
     }
     if (cell.waterform != ATLAS_DRY) return 2;
-    if(sAdminView && ((AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100)
-     || (AtlasWorld_Generation()>=18 && (sScales[sAtlasMapZoom]==4 || sScales[sAtlasMapZoom]==20)))
-     && AtlasWater_RiverNear(x,y,(sScales[sAtlasMapZoom]*71+99)/100))return 2;
+    if(RiverStroke(x,y))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
-    if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA
+    if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA || (cell.landform==ATLAS_CANYON && cell.valley!=0)
      || (cell.landform==ATLAS_ROCK_COAST && cell.moisture<110)) return 6;
     if (cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST || cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;
     return cell.biome == ATLAS_WETLAND ? 7 : 3;

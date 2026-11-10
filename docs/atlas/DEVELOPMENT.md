@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` `--tour karst` `--tour snowline` or `--tour landmarks`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks` or `--tour canyons`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -345,7 +345,35 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   words after 15360 camera steps, without oracle prewarming. Older-world native
   snapshots check visible tiles, macro/habitat checksums and the unchanged journal.
   Focused emulator tours fail if they never reach an actual matching feature.
-  Existing versions 3 through 22 retain their original
+  Generation 24 derives a 576-byte ocean-draining/no-intervening-lake bitmap in
+  the existing parent-first flood-order pass. Detailed channel levels on those
+  routes are incised by three quarters of their height above sea+8, capped at 24
+  ordinal units. This monotone height transform preserves downhill node joins;
+  nodes whose route enters a lake retain their original level, as do the lake
+  receiving planes. Source interpolation and fitted sea/lake outlets use the same
+  channel level. Macro nodes, their water notes, climate/runoff and journal format
+  remain generation 23's; the derived bitmap is rebuilt on Continue.
+  Suitable non-creek channels (half-width 16–96) in original dry ground at least
+  145 and at least 16 above the river acquire a bounded canyon section within the
+  existing bank apron. Incision strength fades over a further 16 height units.
+  The eight-band section has a subdued inner floor and steeper outer shoulders;
+  lowest fitted floor owns its material, with order-independent ties. Main channel
+  paths stay connected; local tributary admission can change with their receiving
+  levels, which is why this is a new generation rather than a save retag.
+  Dry canyon banks use actual eight-unit height contours and native rock/snow
+  walls. Inner floors and existing smooth saddle fields supply walkable openings.
+  Groves do not hide these walls. Canyon naming remains contextual within its
+  catchment, not a separately component-labelled gorge. The sixth-page inspector
+  filters local river/ground relief, then searches both perpendicular banks at
+  four-tile spacing to avoid aliasing narrow walls; it validates a safe 3x3 patch
+  and actual visible rock faces. Searches still yield, stop at their budget and
+  remain cancellable. Close local-relief views also use the existing read-only
+  minimum-width river stroke, so narrow water stays continuous at map resolution.
+  Tests cover monotone levels, lake-route exclusion, unchanged macro notes, bank
+  overlap order, native walls/naming/map isolation/save reload and six-seed strict
+  running-cadence streaming across both water-cache axes. This is bounded incised
+  morphology, not geological epochs, sediment transport or a full erosion solver.
+  Existing versions 3 through 23 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

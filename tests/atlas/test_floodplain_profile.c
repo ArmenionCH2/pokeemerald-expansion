@@ -45,3 +45,5 @@ int main(void)
     assert(bank.height==before.height && bank.wetness==before.wetness);
     puts("PASS river-scaled graded floodplain floor/moisture, extended bucket coverage with no boundary jump, dry overlap ordering and exact old 80-tile profile");
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

@@ -42,3 +42,5 @@ int main(void)
     u8 surface,valley;assert(AtlasWater_Sample(3000,3000,140,&plan,&surface,&valley)==ATLAS_RIVER && surface==124);
     printf("PASS %u descending local creek surface points, flat receiving reach, narrow flagged width, read-only creek inspection and protected main-river surface\n",count);
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

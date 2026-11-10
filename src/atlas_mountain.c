@@ -25,6 +25,11 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     bool8 pass;
     struct AtlasVolcano volcano;
     if(c->waterform!=ATLAS_DRY)return 0;
+    if(c->landform==ATLAS_CANYON)
+    {
+        unsigned saddle=AtlasTerrain_ReliefNoise(x,y,TRUE);
+        return 0x70|((c->valley==0 || (saddle>=126 && saddle<=130))?0x80:0);
+    }
     if(c->landform==ATLAS_SINKHOLE){struct AtlasKarst karst;return AtlasKarst_Sample(x,y,&karst)?karst.relief:0;}
     if(c->landform==ATLAS_ROCK_COAST)return 0x60;
     if(c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST)return c->landform==ATLAS_DUNE_CREST?0x50:0x40;

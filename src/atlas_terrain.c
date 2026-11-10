@@ -490,6 +490,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     if(mesaGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_MESA;
     if(karstGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_SINKHOLE;
     if(rockCoast && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_ROCK_COAST;
+    if(water==ATLAS_DRY && bank.canyon)cell->landform=ATLAS_CANYON;
 }
 
 u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCover)
@@ -503,11 +504,11 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     /* Stateless native floor detail; no new lattice, cache or geographic query. */
     detail = Hash(x, y, 0x47524E44);
     if(AtlasWorld_Generation()>=14 && c->biome!=ATLAS_TUNDRA
-     && (c->elevation>205 || c->landform==ATLAS_MESA
+     && (c->elevation>205 || c->landform==ATLAS_MESA || (c->landform==ATLAS_CANYON && c->valley!=0)
       || (c->landform==ATLAS_ROCK_COAST && c->moisture<110) || AtlasVolcano_Bare(x,y)))
         return PACK_METATILE(ATLAS_ROCK_FLOOR_FIRST+((detail&15)<4?(detail&3):0))|PACK_ELEVATION(3);
     if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
-     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST && c->landform!=ATLAS_SINKHOLE
+     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST && c->landform!=ATLAS_SINKHOLE && c->landform!=ATLAS_CANYON
      && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE || c->biome==ATLAS_TAIGA))
     {
         s32 cy=AtlasTerrain_FloorDiv(y,5),cx=x/5;

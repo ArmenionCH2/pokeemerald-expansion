@@ -29,6 +29,7 @@ void AtlasPlan_ReserveHeap(void)
 EWRAM_DATA struct AtlasPlanStats gAtlasPlanStats = {0};
 EWRAM_DATA u32 gAtlasWorldSeed = 0;
 EWRAM_DATA bool8 gAtlasPlanReady = FALSE;
+EWRAM_DATA static u8 sCanyonOpen[(ATLAS_PLAN_COUNT+7)/8]={0};
 struct PlanScratch {
     u16 heap[ATLAS_PLAN_COUNT], order[ATLAS_PLAN_COUNT];
     u8 level[ATLAS_PLAN_COUNT], rain[ATLAS_PLAN_COUNT];
@@ -145,6 +146,7 @@ bool8 AtlasPlan_Begin(u32 seed)
         return FALSE;
     }
     memset(gAtlasPlan, 0, sizeof(gAtlasPlan));
+    memset(sCanyonOpen,0,sizeof(sCanyonOpen));
     sScratch->islandRank=0xFFFFFFFFu;
     memset(&gAtlasPlanStats, 0, sizeof(gAtlasPlanStats));
     gAtlasWorldSeed = gAtlasPlanStats.seed = seed;
@@ -503,6 +505,11 @@ bool8 ATLAS_MACRO_ARM AtlasPlan_Step(u16 work)
                 /* Retain wet depressions; a spill level alone does not create a lake. */
                 if (node->water > node->height + 3 && node->runoff > 180 && node->rain > 65)
                     node->basin |= ATLAS_LAKE_FLAG;
+                /* Flood order visits parents first. Never lower water on a
+                 * route that enters a lake: its receiving plane stays intact. */
+                if(AtlasWorld_Generation()>=24 && !(node->basin&ATLAS_LAKE_FLAG)
+                 && (gAtlasPlan[parent].height<ATLAS_PLAN_SEA || (sCanyonOpen[parent/8]&(1<<(parent%8)))))
+                    sCanyonOpen[id/8]|=1<<(id%8);
             }
             if (++sAt == ATLAS_PLAN_COUNT) { memset(sScratch->rain, 0, sizeof(sScratch->rain)); Advance(); }
         }
@@ -724,4 +731,10 @@ bool8 AtlasPlan_IsIsland(u16 component)
         if(gAtlasPlan[i].continent==component && ++count>=32)break;
     sIslandClass.component=component;sIslandClass.valid=TRUE;sIslandClass.island=count>0 && count<32;
     return sIslandClass.island;
+}
+
+bool8 AtlasPlan_CanyonDrain(u16 node)
+{
+    return gAtlasPlanReady && AtlasWorld_Generation()>=24 && node<ATLAS_PLAN_COUNT
+        && (sCanyonOpen[node/8]&(1<<(node%8)));
 }

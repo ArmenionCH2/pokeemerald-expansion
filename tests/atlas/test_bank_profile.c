@@ -43,3 +43,5 @@ int main(void)
     assert(bank.height==before.height && bank.wetness==before.wetness);
     puts("PASS graded dry bank heights, moisture falloff, overlap ordering and unchanged water membership/surface/legacy valley caps");
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

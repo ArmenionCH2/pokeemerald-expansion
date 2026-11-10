@@ -87,3 +87,5 @@ int main(void)
     }
     puts("PASS: compatible lake/sea ownership, no upstream plane jump, bounded resumable terminal fitting");
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

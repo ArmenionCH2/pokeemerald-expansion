@@ -4,13 +4,13 @@
 #define ATLAS_WORLD_WIDTH 40075000
 #define ATLAS_WORLD_HALF_HEIGHT 10001500
 #define ATLAS_WORLD_SIZE ATLAS_WORLD_WIDTH
-#define ATLAS_GENERATION_VERSION 23
+#define ATLAS_GENERATION_VERSION 24
 #define ATLAS_GENERATION_OCEAN_BALANCE 4
 #define ATLAS_GENERATION_LEGACY 3
 #define ATLAS_SAVE_MAGIC 0xA756
 enum AtlasBiome { ATLAS_OCEAN, ATLAS_JUNGLE, ATLAS_FOREST, ATLAS_GRASSLAND, ATLAS_SAVANNA, ATLAS_DESERT, ATLAS_TAIGA, ATLAS_TUNDRA, ATLAS_WETLAND };
 enum AtlasWaterform { ATLAS_DRY, ATLAS_SEA, ATLAS_RIVER, ATLAS_LAKE };
-enum AtlasLandform { ATLAS_PLAIN, ATLAS_HILL, ATLAS_MOUNTAIN, ATLAS_COAST, ATLAS_DUNE, ATLAS_DUNE_CREST, ATLAS_MESA, ATLAS_ROCK_COAST, ATLAS_SINKHOLE };
+enum AtlasLandform { ATLAS_PLAIN, ATLAS_HILL, ATLAS_MOUNTAIN, ATLAS_COAST, ATLAS_DUNE, ATLAS_DUNE_CREST, ATLAS_MESA, ATLAS_ROCK_COAST, ATLAS_SINKHOLE, ATLAS_CANYON };
 struct AtlasCell { u8 elevation, temperature, moisture, biome, landform, humidity, seasonalRange, waterform, valley; };
 void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell);
 u16 AtlasTerrain_Tile(s32 x, s32 y);
@@ -22,7 +22,7 @@ bool8 AtlasWorld_IsActive(void);
 bool8 AtlasWorld_SaveValid(void);
 u16 AtlasWorld_Generation(void);
 /* Select only before AtlasPlan_Begin, never during live traversal. Fresh
- * worlds use version 23; saved versions 3 through 22 retain their terrain rules. */
+ * worlds use version 24; saved versions 3 through 23 retain their terrain rules. */
 bool8 AtlasWorld_SetGeneration(u16 version);
 bool8 AtlasWorld_RestoreGeneration(void);
 const struct MapHeader *AtlasWorld_Header(const struct MapHeader *base);

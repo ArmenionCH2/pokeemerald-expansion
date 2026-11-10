@@ -46,6 +46,16 @@ static u32 Mix(u32 n)
     n ^= n >> 16; n *= 0x7FEB352D; n ^= n >> 15; n *= 0x846CA68B; return n ^ (n >> 16);
 }
 void AtlasWater_Reset(void) { memset(sBuckets, 0, sizeof(sBuckets)); sActive = 0; sClock = 0; }
+static u8 ChannelLevel(u16 node)
+{
+    unsigned level=gAtlasPlan[node].water;
+    if(AtlasWorld_Generation()>=24 && AtlasPlan_CanyonDrain(node) && level>ATLAS_PLAN_SEA+8)
+    {
+        unsigned cut=(level-ATLAS_PLAN_SEA-8)*3/4;if(cut>24)cut=24;
+        level-=cut;
+    }
+    return level;
+}
 void AtlasWater_Point(u16 node, u8 part, s32 *x, s32 *y, u16 *height)
 {
     u16 parent = gAtlasPlan[node].parent;
@@ -65,7 +75,7 @@ void AtlasWater_Point(u16 node, u8 part, s32 *x, s32 *y, u16 *height)
     }
     if (*y < -ATLAS_WORLD_HALF_HEIGHT) *y = -ATLAS_WORLD_HALF_HEIGHT;
     if (*y >= ATLAS_WORLD_HALF_HEIGHT) *y = ATLAS_WORLD_HALF_HEIGHT - 1;
-    *height = ((u32)gAtlasPlan[node].water * (4 - part) + (u32)gAtlasPlan[parent].water * part) * 64;
+    *height = ((u32)ChannelLevel(node) * (4 - part) + (u32)ChannelLevel(parent) * part) * 64;
 
 }
 static s32 ClipParameter(s32 distance, s32 delta)
@@ -207,7 +217,7 @@ static u16 ReceiverLevel(u16 node,u32 t,u32 coast)
 {
     struct AtlasPlanNode *parent=&gAtlasPlan[gAtlasPlan[node].parent];
     u32 base=(parent->height<ATLAS_PLAN_SEA?ATLAS_PLAN_SEA:parent->water)*256u;
-    u32 rise=gAtlasPlan[node].water*256u-base;
+    u32 rise=ChannelLevel(node)*256u-base;
     if(t>=coast)return base;
     return base+(s64)rise*(coast-t)/coast;
 }
@@ -556,7 +566,7 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
 {
     s32 localX, localY; u8 i;
     *valley=255;
-    if(bank){bank->height=terrainHeight;bank->wetness=0;}
+    if(bank){bank->height=terrainHeight;bank->wetness=bank->canyon=0;}
     UseBucket(x, y);
     if (!sBuckets[sActive].ready) Prepare(x,y);
     localX = x - sBucketX * WATER_BUCKET; localY = y - sBucketY * WATER_BUCKET;
@@ -613,8 +623,19 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
                     if(metric<=(s64)radius*radius*unit)
                     {
                         unsigned bed=PieceHeight(p,dot,length),target=terrainHeight;
-                        if(terrainHeight>bed+1)target=bed+1+(terrainHeight-bed-1)*band*band/64;
-                        if(target<bank->height)bank->height=target;
+                        bool8 canyon=AtlasWorld_Generation()>=24 && !(p->widthB&CREEK_FLAG)
+                            && width>=16 && width<=96 && terrainHeight>=145
+                            && bed>=ATLAS_PLAN_SEA+8 && terrainHeight>=bed+16;
+                        static const u8 section[8]={1,2,3,4,16,40,60,64};
+                        unsigned weight=band*band;
+                        unsigned strength=canyon?terrainHeight-bed-15:0;if(strength>16)strength=16;
+                        if(canyon)weight=((16-strength)*weight+strength*section[band-1])/16;
+                        if(terrainHeight>bed+1)target=bed+1+(terrainHeight-bed-1)*weight/64;
+                        bool8 carved=canyon && strength>=1 && band<8 && target<terrainHeight;
+                        /* Lowest fitted floor owns its material. Ties combine
+                         * labels, so overlap order cannot change the result. */
+                        if(target<bank->height){bank->height=target;bank->canyon=carved;}
+                        else if(target==bank->height && carved)bank->canyon=TRUE;
                         if(8-band>bank->wetness)bank->wetness=8-band;
                         break;
                     }

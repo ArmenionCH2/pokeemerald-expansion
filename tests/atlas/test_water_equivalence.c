@@ -169,3 +169,5 @@ int main(void)
     printf("PASS: %u water membership/levels agree; existing caps agree and foothill caps match the highland oracle, all water types and valley caps covered\n", checks);
     return 0;
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

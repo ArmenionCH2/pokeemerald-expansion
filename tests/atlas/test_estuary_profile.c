@@ -49,3 +49,5 @@ int main(void)
     assert(sPieceCount==96);
     printf("PASS %u independent tapered capsule samples, width/water continuity across bucket boundary, read-only cartographic stroke, graded banks, preserved legacy cap and bounded 96-piece admission\n",checked);
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

@@ -96,3 +96,5 @@ int main(void)
     assert(maxCreeks);
     printf("PASS 64 dense rainy drainage fixtures: max %u pieces/%u headwaters, main/parent/child ownership order, one ground probe per step, four-frontier interleaving equals serial preparation\n",maxPieces,maxCreeks);
 }
+
+bool8 AtlasPlan_CanyonDrain(u16 node){return FALSE;}

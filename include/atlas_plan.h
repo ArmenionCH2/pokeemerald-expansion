@@ -15,7 +15,7 @@ struct AtlasPlanNode { u16 parent, runoff, continent, basin; u8 height, rain, hu
 struct AtlasPlanStats { u32 seed, checksum; u16 land, continents, rivers, lakes, basins, cold, wet; u32 habitatChecksum; };
 struct AtlasPlanSample { u8 height, rain, humidity, water, lake; };
 struct AtlasHabitat { u8 temperature, humidity, moisture, seasonalRange; };
-struct AtlasBankProfile { u8 height, wetness; };
+struct AtlasBankProfile { u8 height, wetness, canyon; };
 #ifdef __arm__
 #include "malloc.h"
 #define ATLAS_RUNTIME_HEAP_SIZE (HEAP_SIZE - ATLAS_PLAN_BYTES)
@@ -43,6 +43,7 @@ void AtlasPlan_ResetSample(void);
 bool8 AtlasPlan_HasSea(s32 x,s32 y);
 /* Interpolated ocean contribution, 0..255; no detailed water preparation. */
 u8 AtlasPlan_SeaContext(s32 x,s32 y);
+bool8 AtlasPlan_CanyonDrain(u16 node);
 bool8 AtlasPlan_IsIsland(u16 component);
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan);
 u8 AtlasTerrain_RawHeight(s32 x,s32 y);
