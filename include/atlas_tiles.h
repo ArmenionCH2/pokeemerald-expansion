@@ -1,5 +1,7 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
+#define ATLAS_ROCK_CLIFF_FIRST 384
+#define ATLAS_ROCK_FLOOR_FIRST 431
 #define ATLAS_NATURE_WATER_FIRST 0x200
 #define ATLAS_NATURE_WATER_COUNT 375
 #define ATLAS_NATURE_GRASS_FIRST 888
@@ -25,6 +27,12 @@ static inline bool8 AtlasTiles_SandEdge(u16 floor, u16 semantic)
     return !(semantic & 3) && ((semantic >> 2) & 3) == 1
         && id >= ATLAS_NATURE_SAND_FIRST && id < ATLAS_NATURE_SAND_FIRST + 4;
 }
+static inline bool8 AtlasTiles_IsCliff(u16 id)
+{
+    return (id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
+        || (id>=ATLAS_ROCK_CLIFF_FIRST && id<ATLAS_ROCK_CLIFF_FIRST+47);
+}
+extern const u16 gAtlasPrimaryMetatiles[4096],gAtlasPrimaryAttributes[512];
 extern const u32 gAtlasNatureTiles[4096];
 extern const u16 gAtlasNaturePalettes[16][16];
 extern const u16 gAtlasNatureMetatiles[4096], gAtlasNatureAttributes[512];

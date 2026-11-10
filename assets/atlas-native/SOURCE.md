@@ -1,7 +1,8 @@
 # Native Pokémon terrain source and Atlas adaptation
 
 The active terrain catalogue uses the original Emerald graphics, metatiles,
-attributes and palettes already in `data/tilesets/primary/general/`. The generated
+attributes and palettes already in `data/tilesets/primary/general/`, plus the
+Cave floor and its palette in `data/tilesets/secondary/cave/`. The generated
 manifest records the exact input hashes and source metatile references. Original
 Pokémon artwork belongs to Nintendo, Creatures and GAME FREAK; it is not open-source
 art. Existing game/engine credits remain applicable.
@@ -40,3 +41,11 @@ Run `python3 dev_scripts/compile_atlas_native.py`. Generated C and manifest are
 reviewed source; the preview stays under `build/atlas-native/`. No PNG decoding,
 quantization or asset conversion takes place in the ROM. Original input files are
 read-only to the compiler. Historical recovery inputs remain unchanged.
+
+Atlas's primary metatile catalogue copies General, reclaiming unused building roles
+384–430 for rock cliff masks and 431–434 for ground variants. Other layouts keep
+General's catalogue. Primary graphics/palettes and General's animation callback
+remain shared. Rock ground uses Cave 0x201 pixels quantized offline to the derived
+rock palette. Cliff quarters retain native General geometry, with Cave ground
+beneath grey rock walls. This adds four secondary graphic tiles and no extra VRAM
+bank. It does not import cave maps, scripts, movement restrictions or a cave system.

@@ -100,6 +100,12 @@ bool8 AtlasVolcano_Sample(s32 x,s32 y,struct AtlasVolcano *out)
     if(dx<=5)site.relief|=0x80;
     *out=site;return TRUE;
 }
+bool8 AtlasVolcano_Bare(s32 x,s32 y)
+{
+    struct AtlasVolcano v;
+    return AtlasWorld_Generation()>=14 && AtlasVolcano_Sample(x,y,&v)
+        && v.distance<v.radius*3/4;
+}
 static u32 Smooth(u32 f) { return (f * f * (768 - 2 * f)) >> 16; }
 static s32 Noise(s32 x, s32 y, u32 channel)
 {
@@ -252,6 +258,9 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     x = Wrap(x);
     /* Stateless native floor detail; no new lattice, cache or geographic query. */
     detail = Hash(x, y, 0x47524E44);
+    if(AtlasWorld_Generation()>=14 && c->biome!=ATLAS_TUNDRA
+     && (c->elevation>205 || AtlasVolcano_Bare(x,y)))
+        return PACK_METATILE(ATLAS_ROCK_FLOOR_FIRST+((detail&15)<4?(detail&3):0))|PACK_ELEVATION(3);
     if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
      && c->landform!=ATLAS_COAST
      && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE || c->biome==ATLAS_TAIGA))

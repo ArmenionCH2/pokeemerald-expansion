@@ -404,13 +404,17 @@ static void shoreTour(uint32_t savePointer)
                 for (int dy=-4;dy<=4;dy++) for (int dx=-6;dx<=6;dx++)
                 {
                     unsigned tile=core->busRead16(core,map+((py+dy)*35+px+dx)*2),id=tile&1023;
-                    walls+=id>=924 && id<1018;
+                    walls+=(id>=924 && id<1018) || (id>=384 && id<431);
                     edges+=id==887 || (id>=901 && id<915);
                     water+=id>=512 && id<887;
                     if (dx>=-1 && dx<=1 && dy>=-1 && dy<=1) assert(!(tile&0xC00));
                 }
                 if(type==18){assert(edges);printf("PASS native sand/grass boundary: %u visible sand borders and safe 3x3 landing\n",edges);}
-                else if(type==5){assert(walls);assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==16);printf("PASS native dormant volcanic cone: %u cliff tiles, physical name and safe radial gap landing\n",walls);}
+                else if(type==5){
+                    unsigned ground=core->busRead16(core,map+(py*35+px)*2)&1023;
+                    assert((ground>=431 && ground<435) || (ground>=896 && ground<900) || ground==1019 || ground==1021);
+                    printf("PASS native volcanic ground material role %u\n",ground);
+                    assert(walls);assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==16);printf("PASS native dormant volcanic cone: %u cliff tiles, physical name and safe radial gap landing\n",walls);}
                 else if(type==19)
                 {
                     unsigned component=core->busRead16(core,symbol("gAtlasGeoResult")+8),cells=0;
@@ -424,6 +428,22 @@ static void shoreTour(uint32_t savePointer)
             printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
+        if(type==5)
+        {
+            uint32_t popup=symbol("sAtlasLocationPopup");unsigned named=0;
+            for(unsigned tick=0;tick<900 && !named;tick++)
+            {
+                char name[21];unsigned n;
+                for(n=0;n<20;n++)
+                {
+                    unsigned c=core->busRead8(core,popup+n);if(c==255)break;
+                    name[n]=c>=0xbb && c<=0xd4?'A'+c-0xbb:c>=0xd5 && c<=0xee?'a'+c-0xd5:' ';
+                }
+                name[n]=0;named=!strcmp(name,"Volcanic Cone");
+                if(!named)frames(0,1);
+            }
+            assert(named);
+        }
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
         if(type==5)
         {
@@ -507,9 +527,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==13);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==14);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 13 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 14 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();

@@ -1553,3 +1553,15 @@ const struct Tileset gTileset_AtlasNative =
     .metatileAttributes = gAtlasNatureAttributes,
     .callback = NULL,
 };
+
+/* Native General graphics/animation, Atlas-only terrain metatile catalogue. */
+const struct Tileset gTileset_AtlasPrimary =
+{
+    .isCompressed = TRUE,
+    .isSecondary = FALSE,
+    .tiles = gTilesetTiles_General,
+    .palettes = gTilesetPalettes_General,
+    .metatiles = gAtlasPrimaryMetatiles,
+    .metatileAttributes = gAtlasPrimaryAttributes,
+    .callback = InitTilesetAnim_General,
+};

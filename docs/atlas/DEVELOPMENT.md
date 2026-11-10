@@ -123,7 +123,18 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   summaries include local uplift without preparing remote hydrology. GEO TP checks
   the real dry landing and scans a camera viewport for native cliff art, yielding
   between points. Physical popups distinguish volcanic cones from caldera floors.
-  Existing versions 3 through 12 retain their original
+  Generation 14 exposes rock ground in the inner three quarters of dormant cones
+  and on non-tundra terrain above height 205. Native Cave floor pixels are compiled
+  into the shared secondary graphics with a derived rock palette; Atlas alone uses
+  a clone of General's primary metatile catalogue. Reclaimed primary roles 384–430
+  supply 47 rock cliff masks and 431–434 supply four floor variants. All other
+  primary definitions/attributes remain byte-identical; primary graphics, palette
+  ownership and animation callback remain General's. Other layouts keep General.
+  Rock, grass and snow cliff selections preserve the same collision/elevation
+  topology; snow retains priority. Exposed rock clears vegetation, so new saves
+  receive generation 14 rather than changing old worlds' walkability. This is a
+  material/exposure layer, not sediment/soil ageing or every biome transition.
+  Existing versions 3 through 13 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

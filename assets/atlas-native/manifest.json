@@ -19,9 +19,12 @@
     "data/tilesets/primary/general/palettes/12.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
     "data/tilesets/primary/general/palettes/13.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
     "data/tilesets/primary/general/palettes/14.pal": "ea391b70a00c55f0fe13590e345ee9b66fb9013864b737f40258d99f70f6eb04",
-    "data/tilesets/primary/general/palettes/15.pal": "1579046ed0c59dcfa931c6d4b181f363f714dd2127fc04f960f74be95287195b"
+    "data/tilesets/primary/general/palettes/15.pal": "1579046ed0c59dcfa931c6d4b181f363f714dd2127fc04f960f74be95287195b",
+    "data/tilesets/secondary/cave/tiles.png": "bcffd7ad24c8acb328cee23598dca4dadeb527299c76565e6a9d939e25e40c76",
+    "data/tilesets/secondary/cave/metatiles.bin": "fca8629264b6ff2324224864ed98d929cc5a93213a5a512a3798d144470e022b",
+    "data/tilesets/secondary/cave/palettes/06.pal": "f0205efcdd74ead5efd49e4c6b3559cff92ade3010bce19a26882d0dd021867b"
   },
-  "raw_tiles": 41,
+  "raw_tiles": 57,
   "metatiles": 512,
   "families": [
     {
@@ -118,6 +121,16 @@
       "first": 1022,
       "count": 2,
       "role": "flowers"
+    },
+    {
+      "first": 384,
+      "count": 47,
+      "role": "primary_rock_cliffs"
+    },
+    {
+      "first": 431,
+      "count": 4,
+      "role": "primary_rock_floor"
     }
   ]
 }

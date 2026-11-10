@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_tiles.h"
 #include "atlas_vegetation.h"
+#include "atlas_volcano.h"
 #include "constants/metatile_labels.h"
 
 /* Compact semantics: geographic height, relief/pass, material and water type.
@@ -25,7 +26,9 @@ static u16 Describe(s32 x, s32 y, const struct AtlasCell *c, u16 *floor)
 {
     u8 relief = AtlasMountain_Relief(x, y, c);
     *floor = AtlasTerrain_BaseTile(x, y, c, !!(relief & 0x80));
-    return ((u16)c->elevation << 8) | relief | (Material(c) << 2) | c->waterform;
+    u8 material=Material(c);
+    if(c->biome!=ATLAS_TUNDRA && AtlasVolcano_Bare(x,y))material=2;
+    return ((u16)c->elevation << 8) | relief | (material << 2) | c->waterform;
 }
 u16 AtlasTiles_Describe(s32 x, s32 y, u16 *floor)
 {
@@ -58,6 +61,7 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
         if (center & 0x80)
         {
             u16 id=floor&1023;
+            if(id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)return floor;
             if (id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4) return Ground(floor,cells);
             /* Mark only a connector crossing a terrace change. Flat valley
              * reservations and broad saddle interiors keep their own floor.
@@ -78,7 +82,9 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
             if (((cells[neighbors[i]] >> 4) & 7) >= tier) mask |= 1 << i;
         }
         if (mask == 255) return Ground(floor,cells);
-        return PACK_METATILE(ATLAS_NATURE_MOUNTAIN_FIRST + (((center >> 2) & 3) == 3 ? 47 : 0) + gAtlasNatureMaskIndex[mask]) | PACK_COLLISION(1) | PACK_ELEVATION(3);
+        u16 first=AtlasWorld_Generation()>=14 && ((center>>2)&3)==2?ATLAS_ROCK_CLIFF_FIRST
+            :ATLAS_NATURE_MOUNTAIN_FIRST+(((center>>2)&3)==3?47:0);
+        return PACK_METATILE(first+gAtlasNatureMaskIndex[mask])|PACK_COLLISION(1)|PACK_ELEVATION(3);
     }
     for (i = 0; i < 8; i++)
         if (cells[neighbors[i]] & 3) mask |= 1 << i;

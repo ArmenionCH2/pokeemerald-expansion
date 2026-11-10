@@ -163,7 +163,7 @@ u8 AtlasGeo_Step(void)
         x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
         if(!ReadyPoint(x,y))return 0;
         u16 id=AtlasTerrain_Tile(x,y)&1023;
-        if(id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
+        if(AtlasTiles_IsCliff(id))
         {sPhase=9;return 0;}
         if(++sSceneAt>=117)sPhase=0;
         return 0;
@@ -364,7 +364,7 @@ u8 AtlasGeo_Step(void)
         }
         if(!ReadyPoint(x,y))return 0;
         tile=AtlasTerrain_Tile(x,y);
-        if((tile&1023)>=924 && (tile&1023)<1018)sSceneWalls++;
+        if(AtlasTiles_IsCliff(tile&1023))sSceneWalls++;
         if(sType==ATLAS_GEO_MOUNTAIN)
         {
             u16 id=tile&1023;
