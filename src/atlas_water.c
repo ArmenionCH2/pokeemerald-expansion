@@ -566,7 +566,7 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
 {
     s32 localX, localY; u8 i;
     *valley=255;
-    if(bank){bank->height=terrainHeight;bank->wetness=bank->canyon=0;}
+    if(bank){bank->height=terrainHeight;bank->wetness=bank->canyon=bank->flood=0;}
     UseBucket(x, y);
     if (!sBuckets[sActive].ready) Prepare(x,y);
     localX = x - sBucketX * WATER_BUCKET; localY = y - sBucketY * WATER_BUCKET;
@@ -631,12 +631,27 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
                         unsigned strength=canyon?terrainHeight-bed-15:0;if(strength>16)strength=16;
                         if(canyon)weight=((16-strength)*weight+strength*section[band-1])/16;
                         if(terrainHeight>bed+1)target=bed+1+(terrainHeight-bed-1)*weight/64;
+                        u8 flood=ATLAS_BANK_NONE,wetness=8-band;
+                        bool8 lowland=AtlasWorld_Generation()>=25 && !(p->widthB&CREEK_FLAG)
+                            && !plan->lake && width>=24 && width<=128 && terrainHeight<=155
+                            && bed>=ATLAS_PLAN_SEA+2 && terrainHeight>=bed+4 && terrainHeight<=bed+16
+                            && plan->rain>=96 && plan->humidity>=80;
+                        if(lowland)
+                        {
+                            canyon=FALSE;
+                            static const u8 floor[8]={3,2,1,1,1,0,0,0};
+                            static const u8 damp[8]={4,6,7,7,7,4,1,0};
+                            if(band<=5){target=bed+floor[band-1];flood=band==1?ATLAS_BANK_LEVEE:ATLAS_BANK_BACKSWAMP;}
+                            else target=bed+1+(terrainHeight-bed-1)*(band-5)*(band-5)/9;
+                            wetness=damp[band-1];
+                        }
                         bool8 carved=canyon && strength>=1 && band<8 && target<terrainHeight;
                         /* Lowest fitted floor owns its material. Ties combine
                          * labels, so overlap order cannot change the result. */
-                        if(target<bank->height){bank->height=target;bank->canyon=carved;}
-                        else if(target==bank->height && carved)bank->canyon=TRUE;
-                        if(8-band>bank->wetness)bank->wetness=8-band;
+                        if(target<bank->height){bank->height=target;bank->canyon=carved;bank->flood=flood;}
+                        else if(target==bank->height)
+                        {if(carved)bank->canyon=TRUE;if(flood>bank->flood)bank->flood=flood;}
+                        if(wetness>bank->wetness)bank->wetness=wetness;
                         break;
                     }
                 }

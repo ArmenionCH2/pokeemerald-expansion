@@ -149,16 +149,27 @@ static u8 Color(s32 x, s32 y)
     if (cell.waterform != ATLAS_DRY) return 2;
     if(RiverStroke(x,y))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
+    if(cell.landform==ATLAS_BACKSWAMP)return 7;
+    if(cell.landform==ATLAS_LEVEE)return 3;
     if (cell.landform == ATLAS_MOUNTAIN || cell.landform==ATLAS_MESA || (cell.landform==ATLAS_CANYON && cell.valley!=0)
      || (cell.landform==ATLAS_ROCK_COAST && cell.moisture<110)) return 6;
     if (cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST || cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;
     return cell.biome == ATLAS_WETLAND ? 7 : 3;
 }
-static bool8 Pixel(u32 px, u32 py, s32 x, s32 y)
+static bool8 Pixel(u32 px, u32 py, s32 x, s32 y,u8 *warmBudget)
 {
     u32 bit = py * WIDTH + px;
     if (sPainted[bit / 8] & (1 << (bit % 8))) return TRUE;
-    if (sAtlasMapLayer!=LAYER_REGIONS && !MacroSummary() && !AtlasWater_Prewarm(x,y)) return FALSE;
+    if(sAtlasMapLayer!=LAYER_REGIONS && !MacroSummary())
+    {
+        bool8 ready=FALSE;
+        while(*warmBudget)
+        {
+            (*warmBudget)--;
+            if(AtlasWater_Prewarm(x,y)){ready=TRUE;break;}
+        }
+        if(!ready)return FALSE;
+    }
     sPainted[bit / 8] |= 1 << (bit % 8);
     /* PIXEL_FILL evaluates its argument twice. Geography is stateful and
      * expensive, so sample once and reuse the palette index. */
@@ -247,6 +258,7 @@ static void Paint(void)
     struct AtlasSaveState *state = &gSaveBlock3Ptr->atlas;
     s32 x,y,px,py,dx;
     u32 bit;
+    u8 warmBudget=8; /* Same bounded preparation cadence as overworld streaming. */
     if (sAdminView)
     {
         if (sAtlasMapRow>=HEIGHT)
@@ -263,7 +275,7 @@ static void Paint(void)
             bool8 outsideGlobe=sAtlasMapZoom==ARRAY_COUNT(sScales)-1
                 && (horizontal>ATLAS_WORLD_WIDTH/2 || horizontal< -ATLAS_WORLD_WIDTH/2);
             if (!outsideGlobe && y >= -ATLAS_WORLD_HALF_HEIGHT && y < ATLAS_WORLD_HALF_HEIGHT)
-                if (!Pixel(sAtlasMapColumn,sAtlasMapRow,Wrap(sX+((s32)sAtlasMapColumn-WIDTH/2)*(s32)sScales[sAtlasMapZoom]),y)) break;
+                if (!Pixel(sAtlasMapColumn,sAtlasMapRow,Wrap(sX+((s32)sAtlasMapColumn-WIDTH/2)*(s32)sScales[sAtlasMapZoom]),y,&warmBudget)) break;
             if (++sAtlasMapColumn==WIDTH) {sAtlasMapColumn=0;sAtlasMapRow++;}
         }
     }
@@ -284,7 +296,7 @@ static void Paint(void)
             if (dx< -ATLAS_WORLD_WIDTH/2) dx+=ATLAS_WORLD_WIDTH;
             px=AtlasTerrain_FloorDiv(dx,sScales[sAtlasMapZoom])+WIDTH/2;
             py=AtlasTerrain_FloorDiv(y-sY,sScales[sAtlasMapZoom])+HEIGHT/2;
-            if (px>=0 && px<WIDTH && py>=0 && py<HEIGHT && !Pixel(px,py,x,y)) break;
+            if (px>=0 && px<WIDTH && py>=0 && py<HEIGHT && !Pixel(px,py,x,y,&warmBudget)) break;
         }
         sTile=bit;
         if (sTile==400) {sTile=0;sChunk++;}

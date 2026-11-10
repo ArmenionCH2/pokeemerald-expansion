@@ -490,6 +490,11 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     if(mesaGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_MESA;
     if(karstGround && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_SINKHOLE;
     if(rockCoast && water==ATLAS_DRY && !bank.wetness && cell->valley==255)cell->landform=ATLAS_ROCK_COAST;
+    if(water==ATLAS_DRY && bank.flood)
+    {
+        cell->landform=bank.flood==ATLAS_BANK_LEVEE?ATLAS_LEVEE:ATLAS_BACKSWAMP;
+        if(bank.flood==ATLAS_BANK_BACKSWAMP && t>=85)cell->biome=ATLAS_WETLAND;
+    }
     if(water==ATLAS_DRY && bank.canyon)cell->landform=ATLAS_CANYON;
 }
 
@@ -508,7 +513,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
       || (c->landform==ATLAS_ROCK_COAST && c->moisture<110) || AtlasVolcano_Bare(x,y)))
         return PACK_METATILE(ATLAS_ROCK_FLOOR_FIRST+((detail&15)<4?(detail&3):0))|PACK_ELEVATION(3);
     if (AtlasWorld_Generation()>=7 && !clearCover && c->elevation<186
-     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST && c->landform!=ATLAS_SINKHOLE && c->landform!=ATLAS_CANYON
+     && c->landform!=ATLAS_COAST && c->landform!=ATLAS_ROCK_COAST && c->landform!=ATLAS_SINKHOLE && c->landform!=ATLAS_CANYON && c->landform!=ATLAS_BACKSWAMP && c->landform!=ATLAS_LEVEE
      && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE || c->biome==ATLAS_TAIGA))
     {
         s32 cy=AtlasTerrain_FloorDiv(y,5),cx=x/5;
@@ -532,7 +537,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
          * whole local ridge with native encounter-grass artwork. */
         if (Noise(x, y, 6) > threshold + (s32)((detail >> 4) & 31)) id = METATILE_General_TallGrass;
     }
-    else if (!clearCover && c->biome == ATLAS_WETLAND)
+    else if (!clearCover && c->biome == ATLAS_WETLAND && c->landform!=ATLAS_LEVEE)
     {
         if ((detail & 7) < 5) id = ATLAS_NATURE_MARSH_GRASS;
     }

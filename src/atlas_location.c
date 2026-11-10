@@ -57,7 +57,9 @@ void AtlasLocation_Tick(void)
         {
             struct AtlasVolcano volcano;
             u8 region=AtlasRegion_At(x,y);
-            if(cell.landform==ATLAS_CANYON)sPlace.kind=ATLAS_PLACE_CANYON;
+            if(cell.landform==ATLAS_BACKSWAMP)sPlace.kind=ATLAS_PLACE_BACKSWAMP;
+            else if(cell.landform==ATLAS_LEVEE)sPlace.kind=ATLAS_PLACE_LEVEE;
+            else if(cell.landform==ATLAS_CANYON)sPlace.kind=ATLAS_PLACE_CANYON;
             else if(AtlasVolcano_Sample(x,y,&volcano))
             {
                 sPlace.kind=volcano.distance<volcano.radius/4?ATLAS_PLACE_CALDERA:ATLAS_PLACE_VOLCANO;

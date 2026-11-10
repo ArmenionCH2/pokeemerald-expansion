@@ -15,7 +15,8 @@ struct AtlasPlanNode { u16 parent, runoff, continent, basin; u8 height, rain, hu
 struct AtlasPlanStats { u32 seed, checksum; u16 land, continents, rivers, lakes, basins, cold, wet; u32 habitatChecksum; };
 struct AtlasPlanSample { u8 height, rain, humidity, water, lake; };
 struct AtlasHabitat { u8 temperature, humidity, moisture, seasonalRange; };
-struct AtlasBankProfile { u8 height, wetness, canyon; };
+enum AtlasFloodplainShape {ATLAS_BANK_NONE,ATLAS_BANK_LEVEE,ATLAS_BANK_BACKSWAMP};
+struct AtlasBankProfile { u8 height, wetness, canyon, flood; };
 #ifdef __arm__
 #include "malloc.h"
 #define ATLAS_RUNTIME_HEAP_SIZE (HEAP_SIZE - ATLAS_PLAN_BYTES)

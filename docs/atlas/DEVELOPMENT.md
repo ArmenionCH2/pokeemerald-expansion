@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks` or `--tour canyons`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks` `--tour canyons` or `--tour wetlands`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -373,7 +373,39 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   overlap order, native walls/naming/map isolation/save reload and six-seed strict
   running-cadence streaming across both water-cache axes. This is bounded incised
   morphology, not geological epochs, sediment transport or a full erosion solver.
-  Existing versions 3 through 23 retain their original
+  Generation 25 shapes suitable humid, low-relief riverbanks into natural levees
+  and backswamps. The existing connected channel supplies position and water level;
+  original dry ground must be at most 155, 4–16 units above the river, with rainfall
+  at least 96 and vapor supply at least 80. Non-creek channels have half-widths
+  24–128; lake context is excluded. These are ordinal bounds, not measured slopes
+  or sediment transport. The profile does not depend on bucket-clipped endpoint
+  grades, avoiding a cache-boundary-dependent eligibility test.
+  The innermost bank band lies three units above the river, followed by lower
+  two- and one-unit floors. The outer three bands taper back to original ground.
+  Levee wetness is lower than the backswamp's, while atmospheric vapor/rain notes
+  stay unchanged. No ground is raised above the original floor or lowered into
+  the channel; river/lake membership and receiving planes retain their ownership.
+  Lowest fitted floor owns its feature flags, with order-independent ties.
+  The temporary bank profile adds one shape byte; no persistent geographic array,
+  raw art or saved fields are added. Macro notes remain generation 24's.
+  Warm backswamps use the native wetland biome and marsh cover; frozen/cold climate
+  retains its priority. Levees retain native ground rather than marsh-cover art.
+  Groves are excluded from these generated bank shapes. Both remain walkable and
+  use contextual Backswamp/Natural levee names inside the catchment. Sixth-page
+  inspectors search real perpendicular bank sections and verify dry 3x3 landings
+  plus the announcer's three-tile shoreline stencil, so a bank is not mislabeled.
+  Tests cover the cross-section, climate/lake/width/creek gates, overlap order,
+  six-seed unchanged macro notes, safe names/habitat and running-cadence streaming
+  across both cache axes. Native tours check marsh/levee contrast, actual popups,
+  map isolation, cached walking and cold save reloads. This is static bounded
+  floodplain morphology, not deposition history, seasonal flooding, groundwater
+  flow, cut-off lakes or distributary deltas.
+  Detailed map painting shares a budget of eight water-preparation steps per
+  frame across all pixels. This replaces the previous one-step cold-pixel stall,
+  retaining bounded work and responsive menu input. Pixel-for-pixel native image
+  comparisons verify that batching changes preparation timing, not final colors
+  or exploration state.
+  Existing versions 3 through 24 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

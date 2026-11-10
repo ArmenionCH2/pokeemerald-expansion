@@ -23,6 +23,7 @@ EWRAM_DATA static bool8 sInitialized = 0;
 EWRAM_DATA static u8 sSceneAt = 0, sSceneWalls = 0, sSceneTarget = 0;
 static s32 Abs(s32 n){return n<0?-n:n;}
 static s32 Wrap(s32 x){x%=ATLAS_WORLD_WIDTH;return x<0?x+ATLAS_WORLD_WIDTH:x;}
+static bool8 WetPlain(void){return sType==ATLAS_GEO_BACKSWAMP || sType==ATLAS_GEO_LEVEE;}
 static bool8 MouthTarget(void){return sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_ESTUARY;}
 static bool8 ReliefTarget(void){return sType==ATLAS_GEO_MOUNTAIN || sType==ATLAS_GEO_RIDGE || sType==ATLAS_GEO_FOOTHILLS;}
 static bool8 Sand(const struct AtlasCell *c)
@@ -100,6 +101,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(WetPlain() && AtlasWorld_Generation()<25)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_CANYON && AtlasWorld_Generation()<24)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_SINKHOLE && AtlasWorld_Generation()<23)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_SEA_CLIFF && AtlasWorld_Generation()<22)gAtlasGeoStatus=3;
@@ -124,6 +126,8 @@ static bool8 Candidate(u16 id)
         s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         return AtlasDune_Envelope(x,y,&plan)>=64;
     }
+    if(WetPlain())return n->height>=125 && n->height<=155 && n->rain>=96 && n->humidity>=80
+        && n->runoff>=512 && (n->runoff>=600 || AtlasWater_IsSmallRiver(id)) && n->parent<ATLAS_PLAN_COUNT && n->parent!=id;
     if(sType==ATLAS_GEO_CANYON)return n->height>=132 && (n->runoff>=600 || AtlasWater_IsSmallRiver(id)) && n->runoff<=9200 && n->parent<ATLAS_PLAN_COUNT && n->parent!=id;
     if(sType==ATLAS_GEO_CREEK || sType==ATLAS_GEO_HEADWATER)return AtlasWater_CreekSource(id);
     if(sType==ATLAS_GEO_FLOODPLAIN)return n->height>=132 && n->height<155
@@ -216,6 +220,28 @@ u8 AtlasGeo_Step(void)
         if (AtlasVegetation_IsTree(AtlasTerrain_Tile(x,y))) sSceneTarget++;
         if (sSceneTarget>=9) {sPhase=9;return 0;}
         if (++sSceneAt>=117) sPhase=17;
+        return 0;
+    }
+    if(sPhase==40)
+    {
+        if(sTrial>=1024){sPhase=0;return 0;}
+        unsigned distance=4*(1+sTrial/2);s32 offset=(sTrial&1)?-(s32)distance:(s32)distance;
+        x=sCX+(sDirection?0:offset);y=sCY+(sDirection?offset:0);
+        if(!ReadyPoint(x,y))return 0;
+        sTrial++;AtlasTerrain_Sample(x,y,&c);
+        unsigned target=sType==ATLAS_GEO_BACKSWAMP?ATLAS_BACKSWAMP:ATLAS_LEVEE;
+        if(c.waterform || c.landform!=target || (AtlasTerrain_Tile(x,y)&0xC00))return 0;
+        sLX=x;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
+    }
+    if(sPhase==41)
+    {
+        static const s8 offsets[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
+        unsigned direction=sSceneAt%4,distance=1+sSceneAt/4;
+        x=sLX+offsets[direction][0]*(s32)distance;y=sLY+offsets[direction][1]*(s32)distance;
+        if(!Warm(x,y))return 0;
+        AtlasTerrain_Sample(x,y,&c);
+        if(c.waterform){sPhase=40;return 0;}
+        if(++sSceneAt==12)sPhase=9;
         return 0;
     }
     if(sPhase==39)
@@ -403,6 +429,12 @@ u8 AtlasGeo_Step(void)
                 sPhase=20;return 0;
             }
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CANYON || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,sType==ATLAS_GEO_CANYON?1:2,&sCX,&sCY,&height);}
+            if(WetPlain())
+            {
+                u16 level;AtlasWater_Point(sNode,2,&sCX,&sCY,&level);
+                sDirection=sNode/ATLAS_PLAN_WIDTH==gAtlasPlan[sNode].parent/ATLAS_PLAN_WIDTH;
+                sTrial=0;sPhase=40;return 0;
+            }
             if(sType==ATLAS_GEO_CANYON){sDirection=sNode/ATLAS_PLAN_WIDTH==gAtlasPlan[sNode].parent/ATLAS_PLAN_WIDTH;sTrial=0;u16 level;AtlasWater_Point(sNode,1,&sCX,&sCY,&level);sMouthDX=level/256;sPhase=39;return 0;}
             if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
@@ -625,6 +657,7 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
+        if(WetPlain()){sPhase=40;return 0;}
         if(sType==ATLAS_GEO_CANYON){sPhase=37;return 0;}
         if(sType==ATLAS_GEO_SEA_CLIFF)
         {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
@@ -649,6 +682,13 @@ u8 AtlasGeo_Step(void)
             if(c.waterform || c.landform!=ATLAS_ROCK_COAST)
             {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
             sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=33;return 0;
+        }
+        if(WetPlain())
+        {
+            AtlasTerrain_Sample(sLX,sLY,&c);
+            unsigned target=sType==ATLAS_GEO_BACKSWAMP?ATLAS_BACKSWAMP:ATLAS_LEVEE;
+            if(c.waterform || c.landform!=target){sPhase=40;return 0;}
+            sSceneAt=0;sPhase=41;return 0;
         }
         if(sType==ATLAS_GEO_CANYON)
         {

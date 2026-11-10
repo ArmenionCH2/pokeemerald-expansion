@@ -35,7 +35,7 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
     memset(out, 0, sizeof(*out));
     if (!gAtlasPlanReady || cell == NULL || y < -ATLAS_WORLD_HALF_HEIGHT
      || y >= ATLAS_WORLD_HALF_HEIGHT || cell->waterform > ATLAS_LAKE
-     || cell->biome > ATLAS_WETLAND || cell->landform > ATLAS_CANYON) return FALSE;
+     || cell->biome > ATLAS_WETLAND || cell->landform > ATLAS_LEVEE) return FALSE;
     x %= ATLAS_WORLD_WIDTH; if (x < 0) x += ATLAS_WORLD_WIDTH;
     sx = (u32)x * ATLAS_PLAN_WIDTH;
     sy = (u32)(y + ATLAS_WORLD_HALF_HEIGHT) * (ATLAS_PLAN_HEIGHT - 1);
@@ -65,6 +65,8 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
     if (cell->waterform==ATLAS_SEA) return TRUE;
     out->kind = cell->waterform == ATLAS_RIVER ? ATLAS_PLACE_RIVER
               : cell->waterform == ATLAS_LAKE ? ATLAS_PLACE_LAKE
+              : cell->landform==ATLAS_BACKSWAMP ? ATLAS_PLACE_BACKSWAMP
+              : cell->landform==ATLAS_LEVEE ? ATLAS_PLACE_LEVEE
               : cell->landform==ATLAS_CANYON ? ATLAS_PLACE_CANYON
               : cell->landform==ATLAS_SINKHOLE ? ATLAS_PLACE_SINKHOLE
               : cell->landform==ATLAS_ROCK_COAST ? ATLAS_PLACE_ROCK_COAST
@@ -106,11 +108,11 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
     static const char *const first[] = {"Al","Bel","Cor","Dar","El","Fal","Gal","Har","Is","Kel","Lor","Mar","Nor","Or","Pel","Syl"};
     static const char *const middle[] = {"a","e","i","o","u","an","en","in","or","el","ar","ir","al","on","un","es"};
     static const char *const last[] = {"dor","len","mir","ran","sil","tor","ven","wyn","bar","del","fin","gar","hel","ith","jor","kas","lin","mor","nar","ond","por","quil","rin","sar","tal","ul","val","wer","xel","yor","zan","den"};
-    static const char *const feature[] = {"Ocean","Riverbank","Lake shore","Coast","Highlands","Foothills","Forest","Taiga","Tundra","Desert","Wetland","Savanna","Plains","Plateau","Valley","Ridge","Volcanic Cone","Caldera","Floodplain","Creekbank","Dunes","Mesa","Headwater creek","Coastal upland","Sea cliffs","Sinkhole","Canyon"};
+    static const char *const feature[] = {"Ocean","Riverbank","Lake shore","Coast","Highlands","Foothills","Forest","Taiga","Tundra","Desert","Wetland","Savanna","Plains","Plateau","Valley","Ridge","Volcanic Cone","Caldera","Floodplain","Creekbank","Dunes","Mesa","Headwater creek","Coastal upland","Sea cliffs","Sinkhole","Canyon","Backswamp","Natural levee"};
     u32 code, id, i, count = 0;
     if (out == NULL) return FALSE;
     out[0] = 0;
-    if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_CANYON
+    if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_LEVEE
      || (place->landmass & ~ATLAS_OCEAN_COMPONENT) > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT || place->landmark>ATLAS_PLAN_COUNT) return FALSE;
     if (level == 2)
     {

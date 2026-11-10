@@ -25,6 +25,7 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     bool8 pass;
     struct AtlasVolcano volcano;
     if(c->waterform!=ATLAS_DRY)return 0;
+    if(c->landform==ATLAS_BACKSWAMP || c->landform==ATLAS_LEVEE)return 0;
     if(c->landform==ATLAS_CANYON)
     {
         unsigned saddle=AtlasTerrain_ReliefNoise(x,y,TRUE);
