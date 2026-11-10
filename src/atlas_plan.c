@@ -5,6 +5,14 @@
 #include "atlas_ocean.h"
 #include "malloc.h"
 
+/* Keep hot planner calls in ARM together: exact reciprocal/wrapped-neighbor
+ * divisions use the ARM7 long multiplier without repeated interworking. */
+#ifdef __arm__
+#define ATLAS_MACRO_ARM __attribute__((target("arm"),noinline))
+#else
+#define ATLAS_MACRO_ARM
+#endif
+
 #ifndef __arm__
 // Host contracts use ordinary memory; the GBA uses the scene reservation.
 EWRAM_DATA struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT] = {{0}};
@@ -78,7 +86,7 @@ static s32 FrameSignedDivide(s32 value,u32 divisor,u32 inverse)
     s32 q=FrameDivide(magnitude,divisor,inverse);
     return value<0?-q:q;
 }
-static u16 Neighbor(u16 id, u8 dir)
+static u16 ATLAS_MACRO_ARM Neighbor(u16 id, u8 dir)
 {
     u16 x = id % ATLAS_PLAN_WIDTH, y = id / ATLAS_PLAN_WIDTH;
     if (dir == 0) x = (x + 1) % ATLAS_PLAN_WIDTH;
@@ -92,7 +100,7 @@ static bool8 Before(u16 a, u16 b)
     return sScratch->level[a] < sScratch->level[b]
         || (sScratch->level[a] == sScratch->level[b] && a < b);
 }
-static void Push(u16 id)
+static void ATLAS_MACRO_ARM Push(u16 id)
 {
     u16 at = sHeapSize++;
     while (at && Before(id, sScratch->heap[(at - 1) / 2]))
@@ -173,7 +181,7 @@ static void Advance(void) { sStage++; sAt = 0; }
  * distance is periodic; seeded offsets, aspect ratios and the former height
  * field give irregular coasts. This is a morphological model, not tectonics.
  * Evaluated only during macro creation, never during tile streaming. */
-static u32 ContinentalFrame(u16 id,unsigned i,s32 *dx,s32 *dy,s32 *rx,s32 *ry)
+static u32 ATLAS_MACRO_ARM ContinentalFrame(u16 id,unsigned i,s32 *dx,s32 *dy,s32 *rx,s32 *ry)
 {
     /* These descriptors depend only on the seed. Keep them in creation scratch
      * rather than repeating their hashes and divisions for every node/pass. */
@@ -277,7 +285,7 @@ bool8 AtlasPlan_ImportHeights(const u8 *heights)
     sStage = 2;
     return TRUE;
 }
-bool8 AtlasPlan_Step(u16 work)
+bool8 ATLAS_MACRO_ARM AtlasPlan_Step(u16 work)
 {
     if (gAtlasPlanReady) return TRUE;
     if (!sScratch) return FALSE;

@@ -47,7 +47,9 @@ enables the engine's release/LTO mode. Build artifacts stay in `build/` or the
 engine's existing ignored output paths. CI checks; it never commits or publishes ROMs.
 
 Preserved tests exercise real Atlas C with host mocks. `dev_scripts/test_atlas.py`
-compiles separate cases with sanitizers. New regressions should protect behavior
+compiles separate cases with sanitizers. Repeat `--case NAME` to select relevant
+contracts for a focused change; omit it for the complete suite. Native asset/script
+contracts still run. New regressions should protect behavior
 or data integrity, not mirror source formatting. Use `git diff --check` before commit.
 
 Regenerate art with `python3 dev_scripts/compile_atlas_native.py`; review the C,
@@ -174,6 +176,12 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   River statistics still count main channels at runoff 600 and above. Coarse
   notes remain approximately 420 km apart: this is not metre-scale drainage
   refinement or a claim that all local creeks have been generated.
+  The hot native planner, continental-frame, neighbor and heap-push routines use
+  ARM mode together; the ARM7 long multiplier accelerates exact reciprocal and
+  constant-divisor arithmetic while avoiding repeated ARM/Thumb handoffs. Other
+  engine code retains its existing mode. This changes compilation, not formulas,
+  generation identity, saved geometry or storage. Native checks compare real save
+  checksums and journals across builds and time the same saved location.
   Seed-only continental reciprocals replace repeated divisions with a high
   product and exact remainder correction. Signed frame calculations retain C's
   truncation toward zero. They use creation scratch only and preserve older

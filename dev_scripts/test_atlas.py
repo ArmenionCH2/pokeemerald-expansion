@@ -3,6 +3,7 @@
 These tests use host mocks, not the GBA ABI or an emulator.
 """
 import os
+import argparse
 from pathlib import Path
 import subprocess
 R = Path(__file__).resolve().parents[1]
@@ -24,8 +25,13 @@ groups = {
     '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions','bank_profile','estuary_profile','floodplain_profile','creek_profile','creek_budget'],
     'plan climate': ['plan_cache_native'],
 }
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--case',action='append',choices=sorted(case for cases in groups.values() for case in cases),
+                    help='Run a named contract; repeat for multiple cases. Default: complete suite.')
+selected=parser.parse_args().case
 for modules, cases in groups.items():
     for case in cases:
+        if selected and case not in selected:continue
         exe = OUT / case
         cmd = [os.environ.get('CC', 'cc'), '-std=c99', '-O1', '-g', '-Wall', '-Wextra',
                '-Werror', '-Wno-unused-parameter', '-fsanitize=address,undefined',
