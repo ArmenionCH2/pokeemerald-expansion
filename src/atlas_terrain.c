@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_tiles.h"
+#include "atlas_volcano.h"
 #include "constants/metatile_labels.h"
 
 /* Geographic generation 1 for box 3, not the missing historical generator. */
@@ -13,10 +14,17 @@ struct NoiseCache {
     bool8 valid;
 };
 EWRAM_DATA static struct NoiseCache sNoise[9] = {{0}};
+static EWRAM_DATA struct {
+    s32 x0,x1,y0,y1,cx,cy;
+    u16 node,radius;
+    u8 peak;
+    bool8 valid,active;
+} sVolcanoCache={0};
 void AtlasTerrain_SetSeed(u32 seed)
 {
     gAtlasWorldSeed = seed;
     memset(sNoise, 0, sizeof(sNoise));
+    sVolcanoCache.valid=FALSE;
     AtlasTiles_Reset();
     AtlasPlan_ResetSample();
 }
@@ -37,6 +45,60 @@ static u32 Hash(s32 x, s32 y, u32 salt)
     h ^= h >> 16; h *= 0x7FEB352Du;
     h ^= h >> 15; h *= 0x846CA68Bu;
     return h ^ (h >> 16);
+}
+/* Sites are rare dry lower uplands, separated by the macro grid. A cone's
+ * kilometre-scale footprint is tiny relative to its ~420 km owner spacing.
+ * Site selection reads final notes only: it cannot recurse into water/terrain. */
+bool8 AtlasVolcano_Site(u16 node,struct AtlasVolcano *out)
+{
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<13 || node>=ATLAS_PLAN_COUNT)return FALSE;
+    const struct AtlasPlanNode *n=&gAtlasPlan[node];
+    u32 h=Hash(node,0,0x564F4C43u);
+    if(n->height<140 || n->height>155 || n->water>n->height || n->runoff>=600 || h%29)return FALSE;
+    out->x=(u32)(node%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+    out->y=(node/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+    out->radius=2048+((h>>8)&3)*1024;out->distance=0;
+    out->uplift=48+((h>>12)&15);out->relief=0;
+    return TRUE;
+}
+bool8 AtlasVolcano_Sample(s32 x,s32 y,struct AtlasVolcano *out)
+{
+    struct AtlasVolcano site={0};
+    s32 dx,dy,r,small,rim;
+    if(!out || !gAtlasPlanReady || AtlasWorld_Generation()<13 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
+    x=Wrap(x);
+    if(!sVolcanoCache.valid || x<sVolcanoCache.x0 || x>=sVolcanoCache.x1 || y<sVolcanoCache.y0 || y>=sVolcanoCache.y1)
+    {
+        u32 col=((u32)x*ATLAS_PLAN_WIDTH+ATLAS_WORLD_WIDTH/2)/ATLAS_WORLD_WIDTH;
+        u32 row=((u32)(y+ATLAS_WORLD_HALF_HEIGHT)*(ATLAS_PLAN_HEIGHT-1)+ATLAS_WORLD_HALF_HEIGHT)/(2*ATLAS_WORLD_HALF_HEIGHT);
+        sVolcanoCache.node=row*ATLAS_PLAN_WIDTH+col%ATLAS_PLAN_WIDTH;
+        sVolcanoCache.cx=col*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+        sVolcanoCache.cy=row*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        sVolcanoCache.x0=sVolcanoCache.cx-ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sVolcanoCache.x1=sVolcanoCache.cx+ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH/2;
+        sVolcanoCache.y0=sVolcanoCache.cy-ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sVolcanoCache.y1=sVolcanoCache.cy+ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1);
+        sVolcanoCache.active=AtlasVolcano_Site(sVolcanoCache.node,&site);
+        if(sVolcanoCache.active){sVolcanoCache.radius=site.radius;sVolcanoCache.peak=site.uplift;}
+        sVolcanoCache.valid=TRUE;
+    }
+    if(!sVolcanoCache.active)return FALSE;
+    site.x=Wrap(sVolcanoCache.cx);site.y=sVolcanoCache.cy;
+    site.radius=sVolcanoCache.radius;site.uplift=sVolcanoCache.peak;
+    dx=x-sVolcanoCache.cx;dy=y-site.y;
+    if(dx<0)dx=-dx;
+    if(dy<0)dy=-dy;
+    r=dx>dy?dx:dy;small=dx>dy?dy:dx;
+    r+=small/2; /* bounded octagonal distance, no square root on the GBA */
+    if(r>=site.radius)return FALSE;
+    rim=site.radius/4;
+    site.distance=r;
+    site.uplift=r<rim?site.uplift-24+24*r/rim:site.uplift*(site.radius-r)/(site.radius-rim);
+    site.relief=(site.uplift>=48?3:site.uplift>=32?2:site.uplift>=16?1:0)<<4;
+    /* A ten-tile-wide radial erosion gap joins outside, rim and crater floor.
+     * Prepared cliff stencils retain their usual collision on either side. */
+    if(dx<=5)site.relief|=0x80;
+    *out=site;return TRUE;
 }
 static u32 Smooth(u32 f) { return (f * f * (768 - 2 * f)) >> 16; }
 static s32 Noise(s32 x, s32 y, u32 channel)
@@ -106,7 +168,10 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
     if(y< -ATLAS_WORLD_HALF_HEIGHT)y= -ATLAS_WORLD_HALF_HEIGHT;
     if(y>=ATLAS_WORLD_HALF_HEIGHT)y=ATLAS_WORLD_HALF_HEIGHT-1;
     AtlasPlan_SampleDetail(x,y,plan);
-    return plan->lake?plan->height:Clamp(plan->height+(Noise(x,y,3)-128)/16);
+    s32 height=plan->lake?plan->height:Clamp(plan->height+(Noise(x,y,3)-128)/16);
+    struct AtlasVolcano volcano;
+    if(!plan->lake && AtlasVolcano_Sample(x,y,&volcano))height=Clamp(height+volcano.uplift);
+    return height;
 }
 void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
 {
@@ -129,6 +194,8 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         struct AtlasPlanSample plan;
         AtlasPlan_SampleDetail(x,y,&plan);
         e = plan.lake ? plan.height : Clamp(plan.height + (Noise(x,y,3)-128)/16);
+        struct AtlasVolcano volcano;
+        if(!plan.lake && AtlasVolcano_Sample(x,y,&volcano))e=Clamp(e+volcano.uplift);
         rain = Clamp(plan.rain + (Noise(x, y, 4) - 128) / 8); vapor = plan.humidity;
         if(AtlasWorld_Generation()>=9)
         {

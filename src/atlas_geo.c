@@ -5,6 +5,7 @@
 #include "atlas_tiles.h"
 #include "atlas_region.h"
 #include "atlas_vegetation.h"
+#include "atlas_volcano.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -75,13 +76,15 @@ void AtlasGeo_Begin(u8 type)
         sLastLand=0;sSeed=gAtlasWorldSeed;sGeneration=AtlasWorld_Generation();sInitialized=TRUE;
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
-    gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_VOLCANO && type!=ATLAS_GEO_RETURN?0:3;
+    gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if (type==ATLAS_GEO_VOLCANO && AtlasWorld_Generation()<13) gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_GROVE && AtlasWorld_Generation()<7) gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_ISLAND && AtlasWorld_Generation()<12) gAtlasGeoStatus=3;
 }
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
     if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
     if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
@@ -155,6 +158,16 @@ u8 AtlasGeo_Step(void)
         if (++sSceneAt>=117) sPhase=17;
         return 0;
     }
+    if(sPhase==24)
+    {
+        x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
+        if(!ReadyPoint(x,y))return 0;
+        u16 id=AtlasTerrain_Tile(x,y)&1023;
+        if(id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
+        {sPhase=9;return 0;}
+        if(++sSceneAt>=117)sPhase=0;
+        return 0;
+    }
     if(sPhase==0)
     {
         for(i=0;i<24;i++)
@@ -164,6 +177,14 @@ u8 AtlasGeo_Step(void)
             if(!Candidate(sNode))continue;
             sCX=(u32)(sNode%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
             sCY=(sNode/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+            if(sType==ATLAS_GEO_VOLCANO)
+            {
+                struct AtlasVolcano v;
+                if(!AtlasVolcano_Site(sNode,&v))continue;
+                /* Approach the second cone terrace through its radial gap. */
+                sLX=v.x;sLY=v.y+v.radius-32*(v.radius-v.radius/4)/v.uplift;
+                sCheck=sAttempt=0;sPhase=4;return 0;
+            }
             if(sType==ATLAS_GEO_SAND_EDGE){sPhase=20;return 0;}
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(sType==ATLAS_GEO_MOUTH){sTrial=0;sPhase=11;return 0;}
@@ -376,6 +397,7 @@ u8 AtlasGeo_Step(void)
     if(!ReadyPoint(x,y))return 0;
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
+        if(sType==ATLAS_GEO_VOLCANO){sPhase=0;return 0;}
         if(sType==ATLAS_GEO_SAND_EDGE){sDirection++;SandDirection();return 0;}
         if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
         if(++sAttempt<4 && sType!=ATLAS_GEO_LAND && !ReliefTarget())
@@ -386,9 +408,10 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_VOLCANO){sSceneAt=0;sPhase=24;return 0;}
         if (sType==ATLAS_GEO_GROVE) {sSceneAt=sSceneTarget=0;sPhase=18;return 0;}
         if(sType==ATLAS_GEO_MOUTH){sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=14;return 0;}
-        if(ReliefTarget() || sType==ATLAS_GEO_VALLEY)
+        if(ReliefTarget() || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_VOLCANO)
         {
             if(sType==ATLAS_GEO_VALLEY)
             {

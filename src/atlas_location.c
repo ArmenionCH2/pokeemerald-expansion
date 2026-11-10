@@ -3,6 +3,7 @@
 #include "atlas_plan.h"
 #include "atlas_place.h"
 #include "atlas_region.h"
+#include "atlas_volcano.h"
 #include "script.h"
 #include "map_name_popup.h"
 #include "constants/characters.h"
@@ -54,8 +55,11 @@ void AtlasLocation_Tick(void)
         sPositionValid = AtlasPlace_Identify(x, y, &cell, &sPlace);
         if (sPositionValid && cell.waterform==ATLAS_DRY && cell.landform!=ATLAS_COAST)
         {
+            struct AtlasVolcano volcano;
             u8 region=AtlasRegion_At(x,y);
-            if (region==ATLAS_REGION_PLATEAU) sPlace.kind=ATLAS_PLACE_PLATEAU;
+            if(AtlasVolcano_Sample(x,y,&volcano))
+                sPlace.kind=volcano.distance<volcano.radius/4?ATLAS_PLACE_CALDERA:ATLAS_PLACE_VOLCANO;
+            else if (region==ATLAS_REGION_PLATEAU) sPlace.kind=ATLAS_PLACE_PLATEAU;
             else if (region==ATLAS_REGION_VALLEY) sPlace.kind=ATLAS_PLACE_VALLEY;
             else if (region==ATLAS_REGION_RIDGE) sPlace.kind=ATLAS_PLACE_RIDGE;
         }

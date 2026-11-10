@@ -23,7 +23,7 @@ static const u8 sMountain[] = _("Mountain / natural pass");
 static const u8 sLake[] = _("Lake shore");
 static const u8 sRiver[] = _("River bank");
 static const u8 sCoast[] = _("Coast");
-static const u8 sVolcano[] = _("Volcano - coming soon");
+static const u8 sVolcano[] = _("Dormant volcano / caldera");
 static const u8 sReturn[] = _("Return to previous location");
 static const u8 sRidge[] = _("Ridge outlook");
 static const u8 sValley[] = _("River valley / terraces");
@@ -118,7 +118,6 @@ static void GeoMenu_Run(void)
             if(sBookmark && sReturnSeed==gAtlasWorldSeed){s32 x=sReturnX,y=sReturnY;Go(x,y);return;}
             sMessage=3;Draw();return;
         }
-        if(sGeoChoice==ATLAS_GEO_VOLCANO){sMessage=2;Draw();return;}
         AtlasGeo_Begin(sGeoChoice);sSearchingNow=TRUE;sMessage=0;Draw();
     }
 }

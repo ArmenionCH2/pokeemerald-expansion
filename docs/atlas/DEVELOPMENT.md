@@ -110,7 +110,20 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   available. A failed bounded search does not establish that a feature is absent.
   Continental seed descriptors are cached in creation scratch without changing
   older generation results. The native test prints generation-stage frame costs.
-  Existing versions 3 through 11 retain their original
+  Generation 13 adds rare dormant cones on final dry lower upland nodes, excluding
+  lake centres and main river nodes. Hash-selected sites have 2–5 km radii, bounded
+  octagonal cone profiles, raised rims and lower crater floors. The same uplift
+  feeds direct ground height, hydrology's terrain queries and final habitat; local
+  native cliff tiers follow the cone profile. A radial gap permits walking through
+  all tiers. Water and carved-valley ownership retain priority. Site descriptors
+  use a single-owner spatial cache, reset with the world seed; no all-world scan,
+  extra saved state, or permanent site list is needed. Macro climate/drainage and
+  land percentage remain generation 12's. This is dormant morphology, not eruptions,
+  lava, plate tectonics, a crater-lake model or a cave entrance. Close admin map
+  summaries include local uplift without preparing remote hydrology. GEO TP checks
+  the real dry landing and scans a camera viewport for native cliff art, yielding
+  between points. Physical popups distinguish volcanic cones from caldera floors.
+  Existing versions 3 through 12 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

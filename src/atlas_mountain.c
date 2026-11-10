@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_plan.h"
+#include "atlas_volcano.h"
 
 /* Continuous periodic fields, not one independent mound per owner cell.
  * Macro elevation bounds the relief; existing rivers carve its cross-section.
@@ -20,7 +21,10 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     s32 local,broad,height,d;
     u8 tier,cap;
     bool8 pass;
-    if(c->waterform!=ATLAS_DRY || c->elevation<=155)return 0;
+    struct AtlasVolcano volcano;
+    if(c->waterform!=ATLAS_DRY)return 0;
+    if(c->valley==255 && AtlasVolcano_Sample(x,y,&volcano))return volcano.relief;
+    if(c->elevation<=155)return 0;
     if(c->valley==0)return 0x80;
     local=AtlasTerrain_ReliefNoise(x,y,FALSE);
     broad=AtlasTerrain_ReliefNoise(x,y,TRUE);

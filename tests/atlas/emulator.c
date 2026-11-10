@@ -347,7 +347,7 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit],isShore=type>=2 && type<=4;
@@ -410,6 +410,7 @@ static void shoreTour(uint32_t savePointer)
                     if (dx>=-1 && dx<=1 && dy>=-1 && dy<=1) assert(!(tile&0xC00));
                 }
                 if(type==18){assert(edges);printf("PASS native sand/grass boundary: %u visible sand borders and safe 3x3 landing\n",edges);}
+                else if(type==5){assert(walls);assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==16);printf("PASS native dormant volcanic cone: %u cliff tiles, physical name and safe radial gap landing\n",walls);}
                 else if(type==19)
                 {
                     unsigned component=core->busRead16(core,symbol("gAtlasGeoResult")+8),cells=0;
@@ -424,6 +425,25 @@ static void shoreTour(uint32_t savePointer)
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
+        if(type==5)
+        {
+            unsigned char before[1456],after[1456];
+            press(8);
+            for(unsigned i=0;core->busRead8(core,cursor)!=0 && i<8;i++)press(128);
+            press(1);frames(0,60);
+            assert(core->busRead8(core,symbol("gAtlasMapActive")));
+            uint32_t journal=core->busRead32(core,symbol("gSaveBlock3Ptr"));
+            bytes(journal,before,sizeof(before));
+            if(!core->busRead8(core,symbol("sAdminView")))press(4);
+            for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapZoom"))!=4 && i<8;i++)press(core->busRead8(core,symbol("sAtlasMapZoom"))<4?256:512);
+            for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapLayer"))!=1 && i<8;i++)press(8);
+            frames(0,300);assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
+            shot("build/atlas-emulator/volcano-elevation.ppm");
+            bytes(journal,after,sizeof(after));assert(!memcmp(before,after,sizeof(before)));
+            press(2);frames(0,180);press(2);frames(0,60);
+            printf("PASS native local volcanic elevation atlas leaves journal unchanged\n");
+            cachedCrossing(savePointer);
+        }
         if (type==17 || type==18) cachedCrossing(savePointer);
     }
 }
@@ -487,9 +507,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==12);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==13);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 12 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 13 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();

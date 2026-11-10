@@ -4,7 +4,7 @@
 #define ATLAS_WORLD_WIDTH 40075000
 #define ATLAS_WORLD_HALF_HEIGHT 10001500
 #define ATLAS_WORLD_SIZE ATLAS_WORLD_WIDTH
-#define ATLAS_GENERATION_VERSION 12
+#define ATLAS_GENERATION_VERSION 13
 #define ATLAS_GENERATION_OCEAN_BALANCE 4
 #define ATLAS_GENERATION_LEGACY 3
 #define ATLAS_SAVE_MAGIC 0xA756
@@ -22,7 +22,7 @@ bool8 AtlasWorld_IsActive(void);
 bool8 AtlasWorld_SaveValid(void);
 u16 AtlasWorld_Generation(void);
 /* Select only before AtlasPlan_Begin, never during live traversal. Fresh
- * worlds use version 12; saved versions 3 through 11 retain their terrain rules. */
+ * worlds use version 13; saved versions 3 through 12 retain their terrain rules. */
 bool8 AtlasWorld_SetGeneration(u16 version);
 bool8 AtlasWorld_RestoreGeneration(void);
 const struct MapHeader *AtlasWorld_Header(const struct MapHeader *base);

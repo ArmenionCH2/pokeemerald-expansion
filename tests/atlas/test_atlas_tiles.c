@@ -1,5 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
+#include "atlas_volcano.h"
+bool8 AtlasVolcano_Sample(s32 x,s32 y,struct AtlasVolcano *out){return FALSE;}
 #include "atlas_tiles.h"
 #include <assert.h>
 #include <stdio.h>

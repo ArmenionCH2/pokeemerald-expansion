@@ -6,6 +6,7 @@
 #include "atlas_place.h"
 #include "atlas_weather.h"
 #include "atlas_region.h"
+#include "atlas_volcano.h"
 #include "bg.h"
 #include "gpu_regs.h"
 #include "main.h"
@@ -52,7 +53,7 @@ static void VBlank(void) { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttB
 static s32 Wrap(s32 x) { x %= ATLAS_WORLD_WIDTH; return x < 0 ? x + ATLAS_WORLD_WIDTH : x; }
 static struct AtlasCell Sample(s32 x, s32 y)
 {
-    struct AtlasCell cell;
+    struct AtlasCell cell={0};
     if (sAdminView && sScales[sAtlasMapZoom]>=100)
     {
         struct AtlasPlanSample plan;
@@ -62,12 +63,21 @@ static struct AtlasCell Sample(s32 x, s32 y)
         AtlasPlan_SampleDetail(Wrap(x),y,&plan);
         cell.elevation=plan.height;
         cell.waterform=plan.height<ATLAS_PLAN_SEA?ATLAS_SEA:plan.lake?ATLAS_LAKE:ATLAS_DRY;
-        AtlasHabitat_Sample(y,plan.height,plan.rain,plan.humidity,cell.waterform,&habitat);
+        if(cell.waterform==ATLAS_DRY && sScales[sAtlasMapZoom]<=1000)
+        {
+            struct AtlasVolcano volcano;
+            if(AtlasVolcano_Sample(x,y,&volcano))
+            {
+                struct AtlasPlanSample ground;
+                cell.elevation=AtlasTerrain_GroundHeight(x,y,&ground);
+            }
+        }
+        AtlasHabitat_Sample(y,cell.elevation,plan.rain,plan.humidity,cell.waterform,&habitat);
         cell.temperature=habitat.temperature;cell.humidity=habitat.humidity;cell.moisture=habitat.moisture;
-        cell.landform=plan.height<128?ATLAS_COAST:plan.height>185?ATLAS_MOUNTAIN:plan.height>155?ATLAS_HILL:ATLAS_PLAIN;
+        cell.landform=cell.elevation<128?ATLAS_COAST:cell.elevation>185?ATLAS_MOUNTAIN:cell.elevation>155?ATLAS_HILL:ATLAS_PLAIN;
         cell.biome=cell.waterform==ATLAS_SEA?ATLAS_OCEAN:cell.waterform!=ATLAS_DRY?ATLAS_WETLAND
             :cell.temperature<45?ATLAS_TUNDRA:cell.temperature<85?ATLAS_TAIGA
-            :plan.height<132 && cell.moisture>160?ATLAS_WETLAND
+            :cell.elevation<132 && cell.moisture>160?ATLAS_WETLAND
             :cell.temperature>160 && cell.moisture<98?ATLAS_DESERT
             :cell.temperature>175 && cell.moisture>155?ATLAS_JUNGLE
             :cell.moisture>132?ATLAS_FOREST:cell.temperature>150 && cell.moisture<125?ATLAS_SAVANNA:ATLAS_GRASSLAND;
