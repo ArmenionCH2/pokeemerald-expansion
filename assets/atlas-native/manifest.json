@@ -24,7 +24,7 @@
     "data/tilesets/secondary/cave/metatiles.bin": "fca8629264b6ff2324224864ed98d929cc5a93213a5a512a3798d144470e022b",
     "data/tilesets/secondary/cave/palettes/06.pal": "f0205efcdd74ead5efd49e4c6b3559cff92ade3010bce19a26882d0dd021867b"
   },
-  "raw_tiles": 57,
+  "raw_tiles": 68,
   "metatiles": 512,
   "families": [
     {
@@ -136,6 +136,11 @@
       "first": 435,
       "count": 47,
       "role": "primary_walkable_sand_ridges"
+    },
+    {
+      "first": 337,
+      "count": 15,
+      "role": "primary_rock_snow_edges"
     },
     {
       "first": 352,

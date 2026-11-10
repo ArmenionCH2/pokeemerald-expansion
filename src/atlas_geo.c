@@ -35,13 +35,13 @@ static bool8 Green(const struct AtlasCell *c)
     return !c->waterform && c->elevation<175 && c->biome!=ATLAS_TUNDRA && !Sand(c);
 }
 static bool8 GroundBoundary(void)
-{return sType==ATLAS_GEO_SAND_EDGE || sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND;}
+{return sType==ATLAS_GEO_SAND_EDGE || sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW;}
 static bool8 BoundaryMaterial(s32 x,s32 y,const struct AtlasCell *c)
 {
     if(sType==ATLAS_GEO_SAND_EDGE)return Sand(c);
     if(c->waterform)return FALSE;
     u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
-    unsigned first=(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_ROCK_SAND)?ATLAS_ROCK_FLOOR_FIRST:ATLAS_NATURE_SNOW_FIRST;
+    unsigned first=(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW)?ATLAS_ROCK_FLOOR_FIRST:ATLAS_NATURE_SNOW_FIRST;
     return id>=first && id<first+4;
 }
 static bool8 BoundaryGreen(s32 x,s32 y,const struct AtlasCell *c)
@@ -49,6 +49,7 @@ static bool8 BoundaryGreen(s32 x,s32 y,const struct AtlasCell *c)
     if(sType==ATLAS_GEO_SAND_EDGE)return Green(c);
     if(c->waterform)return FALSE;
     u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
+    if(sType==ATLAS_GEO_ROCK_SNOW)return id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4;
     if(sType==ATLAS_GEO_ROCK_SAND)return id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4;
     return id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4;
 }
@@ -103,7 +104,7 @@ void AtlasGeo_Begin(u8 type)
     if(type==ATLAS_GEO_SEA_CLIFF && AtlasWorld_Generation()<22)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_HEADWATER && AtlasWorld_Generation()<21)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_MESA && AtlasWorld_Generation()<20)gAtlasGeoStatus=3;
-    if((type==ATLAS_GEO_ROCK_EDGE || type==ATLAS_GEO_ROCK_SAND) && AtlasWorld_Generation()<14)gAtlasGeoStatus=3;
+    if((type==ATLAS_GEO_ROCK_EDGE || type==ATLAS_GEO_ROCK_SAND || type==ATLAS_GEO_ROCK_SNOW) && AtlasWorld_Generation()<14)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_DUNES && AtlasWorld_Generation()<19)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_CREEK && AtlasWorld_Generation()<18)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_FLOODPLAIN && AtlasWorld_Generation()<17)gAtlasGeoStatus=3;
@@ -134,7 +135,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_MESA){struct AtlasMesa mesa;return AtlasMesa_Site(id,&mesa);}
     if(sType==ATLAS_GEO_ROCK_SAND)
     {struct AtlasVolcano volcano;struct AtlasMesa mesa;return n->height>205 || AtlasVolcano_Site(id,&volcano) || AtlasMesa_Site(id,&mesa);}
-    if(sType==ATLAS_GEO_ROCK_EDGE)
+    if(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_ROCK_SNOW)
     {struct AtlasVolcano volcano;return n->height>205 || AtlasVolcano_Site(id,&volcano);}
     if(sType==ATLAS_GEO_SNOW_EDGE)
     {
@@ -632,10 +633,10 @@ u8 AtlasGeo_Step(void)
             if(c.waterform || c.landform!=ATLAS_MESA){sPhase=0;return 0;}
             sSceneAt=0;sPhase=24;return 0;
         }
-        if(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND)
+        if(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW)
         {
             u16 id=AtlasTerrain_Tile(sLX,sLY)&1023;
-            unsigned first=sType==ATLAS_GEO_ROCK_SAND?ATLAS_ROCK_SAND_EDGE_FIRST:sType==ATLAS_GEO_ROCK_EDGE?ATLAS_ROCK_GROUND_EDGE_FIRST:ATLAS_SNOW_GROUND_EDGE_FIRST;
+            unsigned first=sType==ATLAS_GEO_ROCK_SNOW?ATLAS_ROCK_SNOW_EDGE_FIRST:sType==ATLAS_GEO_ROCK_SAND?ATLAS_ROCK_SAND_EDGE_FIRST:sType==ATLAS_GEO_ROCK_EDGE?ATLAS_ROCK_GROUND_EDGE_FIRST:ATLAS_SNOW_GROUND_EDGE_FIRST;
             if(id>=first && id<first+ATLAS_MATERIAL_GROUND_EDGE_COUNT)sPhase=9;
             else if(++sDirection<4)SandDirection();else sPhase=0;
             return 0;

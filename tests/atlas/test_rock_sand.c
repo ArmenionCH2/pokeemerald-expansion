@@ -17,7 +17,7 @@ int main(void)
         assert((tile&0xFC00)==(floor&0xFC00));
         assert((tile&1023)==(mask==15?ATLAS_ROCK_FLOOR_FIRST:ATLAS_ROCK_SAND_EDGE_FIRST+mask));
         if(mask!=15)assert(gAtlasPrimaryAttributes[tile&1023]==0x1000);
-        for(unsigned i=0;i<4;i++)cells[sides[i]]=(i&1)?ATLAS_SEA:(150<<8)|12;
+        for(unsigned i=0;i<4;i++)cells[sides[i]]=(i&1)?ATLAS_SEA:(150<<8)|8;
         assert(AtlasTiles_Render(floor,cells)==floor);
         /* At a three-material junction the established grass outline wins;
          * no sand-colored pixels should replace actual green neighbors. */

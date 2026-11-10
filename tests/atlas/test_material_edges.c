@@ -22,7 +22,7 @@ int main(void)
         if(mask!=15)assert(gAtlasPrimaryAttributes[tile&1023]==0x1000);
         /* Colored ground and water continue the material; neither acquires
          * a false green fringe. Diagonals do not alter cardinal geometry. */
-        for(unsigned i=0;i<4;i++)cells[sides[i]]=(i&1)?ATLAS_RIVER:12;
+        for(unsigned i=0;i<4;i++)cells[sides[i]]=(i&1)?ATLAS_RIVER:(material<<2);
         assert(AtlasTiles_Render(floor,cells)==floor);
         cells[4]|=ATLAS_RIVER;assert(AtlasTiles_Render(floor,cells)&0xC00);
     }

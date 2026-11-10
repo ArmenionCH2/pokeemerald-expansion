@@ -76,3 +76,11 @@ native sand floor's dominant outside color. No original graphics, palettes, nati
 animation bindings or other layouts are modified. This adds no raw graphic tiles.
 Three-material junctions retain the existing green outline priority; diagonal-only
 notches and other non-green material pairs remain future work.
+
+Rock/snow boundaries reclaim Atlas-only primary building roles 337–351. Their
+rounded silhouette comes from the same General sand-edge quarters; native snow
+floor texture replaces the exterior green pixels. Fully interior quarters retain
+Cave rock. Eleven compiled 4bpp subtiles use unused palette-12 entries 1–4 for
+native snow colors and existing rock entries 11–14. Other palettes and original
+input assets stay unchanged. The compile step performs this adaptation once;
+there is no runtime art conversion. Native terrain graphic usage is 68/512.

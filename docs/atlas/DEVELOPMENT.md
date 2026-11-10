@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` or `--tour karst`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` `--tour karst` or `--tour snowline`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
@@ -417,8 +417,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   outlines retain priority; a complete three-material blend remains future work.
   The sixth entry on the fifth inspector page bisects a real dry rock/sand interval,
   validates the border and checks a safe 3x3 landing. Other layouts keep General's
-  original building roles. Primary roles 367–383 remain untouched.
-  Diagonal-only notches, snow/sand and rock/snow blends remain future work.
+  original building roles. Rock/snow transitions reclaim primary roles 337–351 and reuse the same rounded
+  silhouette with native snow texture outside and actual Cave rock interiors.
+  Eleven compiled 4bpp subtiles raise graphic use to 68/512; primary/secondary
+  catalogue sizes and RAM stay fixed. Previously unused palette-12 entries 1–4
+  hold native snow colors, preserving its rock/sand entries 11–15. The selector
+  reads existing prepared cardinal semantics and adds no geography queries.
+  Green and rock/sand outlines keep priority at mixed junctions. A sixth-page
+  Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
+  Native QA checks visible edges, cached walking and cold save reload there.
+  Primary roles 367–383 remain untouched.
+  Diagonal-only notches, snow/sand blends remain future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native
