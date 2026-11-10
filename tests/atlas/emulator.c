@@ -353,7 +353,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit];
-        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31))continue;
+        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31) || (focus==8 && type!=5 && type!=26 && type!=30))continue;
         unsigned isShore=(type>=2 && type<=4) || type==20 || type==11 || type==22 || type==27;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
@@ -481,10 +481,13 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);completed++;
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
-        if(type==5)
+        if(type==5 || type==26 || type==30)
         {
+            const char *suffix=type==5?" Cone":type==26?" Mesa":" Sinkhole";
+            uint16_t owner=core->busRead16(core,symbol("sAtlasPlaceTracker")+6);assert(owner && owner<=4608);
+            assert(owner==core->busRead16(core,symbol("gAtlasGeoResult")+10)+1);
             uint32_t popup=symbol("sAtlasLocationPopup");unsigned named=0;
-            for(unsigned tick=0;tick<900 && !named;tick++)
+            for(unsigned tick=0;tick<1200 && !named;tick++)
             {
                 char name[21];unsigned n;
                 for(n=0;n<20;n++)
@@ -492,10 +495,12 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                     unsigned c=core->busRead8(core,popup+n);if(c==255)break;
                     name[n]=c>=0xbb && c<=0xd4?'A'+c-0xbb:c>=0xd5 && c<=0xee?'a'+c-0xd5:' ';
                 }
-                name[n]=0;named=!strcmp(name,"Volcanic Cone");
+                name[n]=0;unsigned length=strlen(suffix);named=n>length && !strcmp(name+n-length,suffix);
+                if(named)printf("PASS native named landmark %s, stable site %u\n",name,owner);
                 if(!named)frames(0,1);
             }
-            assert(named);
+            /* Native popup waits31 frames before printing, then slides in. */
+            assert(named);frames(0,64);
         }
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
         if(type==5 || type==20 || type==21 || type==23 || type==26 || type==27 || type==28 || type==30)
@@ -628,9 +633,9 @@ int main(int argc,char **argv)
     shot("build/atlas-emulator/world.ppm");
     printf("WORLD SEED %u\n",core->busRead32(core,symbol("gAtlasWorldSeed")));
     printf("PASS native world entry at frame %u, position %d,%d, visited chunks %u\n",frame,(int16_t)core->busRead16(core,savePtr),(int16_t)core->busRead16(core,savePtr+2),core->busRead8(core,statePtr+15));
-    if(argc==4 && (!strcmp(argv[3],"--materials") || !strcmp(argv[3],"--mesa") || !strcmp(argv[3],"--headwaters") || !strcmp(argv[3],"--coasts") || !strcmp(argv[3],"--rock-sand") || !strcmp(argv[3],"--karst") || !strcmp(argv[3],"--snowline")))
+    if(argc==4 && (!strcmp(argv[3],"--materials") || !strcmp(argv[3],"--mesa") || !strcmp(argv[3],"--headwaters") || !strcmp(argv[3],"--coasts") || !strcmp(argv[3],"--rock-sand") || !strcmp(argv[3],"--karst") || !strcmp(argv[3],"--snowline") || !strcmp(argv[3],"--landmarks")))
     {
-        unsigned focus=!strcmp(argv[3],"--materials")?1:!strcmp(argv[3],"--mesa")?2:!strcmp(argv[3],"--headwaters")?3:!strcmp(argv[3],"--coasts")?4:!strcmp(argv[3],"--rock-sand")?5:!strcmp(argv[3],"--karst")?6:7;
+        unsigned focus=!strcmp(argv[3],"--materials")?1:!strcmp(argv[3],"--mesa")?2:!strcmp(argv[3],"--headwaters")?3:!strcmp(argv[3],"--coasts")?4:!strcmp(argv[3],"--rock-sand")?5:!strcmp(argv[3],"--karst")?6:!strcmp(argv[3],"--snowline")?7:8;
         assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))>=(focus==1 || focus==5 || focus==7?14:focus==2?20:focus==3?21:focus==4?22:23));
         shoreTour(sav1,focus);
         core->deinit(core);return 0;

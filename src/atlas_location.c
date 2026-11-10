@@ -58,7 +58,10 @@ void AtlasLocation_Tick(void)
             struct AtlasVolcano volcano;
             u8 region=AtlasRegion_At(x,y);
             if(AtlasVolcano_Sample(x,y,&volcano))
+            {
                 sPlace.kind=volcano.distance<volcano.radius/4?ATLAS_PLACE_CALDERA:ATLAS_PLACE_VOLCANO;
+                AtlasPlace_SetLandmark(&sPlace,x,y);
+            }
             else if(cell.landform==ATLAS_SINKHOLE)sPlace.kind=ATLAS_PLACE_SINKHOLE;
             else if(cell.landform==ATLAS_ROCK_COAST)sPlace.kind=ATLAS_PLACE_ROCK_COAST;
             else if(cell.landform==ATLAS_MESA)sPlace.kind=ATLAS_PLACE_MESA;
@@ -102,7 +105,8 @@ void AtlasLocation_Tick(void)
     if (!sAtlasPlaceTracker.initialized
      || sPlace.landmass!=sAtlasPlaceTracker.previous.landmass
      || sPlace.basin!=sAtlasPlaceTracker.previous.basin
-     || sPlace.kind!=sAtlasPlaceTracker.previous.kind) return;
+     || sPlace.kind!=sAtlasPlaceTracker.previous.kind
+     || sPlace.landmark!=sAtlasPlaceTracker.previous.landmark) return;
     if (IsMapNamePopupActive()) return;
     for (level = 0; level < 3; level++)
     {

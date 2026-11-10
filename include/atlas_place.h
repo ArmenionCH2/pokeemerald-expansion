@@ -8,7 +8,7 @@ enum AtlasPlaceKind { ATLAS_PLACE_OCEAN, ATLAS_PLACE_RIVER, ATLAS_PLACE_LAKE,
     ATLAS_PLACE_FOREST, ATLAS_PLACE_TAIGA, ATLAS_PLACE_TUNDRA,
     ATLAS_PLACE_DESERT, ATLAS_PLACE_WETLAND, ATLAS_PLACE_SAVANNA, ATLAS_PLACE_PLAIN,
     ATLAS_PLACE_PLATEAU, ATLAS_PLACE_VALLEY, ATLAS_PLACE_RIDGE, ATLAS_PLACE_VOLCANO, ATLAS_PLACE_CALDERA, ATLAS_PLACE_FLOODPLAIN, ATLAS_PLACE_CREEK, ATLAS_PLACE_DUNES, ATLAS_PLACE_MESA, ATLAS_PLACE_HEADWATER, ATLAS_PLACE_ROCK_COAST, ATLAS_PLACE_SEA_CLIFF, ATLAS_PLACE_SINKHOLE };
-struct AtlasPlace { u16 landmass, basin; u8 kind; };
+struct AtlasPlace { u16 landmass, basin; u8 kind; u16 landmark; };
 struct AtlasPlaceTracker
 {
     struct AtlasPlace previous, candidate;
@@ -16,9 +16,10 @@ struct AtlasPlaceTracker
     bool8 initialized, pending;
 };
 /* Names follow connected macro landmasses and drainage catchments, never
- * chunk IDs. The local descriptor is basin-wide, not a claim that every
- * forest patch or mountain ridge has already been component-labelled. */
+ * chunk IDs. Bounded cones/calderas, mesas and sinkholes use their seeded
+ * macro-site identity; generic forests/ridges remain contextual descriptors. */
 bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct AtlasPlace *out);
+void AtlasPlace_SetLandmark(struct AtlasPlace *place,s32 x,s32 y);
 bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_PLACE_NAME_BYTES]);
 /* Nearby-water bits use 1 << AtlasWaterform. A dry bank keeps its actual
  * landmass/catchment identity while acquiring the shoreline descriptor. */

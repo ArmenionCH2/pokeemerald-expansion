@@ -4,6 +4,7 @@ Requires libmgba-dev and arm-none-eabi-nm. Output and test save stay in build/.
 """
 from pathlib import Path
 import argparse
+import fcntl
 import os
 import shutil
 import subprocess
@@ -12,11 +13,18 @@ parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--rom',type=Path,default=R/'pokeemerald.gba')
 parser.add_argument('--elf',type=Path,default=R/'pokeemerald.elf')
 parser.add_argument('--save',type=Path,help='Copy a test save; never alter the supplied file')
-parser.add_argument('--tour',choices=['materials','mesa','headwaters','coasts','rock-sand','karst','snowline'],help='Run a focused real-key geography tour instead of the complete smoke test')
+parser.add_argument('--tour',choices=['materials','mesa','headwaters','coasts','rock-sand','karst','snowline','landmarks'],help='Run a focused real-key geography tour instead of the complete smoke test')
 parser.add_argument('--snapshot',type=Path,help='Dump the live journal after world entry instead of the full smoke test')
 args=parser.parse_args()
 if args.tour and args.snapshot:parser.error('--tour and --snapshot are mutually exclusive')
 out=R/'build/atlas-emulator';out.mkdir(parents=True,exist_ok=True)
+# The native core maps the test ROM/save. Never overwrite them while another
+# check is still running, even if its controlling Python process exits first.
+run_lock=(out/'.run.lock').open('a')
+try:
+    fcntl.flock(run_lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+except BlockingIOError:
+    parser.exit(2,'Another Atlas emulator check is running; wait for it to finish.\n')
 rom=out/'atlas.gba'
 shutil.copyfile(args.rom,rom)
 save_data=args.save.read_bytes() if args.save else None
@@ -27,4 +35,4 @@ symbols=out/'symbols.txt'
 symbols.write_bytes(subprocess.check_output(['arm-none-eabi-nm',str(args.elf)]))
 exe=out/'emulator'
 subprocess.run([os.environ.get('CC','cc'),'-O2',str(R/'tests/atlas/emulator.c'),'-lmgba','-o',str(exe)],check=True)
-subprocess.run([str(exe),str(rom),str(symbols)]+([str(args.snapshot)] if args.snapshot else ['--'+args.tour] if args.tour else []),cwd=R,check=True,timeout=600)
+subprocess.run([str(exe),str(rom),str(symbols)]+([str(args.snapshot)] if args.snapshot else ['--'+args.tour] if args.tour else []),cwd=R,check=True,timeout=600,pass_fds=(run_lock.fileno(),))

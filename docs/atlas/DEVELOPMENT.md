@@ -36,9 +36,13 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` `--tour karst` or `--tour snowline`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand` `--tour karst` `--tour snowline` or `--tour landmarks`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
-saves and still uses genuine key input and emulation. Full tours allow up to ten
+saves and still uses genuine key input and emulation. The native runner holds a
+POSIX file lock before copying the shared ROM/save/symbol/executable files; an
+additional invocation exits before mutation. The emulator child inherits that
+lock, so a terminated wrapper cannot expose a still-mapped ROM to overwrite.
+An isolated host fixture verifies the busy-workspace rejection. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
 checked separately. Do not describe this host timeout as game loading time.
  `make` builds the Emerald target; other Expansion game
@@ -370,7 +374,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   terrain changes or a complete seasons/ecology simulation.
 - Physical names derive from connected macro landmasses, water bodies and drainage catchments.
   The local label describes the terrain inside that catchment; individual forests,
-  ridges and river branches are not separately component-labelled. Names are seed
+  ridges and river branches are not separately component-labelled. Bounded volcanic
+  cones/calderas, mesas and sinkholes additionally receive a landmark identity from
+  their seeded macro site, not their containing render chunk. Their root names are
+  deterministic and distinct across site IDs; a cone and its caldera share one
+  root. Local labels fit the existing 21-byte buffer. Shoreline priority clears the
+  landmark identity when the local label becomes a bank/coast. Switching landmarks
+  in one catchment queues only the changed leaf, with normal debounce/cooldown.
+  This identifier lives only in the ephemeral place/tracker; no saved fields,
+  world generation, geometry, map fog or journal format change. Native landmark
+  tours verify actual owner IDs, visible proper-name labels and cold reloads.
+  Generic forest/ridge/river labels remain contextual descriptors. Names are seed
   stable, cross chunk boundaries and announce only changed hierarchy levels after
   a debounce/cooldown. This adds no terrain or save identity change.
   Dry riverbanks/lake shores/coasts use nearby prepared terrain semantics, within

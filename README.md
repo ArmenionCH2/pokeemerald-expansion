@@ -70,7 +70,8 @@ dunes for checking actual sand relief. The fifth page locates rounded rock/grass
 and snow/grass ground borders, mesas, headwater creeks, sea cliffs and rounded rock/sand boundaries. The border artwork preserves terrain
 heights and walking collision. Mesas require generation 20 or newer; headwaters require 21 and sea cliffs 22. A sixth page finds karst sinkholes in generation 23 and rounded rock/snow boundaries.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
-catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
+catchment and terrain. Individual mesas, sinkholes and volcanic cone/caldera complexes
+have seed-stable landmark names; regional plateau/valley/ridge descriptors use surrounding relief.
 The exploration journal has a fixed save capacity and warns when space is low.
 Use a fresh save for this port; back up saves from other engines/versions.
 

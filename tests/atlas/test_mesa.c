@@ -77,7 +77,7 @@ int main(void)
         struct AtlasCell cell;struct AtlasPlace place;char name[ATLAS_PLACE_NAME_BYTES];
         AtlasTerrain_Sample(gAtlasGeoResult.x,gAtlasGeoResult.y,&cell);
         assert(cell.landform==ATLAS_MESA && AtlasPlace_Identify(gAtlasGeoResult.x,gAtlasGeoResult.y,&cell,&place));
-        assert(place.kind==ATLAS_PLACE_MESA && AtlasPlace_Name(&place,2,name) && !strcmp(name,"Mesa"));
+        assert(place.kind==ATLAS_PLACE_MESA && AtlasPlace_Name(&place,2,name) && place.landmark && strstr(name," Mesa"));
         unsigned walls=0;
         for(s32 y=-4;y<=4;y++)for(s32 x=-6;x<=6;x++)
         {

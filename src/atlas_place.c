@@ -5,7 +5,25 @@
 
 static bool8 Equal(const struct AtlasPlace *a, const struct AtlasPlace *b)
 {
-    return a->landmass == b->landmass && a->basin == b->basin && a->kind == b->kind;
+    return a->landmass == b->landmass && a->basin == b->basin && a->kind == b->kind && a->landmark == b->landmark;
+}
+
+static bool8 Landmark(u8 kind)
+{
+    return kind==ATLAS_PLACE_VOLCANO || kind==ATLAS_PLACE_CALDERA
+        || kind==ATLAS_PLACE_MESA || kind==ATLAS_PLACE_SINKHOLE;
+}
+void AtlasPlace_SetLandmark(struct AtlasPlace *place,s32 x,s32 y)
+{
+    if(!place)return;
+    place->landmark=0;
+    if(!gAtlasPlanReady || !Landmark(place->kind) || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    /* These bounded features occupy under 5 km around their seeded site,
+     * comfortably inside the nearest-owner footprint (~417 km per node). */
+    u32 col=((u32)x*ATLAS_PLAN_WIDTH+ATLAS_WORLD_WIDTH/2)/ATLAS_WORLD_WIDTH;
+    u32 row=((u32)(y+ATLAS_WORLD_HALF_HEIGHT)*(ATLAS_PLAN_HEIGHT-1)+ATLAS_WORLD_HALF_HEIGHT)/(2*ATLAS_WORLD_HALF_HEIGHT);
+    place->landmark=row*ATLAS_PLAN_WIDTH+col%ATLAS_PLAN_WIDTH+1;
 }
 
 bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct AtlasPlace *out)
@@ -61,12 +79,14 @@ bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct Atl
               : cell->biome == ATLAS_SAVANNA ? ATLAS_PLACE_SAVANNA
               : cell->biome == ATLAS_FOREST || cell->biome == ATLAS_JUNGLE ? ATLAS_PLACE_FOREST
               : ATLAS_PLACE_PLAIN;
+    AtlasPlace_SetLandmark(out,x,y);
     return TRUE;
 }
 
 void AtlasPlace_ApplyShore(struct AtlasPlace *place,u8 watermask)
 {
     if (!place || place->kind==ATLAS_PLACE_OCEAN) return;
+    if(watermask)place->landmark=0;
     if (watermask&(1<<ATLAS_LAKE)) place->kind=ATLAS_PLACE_LAKE;
     else if (watermask&(1<<ATLAS_RIVER)) place->kind=ATLAS_PLACE_RIVER;
     else if (watermask&(1<<ATLAS_SEA)) place->kind=ATLAS_PLACE_COAST;
@@ -90,8 +110,18 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
     if (out == NULL) return FALSE;
     out[0] = 0;
     if (place == NULL || level > 2 || place->kind > ATLAS_PLACE_SINKHOLE
-     || (place->landmass & ~ATLAS_OCEAN_COMPONENT) > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT) return FALSE;
-    if (level == 2) {Append(out, feature[place->kind]);return TRUE;}
+     || (place->landmass & ~ATLAS_OCEAN_COMPONENT) > ATLAS_PLAN_COUNT || place->basin > ATLAS_PLAN_COUNT || place->landmark>ATLAS_PLAN_COUNT) return FALSE;
+    if (level == 2)
+    {
+        if(place->landmark && Landmark(place->kind))
+        {
+            code=(place->landmark*4051u+(gAtlasWorldSeed^(gAtlasWorldSeed>>16))+1994u)&8191;
+            Append(out,first[code&15]);Append(out,middle[(code>>4)&15]);Append(out,last[code>>8]);
+            Append(out,place->kind==ATLAS_PLACE_VOLCANO?" Cone":place->kind==ATLAS_PLACE_CALDERA?" Caldera":place->kind==ATLAS_PLACE_MESA?" Mesa":" Sinkhole");
+        }
+        else Append(out,feature[place->kind]);
+        return TRUE;
+    }
     id = level == 0 ? place->landmass & ~ATLAS_OCEAN_COMPONENT : place->basin;
     if (!id)
     {
@@ -127,7 +157,7 @@ u8 AtlasPlace_Update(struct AtlasPlaceTracker *tracker, const struct AtlasPlace 
     if (tracker->stable < 4 || tracker->cooldown) return 0;
     mask = !tracker->initialized || tracker->previous.landmass != place->landmass ? 7
          : tracker->previous.basin != place->basin ? 6
-         : tracker->previous.kind != place->kind ? 4 : 0;
+         : (tracker->previous.kind != place->kind || tracker->previous.landmark != place->landmark) ? 4 : 0;
     if (mask)
     {
         tracker->previous = *place; tracker->initialized = TRUE; tracker->cooldown = 20;

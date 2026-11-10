@@ -85,6 +85,27 @@ int main(void)
     assert(AtlasPlace_Name(&b,0,name) && strstr(name,"Ocean"));
     for (j=1;j<ATLAS_PLAN_COUNT;j++) gAtlasPlan[j].continent=ATLAS_OCEAN_COMPONENT|2;
     assert(AtlasPlace_Name(&b,0,name) && strstr(name," Sea"));
+    // A different bounded landmark changes only the leaf announcement.
+    a=(struct AtlasPlace){.landmass=1,.basin=37,.kind=ATLAS_PLACE_MESA};
+    AtlasPlace_SetLandmark(&a,0,0);assert(a.landmark);
+    assert(AtlasPlace_Name(&a,2,name) && strstr(name," Mesa"));
+    b=a;AtlasPlace_SetLandmark(&b,ATLAS_WORLD_WIDTH,0);assert(a.landmark==b.landmark);
+    AtlasPlace_SetLandmark(&b,-1000,0);assert(a.landmark==b.landmark);
+    memset(&tracker,0,sizeof(tracker));for(i=0;i<4;i++)AtlasPlace_Update(&tracker,&a);
+    b=a;AtlasPlace_SetLandmark(&b,ATLAS_WORLD_WIDTH/96,0);assert(b.landmark!=a.landmark);
+    for(i=0;i<19;i++)assert(!AtlasPlace_Update(&tracker,&b));
+    assert(AtlasPlace_Update(&tracker,&b)==4);
+    assert(AtlasPlace_Name(&b,2,again) && strcmp(name,again));
+    // Cone and caldera share a root; every site name fits the existing buffer.
+    for(i=1;i<=ATLAS_PLAN_COUNT;i++)
+    {
+        a.landmark=i;a.kind=ATLAS_PLACE_VOLCANO;assert(AtlasPlace_Name(&a,2,name));
+        a.kind=ATLAS_PLACE_CALDERA;assert(AtlasPlace_Name(&a,2,again));
+        char *tail=strstr(name," Cone");assert(tail);*tail=0;
+        tail=strstr(again," Caldera");assert(tail);*tail=0;assert(!strcmp(name,again));
+        a.kind=ATLAS_PLACE_SINKHOLE;assert(AtlasPlace_Name(&a,2,name) && strstr(name," Sinkhole"));assert(strlen(name)<sizeof(name));
+    }
+    AtlasPlace_ApplyShore(&a,1<<ATLAS_RIVER);assert(!a.landmark && a.kind==ATLAS_PLACE_RIVER);
     puts("PASS physical names, geographic IDs, chunk/dateline continuity, poles, hierarchy and border debounce");
     return 0;
 }
