@@ -71,7 +71,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Earth hypsometry. Shelf bathymetry and more varied continental shapes remain work.
   Versions 4 onward normalize macro height to approximately 29.2% land before mountain
   uplift. Generation 7 adds vegetation collision, retaining generation 6's macro
-  height/climate/drainage rules. Existing versions 3 through 7 retain their original
+  height/climate/drainage rules. Generation 9 retains generation 8's macro atlas
+  while shaping dry riverbanks from cached channel pieces: eight distance bands
+  taper incision back to the original floor across an 80-tile apron. Wet channel
+  membership and water levels retain their previous ownership rules. Soil moisture
+  blends toward saturation near rivers without changing atmospheric humidity or
+  rainfall. Lake-bank wetness uses the existing fitted dry apron and height above
+  its own lake; warm elevated lake shores can therefore become wetlands. Newly
+  lowered inland banks do not become beaches; coarse coastal context also requires
+  a sea corner in the interpolation footprint. These are bounded local profiles,
+  not sediment transport, channel migration or full regional erosion.
+  Existing versions 3 through 8 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

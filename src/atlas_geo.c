@@ -100,7 +100,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_FOOTHILLS)return n->height>=172 && n->height<=184;
     if(sType==ATLAS_GEO_TRIBUTARY)return AtlasWater_IsTributary(id);
     if(sType==ATLAS_GEO_MOUTH)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA;
-    if(sType==ATLAS_GEO_VALLEY)return n->height>=175 && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
+    if(sType==ATLAS_GEO_VALLEY)return n->height>=(AtlasWorld_Generation()>=9?ATLAS_PLAN_SEA:175) && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     if(sType==ATLAS_GEO_LAKE)return (n->basin&ATLAS_LAKE_FLAG) && n->water>ATLAS_PLAN_SEA && n->water>n->height+2;
     if(sType==ATLAS_GEO_RIVER)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     return n->height>=ATLAS_PLAN_SEA && n->height<145;
@@ -352,9 +352,9 @@ u8 AtlasGeo_Step(void)
         else
         {
             sSceneAt++;
-            if(sSceneAt==22 && !sSceneWalls){sPhase=ReliefTarget()?6:0;return 0;}
+            if(sSceneAt==22 && !sSceneWalls && !(sType==ATLAS_GEO_VALLEY && AtlasWorld_Generation()>=9)){sPhase=ReliefTarget()?6:0;return 0;}
             if(sSceneAt<(sType==ATLAS_GEO_MOUNTAIN?139:22))return 0;
-            if(!sSceneWalls || ((sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUNTAIN) && !sSceneTarget))
+            if((!sSceneWalls && !(sType==ATLAS_GEO_VALLEY && AtlasWorld_Generation()>=9)) || ((sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUNTAIN) && !sSceneTarget))
             {sPhase=ReliefTarget()?6:0;return 0;}
         }
         sPhase=9;
@@ -389,7 +389,7 @@ u8 AtlasGeo_Step(void)
             if(sType==ATLAS_GEO_VALLEY)
             {
                 AtlasTerrain_Sample(sLX,sLY,&c);
-                if(c.elevation<=175 || c.valley>1){sPhase=0;return 0;}
+                if((AtlasWorld_Generation()<9 && c.elevation<=175) || c.valley>1){sPhase=0;return 0;}
             }
             sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=8;
         }

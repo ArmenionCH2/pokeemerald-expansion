@@ -235,10 +235,20 @@ bool8 AtlasWater_Prewarm(s32 x, s32 y)
     PreparePart();
     return FALSE;
 }
-u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley)
+static u8 PieceHeight(const struct RiverPiece *p,s32 dot,s32 length)
+{
+    if ((p->ha ^ p->hb) < 256) return p->ha >> 8;
+    if (dot <= 0 || !length) return p->ha >> 8;
+    if (dot >= length) return p->hb >> 8;
+    if ((p->ha >> 8) == (p->hb >> 8) + 1)
+        return (s64)(p->ha-p->hb)*dot < (s64)((p->ha&255)+1)*length ? p->ha >> 8 : p->hb >> 8;
+    return (p->ha + (s64)((s32)p->hb - p->ha)*dot/length) >> 8;
+}
+static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley,struct AtlasBankProfile *bank)
 {
     s32 localX, localY; u8 i;
     *valley=255;
+    if(bank){bank->height=terrainHeight;bank->wetness=0;}
     UseBucket(x, y);
     if (!sBuckets[sActive].ready) Prepare(x,y);
     localX = x - sBucketX * WATER_BUCKET; localY = y - sBucketY * WATER_BUCKET;
@@ -253,6 +263,7 @@ u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSampl
         /* Once a previous piece has supplied a floor, only water can change
          * the answer. Reject remote pieces before any distance products. */
         if (terrainHeight > 155 && *valley) margin += 48;
+        if(bank && margin<p->width+80)margin=p->width+80;
         if (localX < minX - margin || localX > maxX + margin
             || localY < minY - margin || localY > maxY + margin) continue;
         dx = p->bx - p->ax; dy = p->by - p->ay;
@@ -275,6 +286,24 @@ u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSampl
          * ownership and the minimum cap from preceding overlapping pieces. */
         if (metric > (s64)p->width*p->width*unit)
         {
+            if(bank && terrainHeight>=ATLAS_PLAN_SEA)
+            {
+                unsigned band;
+                /* The 80-tile apron stays inside the existing 480-tile
+                 * cached-piece margin, including maximum-width rivers. */
+                for(band=1;band<=8;band++)
+                {
+                    s32 radius=p->width+band*10;
+                    if(metric<=(s64)radius*radius*unit)
+                    {
+                        unsigned bed=PieceHeight(p,dot,length),target=terrainHeight;
+                        if(terrainHeight>bed+1)target=bed+1+(terrainHeight-bed-1)*band*band/64;
+                        if(target<bank->height)bank->height=target;
+                        if(8-band>bank->wetness)bank->wetness=8-band;
+                        break;
+                    }
+                }
+            }
             if (terrainHeight > 155)
                 for (cap = 0; cap < 4 && cap < *valley; cap++)
                 {
@@ -287,18 +316,7 @@ u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSampl
         /* Every interpolated value remains between these endpoints. If
          * both occupy one output-height bin, the byte result is constant:
          * avoid the software 64-bit divide without changing its rounding. */
-        if ((p->ha ^ p->hb) < 256) *surface = p->ha >> 8;
-        else if (dot <= 0 || !length) *surface = p->ha >> 8;
-        else if (dot >= length) *surface = p->hb >> 8;
-        else if ((p->ha >> 8) == (p->hb >> 8) + 1)
-        {
-            /* Descending across one byte boundary: ha - floor(D*t/L)
-             * stays in the upper bin iff D*t < (ha%256 + 1)*L.
-             * The strict comparison preserves signed-division tie rounding. */
-            *surface = (s64)(p->ha-p->hb)*dot < (s64)((p->ha&255)+1)*length
-                ? p->ha >> 8 : p->hb >> 8;
-        }
-        else *surface = (p->ha + (s64)((s32)p->hb - p->ha)*dot/length) >> 8;
+        *surface=PieceHeight(p,dot,length);
         /* A receiving plane owns the junction once the river has reached
          * that level. Never force an upstream channel down to a noisy sea
          * pocket: that can make the following river tile flow uphill. */
@@ -313,4 +331,12 @@ u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSampl
     }
     if (terrainHeight < ATLAS_PLAN_SEA) { *surface = ATLAS_PLAN_SEA; return ATLAS_SEA; }
     return ATLAS_DRY;
+}
+u8 AtlasWater_Sample(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley)
+{
+    return Sample(x,y,terrainHeight,plan,surface,valley,NULL);
+}
+u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley,struct AtlasBankProfile *bank)
+{
+    return Sample(x,y,terrainHeight,plan,surface,valley,bank);
 }

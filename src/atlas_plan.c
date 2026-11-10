@@ -555,3 +555,19 @@ void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain)
     struct AtlasPlanSample s;
     AtlasPlan_SampleDetail(x,y,&s); *height = s.height; *rain = s.rain;
 }
+/* Coarse shoreline context from the same four interpolation corners. A low
+ * inland basin is not a coast. This never prepares detailed water or changes
+ * the interpolation cache and adds no permanent distance field. */
+bool8 AtlasPlan_HasSea(s32 x,s32 y)
+{
+    u32 col,row,next,lower;
+    if(!gAtlasPlanReady || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    col=(u32)x*ATLAS_PLAN_WIDTH/ATLAS_WORLD_WIDTH;
+    row=(u32)(y+ATLAS_WORLD_HALF_HEIGHT)*(ATLAS_PLAN_HEIGHT-1)/(2*ATLAS_WORLD_HALF_HEIGHT);
+    next=(col+1)%ATLAS_PLAN_WIDTH;lower=row+1<ATLAS_PLAN_HEIGHT?row+1:row;
+    return gAtlasPlan[row*ATLAS_PLAN_WIDTH+col].height<ATLAS_PLAN_SEA
+        || gAtlasPlan[row*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA
+        || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+col].height<ATLAS_PLAN_SEA
+        || gAtlasPlan[lower*ATLAS_PLAN_WIDTH+next].height<ATLAS_PLAN_SEA;
+}

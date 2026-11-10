@@ -6,7 +6,9 @@ Generation 6 adds latitude wind belts, cold-ocean vapor supply and rain shadows;
 Generation 7 adds complete forest groves on suitable dry, flat ground;
 Generation 8 adds lower continental interiors and curved uplift belts tied to
 continental margins, with sea-level atmospheric exposure at coasts.
-Existing generation-3 through generation-7 worlds keep their original geography and walkability.
+Generation 9 shapes dry riverbank floors and supplies local soil moisture from
+rivers and lake-relative shorelines; inland low ground no longer implies a beach.
+Existing generation-3 through generation-8 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision

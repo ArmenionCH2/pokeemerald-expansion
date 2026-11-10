@@ -15,6 +15,7 @@ struct AtlasPlanNode { u16 parent, runoff, continent, basin; u8 height, rain, hu
 struct AtlasPlanStats { u32 seed, checksum; u16 land, continents, rivers, lakes, basins, cold, wet; u32 habitatChecksum; };
 struct AtlasPlanSample { u8 height, rain, humidity, water, lake; };
 struct AtlasHabitat { u8 temperature, humidity, moisture, seasonalRange; };
+struct AtlasBankProfile { u8 height, wetness; };
 #ifdef __arm__
 #include "malloc.h"
 #define ATLAS_RUNTIME_HEAP_SIZE (HEAP_SIZE - ATLAS_PLAN_BYTES)
@@ -37,11 +38,13 @@ u8 AtlasPlan_Progress(void);
 void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain);
 void AtlasPlan_SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample);
 void AtlasPlan_ResetSample(void);
+bool8 AtlasPlan_HasSea(s32 x,s32 y);
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan);
 void AtlasHabitat_Sample(s32 y, u8 elevation, u8 rain, u8 vapor, u8 waterform, struct AtlasHabitat *out);
 void AtlasWater_Reset(void);
 bool8 AtlasWater_IsTributary(u16 node);
 u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley);
+u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley,struct AtlasBankProfile *bank);
 u8 AtlasWater_MouthStep(u16 node,s32 *x,s32 *y,s32 *dx,s32 *dy);
 void AtlasWater_Point(u16 node, u8 part, s32 *x, s32 *y, u16 *height);
 void AtlasTerrain_SetSeed(u32 seed);

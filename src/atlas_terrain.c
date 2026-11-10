@@ -103,6 +103,9 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     s32 e, rain, vapor, ridge, t, m;
     struct AtlasHabitat habitat;
     u8 water = ATLAS_DRY, surface = 0;
+    struct AtlasBankProfile bank={0};
+    bool8 coastalGround=TRUE;
+    bool8 lakeBank=FALSE;
     if (!cell) return;
     cell->valley = 255;
     x = Wrap(x);
@@ -117,7 +120,25 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         AtlasPlan_SampleDetail(x,y,&plan);
         e = plan.lake ? plan.height : Clamp(plan.height + (Noise(x,y,3)-128)/16);
         rain = Clamp(plan.rain + (Noise(x, y, 4) - 128) / 8); vapor = plan.humidity;
-        water = AtlasWater_Sample(x, y, e, &plan, &surface, &cell->valley);
+        if(AtlasWorld_Generation()>=9)
+        {
+            coastalGround=e>=ATLAS_PLAN_SEA && e<128 && AtlasPlan_HasSea(x,y);
+            water=AtlasWater_SampleBank(x,y,e,&plan,&surface,&cell->valley,&bank);
+            if(water==ATLAS_DRY)
+            {
+                e=bank.height;
+                if(cell->valley==255 && bank.wetness>=6)cell->valley=0;
+                /* Lake fitting already identifies its dry shoreline apron.
+                 * Wetness follows height above that lake, not sea level. */
+                if(plan.lake==2 && e>=plan.water && e-plan.water<=3)
+                {
+                    unsigned wetness=4-(e-plan.water);
+                    lakeBank=TRUE;
+                    if(wetness>bank.wetness)bank.wetness=wetness;
+                }
+            }
+        }
+        else water = AtlasWater_Sample(x, y, e, &plan, &surface, &cell->valley);
         if (water != ATLAS_DRY) e = surface;
     }
     else
@@ -133,14 +154,15 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     }
     AtlasHabitat_Sample(y, e, rain, vapor, water, &habitat);
     t = habitat.temperature; m = habitat.moisture;
+    if(water==ATLAS_DRY && bank.wetness)m+=(255-m)*bank.wetness/8;
     cell->elevation = e; cell->temperature = t; cell->moisture = m;
     cell->humidity = habitat.humidity; cell->seasonalRange = habitat.seasonalRange; cell->waterform = water;
-    cell->landform = e < 128 && e >= 121 ? ATLAS_COAST : e > 185 ? ATLAS_MOUNTAIN : e > 155 ? ATLAS_HILL : ATLAS_PLAIN;
+    cell->landform = coastalGround && e < 128 && e >= 121 ? ATLAS_COAST : e > 185 ? ATLAS_MOUNTAIN : e > 155 ? ATLAS_HILL : ATLAS_PLAIN;
     if (water == ATLAS_SEA) cell->biome = ATLAS_OCEAN;
     else if (water != ATLAS_DRY) cell->biome = ATLAS_WETLAND;
     else if (t < 45) cell->biome = ATLAS_TUNDRA;
     else if (t < 85) cell->biome = ATLAS_TAIGA;
-    else if (e < 132 && m > 160) cell->biome = ATLAS_WETLAND;
+    else if ((e < 132 || lakeBank) && m > 160) cell->biome = ATLAS_WETLAND;
     else if (t > 160 && m < 98) cell->biome = ATLAS_DESERT;
     else if (t > 175 && m > 155) cell->biome = ATLAS_JUNGLE;
     else if (m > 132) cell->biome = ATLAS_FOREST;

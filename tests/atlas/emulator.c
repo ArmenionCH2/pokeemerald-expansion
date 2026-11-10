@@ -379,15 +379,17 @@ static void shoreTour(uint32_t savePointer)
                 uint32_t map=core->busRead32(core,symbol("gBackupMapLayout")+8);
                 uint32_t save=core->busRead32(core,savePointer);
                 int px=(int16_t)core->busRead16(core,save)+7,py=(int16_t)core->busRead16(core,save+2)+7;
-                unsigned walls=0,edges=0;
+                unsigned walls=0,edges=0,water=0;
                 for (int dy=-4;dy<=4;dy++) for (int dx=-6;dx<=6;dx++)
                 {
                     unsigned tile=core->busRead16(core,map+((py+dy)*35+px+dx)*2),id=tile&1023;
                     walls+=id>=924 && id<1018;
                     edges+=id==887 || (id>=901 && id<915);
+                    water+=id>=512 && id<887;
                     if (dx>=-1 && dx<=1 && dy>=-1 && dy<=1) assert(!(tile&0xC00));
                 }
                 if(type==18){assert(edges);printf("PASS native sand/grass boundary: %u visible sand borders and safe 3x3 landing\n",edges);}
+                else if(type==8){assert(water);printf("PASS native valley inspection: %u visible water tiles and safe carved bank landing\n",water);}
                 else{assert(walls);printf("PASS native terrain inspection type %u: %u visible cliff tiles and safe 3x3 landing\n",type,walls);}
             }
             printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);
@@ -455,9 +457,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==8);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==9);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 8 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 9 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();
