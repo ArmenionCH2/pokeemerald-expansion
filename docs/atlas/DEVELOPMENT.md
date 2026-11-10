@@ -188,7 +188,29 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   bit-identity with an older generation's detailed raster is implied. This is
   bounded incision/riparian moisture, not sediment deposition, levees, seasonal
   inundation or a complete flood model.
-  Existing versions 3 through 16 retain their original
+  Generation 18 adds one local tributary level beside suitable dry inland reaches.
+  Seeded root sites follow the existing channel at 8192-tile intervals; rainfall
+  controls density, branch lengths are 4096–8191 tiles, and heads angle upstream.
+  Widths are 2–10 tiles. A root check plus 16 ground probes reject lake crossings
+  and profiles lacking two units of clearance below sampled original terrain.
+  Root water height is resolved in its own canonical main-channel bucket; creek
+  profiles descend into a flat receiving reach across the parent floodplain.
+  All main pieces are prepared first and retain water ownership. The second
+  preparation pass yields after at most one ground query, including when four
+  cache frontiers interleave. Only nearby branch geometry is considered. The
+  128-piece bank reserves 96 main slots and 32 local slots; static RAM increases
+  by approximately 2.1 KiB, with no world-sized creek list or new save fields.
+  Short creek endpoints remain uncut across bucket boundaries. Internally the
+  high widthB bit marks a creek, its upper fraction bits encode the flat reach,
+  and TipWidth decodes the physical width; callers must not treat flags as width.
+  Local creeks receive Creekbank naming and a real safe inspector target. Close
+  admin terrain strokes also preserve visibility at 4/20 tiles per pixel;
+  read-only queries never prepare terrain or mark player discovery. Native QA
+  additionally saves at a creek and times cold Continue, checking identical
+  visible terrain, position, seed and journal. This is one bounded local branch
+  level, not a complete fine-resolution watershed solver, spring/groundwater
+  simulation or proof of physically exact flow everywhere between probes.
+  Existing versions 3 through 17 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

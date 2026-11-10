@@ -16,7 +16,7 @@ int main(void)
         assert(AtlasPlan_Begin(seeds[seed]));while(!AtlasPlan_Step(256));
         for(type=0;type<ATLAS_GEO_COUNT;type++)
         {
-            if(type==ATLAS_GEO_VOLCANO || type==ATLAS_GEO_RETURN || type==ATLAS_GEO_GROVE || type==ATLAS_GEO_ISLAND || type==ATLAS_GEO_ESTUARY || type==ATLAS_GEO_FLOODPLAIN)continue;
+            if(type==ATLAS_GEO_VOLCANO || type==ATLAS_GEO_RETURN || type==ATLAS_GEO_GROVE || type==ATLAS_GEO_ISLAND || type==ATLAS_GEO_ESTUARY || type==ATLAS_GEO_FLOODPLAIN || type==ATLAS_GEO_CREEK)continue;
             AtlasGeo_Begin(type);
             for(n=0;n<20000 && !AtlasGeo_Step();n++);
             printf("TP seed=%u type=%u steps=%u status=%u x=%d y=%d\n",seeds[seed],type,n,gAtlasGeoStatus,gAtlasGeoResult.x,gAtlasGeoResult.y);

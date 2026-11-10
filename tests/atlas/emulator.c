@@ -298,7 +298,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<22;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<23;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -347,15 +347,15 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21,22};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
-        unsigned type=targets[visit],isShore=(type>=2 && type<=4) || type==20 || type==11;
+        unsigned type=targets[visit],isShore=(type>=2 && type<=4) || type==20 || type==11 || type==22;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<22;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<23;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
@@ -392,7 +392,7 @@ static void shoreTour(uint32_t savePointer)
             }
             else if (isShore || type==16)
             {
-                unsigned expected=type==16?13:type==2?2:(type==3 || type==20 || type==11)?1:3;
+                unsigned expected=type==22?19:type==16?13:type==2?2:(type==3 || type==20 || type==11)?1:3;
                 assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
                 if(type==11)
                 {
@@ -401,11 +401,21 @@ static void shoreTour(uint32_t savePointer)
                     assert(runoff>=240 && runoff<600);
                     printf("PASS native connected small-river bank: node %u runoff %u and safe landing\n",node,runoff);
                 }
+                if(type==22)
+                {
+                    uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned creeks=0;
+                    for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*64+30);p++)
+                        creeks+=!!(core->busRead16(core,pieces+(b*128+p)*16+14)&0x8000);
+                    assert(creeks);printf("PASS native validated local tributary creek: %u resident creek pieces, Creekbank name and safe landing\n",creeks);
+                }
                 if(type==20)
                 {
                     uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned tapers=0;
-                    for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*36+30);p++)
-                        tapers+=core->busRead16(core,pieces+(b*96+p)*16+14)>core->busRead16(core,pieces+(b*96+p)*16+12);
+                    for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*64+30);p++)
+                    {
+                        unsigned tip=core->busRead16(core,pieces+(b*128+p)*16+14);
+                        tapers+=!(tip&0x8000) && tip>core->busRead16(core,pieces+(b*128+p)*16+12);
+                    }
                     assert(tapers);printf("PASS native flared river outlet: %u resident taper pieces and safe flared river bank landing\n",tapers);
                 }
             }
@@ -482,7 +492,7 @@ static void shoreTour(uint32_t savePointer)
             printf("PASS native local feature %u atlas completes in %u frames and leaves journal unchanged\n",type,painted);
             cachedCrossing(savePointer);
         }
-        if (type==17 || type==18 || type==11) cachedCrossing(savePointer);
+        if (type==17 || type==18 || type==11 || type==22) cachedCrossing(savePointer);
     }
 }
 static void cancelGeoSearch(uint32_t savePointer)
@@ -493,7 +503,7 @@ static void cancelGeoSearch(uint32_t savePointer)
     press(8);
     for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
     assert(core->busRead8(core,cursor)==3);press(1);
-    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<22;i++) press(128);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<23;i++) press(128);
     assert(core->busRead8(core,choice)==17);press(1);
     if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
     press(2);frames(0,30);
@@ -501,6 +511,45 @@ static void cancelGeoSearch(uint32_t savePointer)
     settle();save=core->busRead32(core,savePointer);
     assert(core->busRead16(core,save)==x && core->busRead16(core,save+2)==y);
     actors();printf("PASS native geographic search cancel returns to unlocked field without teleporting\n");
+}
+static void creekColdContinue(void)
+{
+    unsigned char before[1456],after[1456];uint16_t tiles[117];
+    uint32_t savePointer=symbol("gSaveBlock1Ptr"),journalPointer=symbol("gSaveBlock3Ptr");
+    saveGame();
+    uint32_t save=core->busRead32(core,savePointer),journal=core->busRead32(core,journalPointer);
+    uint16_t x=core->busRead16(core,save),y=core->busRead16(core,save+2);
+    uint32_t map=core->busRead32(core,symbol("gBackupMapLayout")+8);
+    for(int dy=-4;dy<=4;dy++)for(int dx=-6;dx<=6;dx++)
+        tiles[(dy+4)*13+dx+6]=core->busRead16(core,map+(((int)y+7+dy)*35+(int)x+7+dx)*2);
+    bytes(journal,before,sizeof(before));
+    core->reset(core);unsigned began=0,frame;
+    memset(generationProfile,0,sizeof(generationProfile));profilingGeneration=1;
+    for(frame=0;frame<18000;frame++)
+    {
+        unsigned keys=0;if(frame<1200 && frame%60<2)keys=(frame%120<60)?8:1;
+        frames(keys,1);
+        if(!began && core->busRead8(core,creationStateAddr)==1)began=elapsedFrames;
+        if(frame>120 && core->busRead8(core,creationStateAddr)==3)break;
+    }
+    assert(frame<18000 && began);settle();
+    unsigned ready=elapsedFrames-began;profilingGeneration=0;printGenerationProfile("Creek Continue");
+    if(ready>=1791)fprintf(stderr,"Creek Continue exceeded budget: %u frames %.3fs\n",ready,ready/59.72750057);
+    assert(ready<1791);
+    save=core->busRead32(core,savePointer);journal=core->busRead32(core,journalPointer);
+    assert(core->busRead16(core,save)==x && core->busRead16(core,save+2)==y);
+    bytes(journal,after,sizeof(after));assert(!memcmp(before,after,8));
+    assert(!memcmp(before+12,after+12,2) && !memcmp(before+15,after+15,sizeof(before)-15));
+    map=core->busRead32(core,symbol("gBackupMapLayout")+8);
+    for(int dy=-4;dy<=4;dy++)for(int dx=-6;dx<=6;dx++)
+        assert(tiles[(dy+4)*13+dx+6]==core->busRead16(core,map+(((int)y+7+dy)*35+(int)x+7+dx)*2));
+    uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned creeks=0;
+    for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*64+30);p++)
+        creeks+=!!(core->busRead16(core,pieces+(b*128+p)*16+14)&0x8000);
+    assert(creeks);actors();shot("build/atlas-emulator/creek-continue.ppm");
+    FILE *file=fopen("build/atlas-emulator/creek-continue-timing.json","w");assert(file);
+    fprintf(file,"{\"frames\":%u,\"seconds\":%.4f,\"phone_measured\":false}\n",ready,ready/59.72750057);fclose(file);
+    printf("PASS native cold Continue at a local creek: %.3fs, %u creek pieces, identical visible terrain/position/seed/discovery\n",ready/59.72750057,creeks);
 }
 int main(int argc,char **argv)
 {
@@ -545,9 +594,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==17);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==18);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 17 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 18 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();
@@ -642,5 +691,6 @@ int main(int argc,char **argv)
     biomeTour(sav1);
     cancelGeoSearch(sav1);
     shoreTour(sav1);
+    creekColdContinue();
     core->deinit(core);return 0;
 }

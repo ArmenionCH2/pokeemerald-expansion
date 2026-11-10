@@ -125,8 +125,9 @@ static u8 Color(s32 x, s32 y)
         return 3+place.basin%13;
     }
     if (cell.waterform != ATLAS_DRY) return 2;
-    if(sAdminView && AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100
-     && AtlasWater_RiverNear(x,y,71))return 2;
+    if(sAdminView && ((AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100)
+     || (AtlasWorld_Generation()>=18 && (sScales[sAtlasMapZoom]==4 || sScales[sAtlasMapZoom]==20)))
+     && AtlasWater_RiverNear(x,y,(sScales[sAtlasMapZoom]*71+99)/100))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
     if (cell.landform == ATLAS_MOUNTAIN) return 6;
     if (cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;

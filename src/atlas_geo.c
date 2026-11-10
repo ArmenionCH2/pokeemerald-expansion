@@ -55,11 +55,11 @@ static bool8 Wet(s32 x,s32 y)
 {
     struct AtlasCell c;
     AtlasTerrain_Sample(x,y,&c);
-    return c.waterform==(sType==ATLAS_GEO_LAKE?ATLAS_LAKE:(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?ATLAS_RIVER:ATLAS_SEA);
+    return c.waterform==(sType==ATLAS_GEO_LAKE?ATLAS_LAKE:(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?ATLAS_RIVER:ATLAS_SEA);
 }
 static void Direction(void)
 {
-    s32 distance = (sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?512:ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+    s32 distance = (sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?512:ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
     if(MouthTarget())sTrial=0;
     sDX=sCX;sDY=sCY;sWX=sCX;sWY=sCY;
     if(sDirection==0)sDX+=distance;
@@ -78,6 +78,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_CREEK && AtlasWorld_Generation()<18)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_FLOODPLAIN && AtlasWorld_Generation()<17)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_ESTUARY && AtlasWorld_Generation()<15)gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_VOLCANO && AtlasWorld_Generation()<13) gAtlasGeoStatus=3;
@@ -87,6 +88,7 @@ void AtlasGeo_Begin(u8 type)
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(sType==ATLAS_GEO_CREEK)return AtlasWater_CreekSource(id);
     if(sType==ATLAS_GEO_FLOODPLAIN)return n->height>=132 && n->height<155
         && n->parent<ATLAS_PLAN_COUNT && n->parent!=id && gAtlasPlan[n->parent].height>=ATLAS_PLAN_SEA
         && (n->runoff>=600 || AtlasWater_IsSmallRiver(id));
@@ -175,6 +177,23 @@ u8 AtlasGeo_Step(void)
         if(++sSceneAt>=117)sPhase=0;
         return 0;
     }
+    if(sPhase==25)
+    {
+        for(i=0;i<4 && sTrial<128;i++)
+        {
+            if(!AtlasWater_CreekProbe(sNode,sTrial++,&sCX,&sCY))continue;
+            sPhase=26;return 0;
+        }
+        if(sTrial>=128)sPhase=0;
+        return 0;
+    }
+    if(sPhase==26)
+    {
+        if(!Warm(sCX,sCY))return 0;
+        AtlasTerrain_Sample(sCX,sCY,&c);
+        if(c.waterform!=ATLAS_RIVER || !AtlasWater_CreekNear(sCX,sCY,0)){sPhase=25;return 0;}
+        sDirection=0;Direction();return 0;
+    }
     if(sPhase==0)
     {
         for(i=0;i<24;i++)
@@ -193,9 +212,10 @@ u8 AtlasGeo_Step(void)
                 sCheck=sAttempt=0;sPhase=4;return 0;
             }
             if(sType==ATLAS_GEO_SAND_EDGE){sPhase=20;return 0;}
-            if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
+            if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
+            if(sType==ATLAS_GEO_CREEK){sTrial=0;sPhase=25;return 0;}
             if(sType==ATLAS_GEO_FLOODPLAIN){sDirection=0;sPhase=1;return 0;}
             if (sType>=ATLAS_GEO_FOREST) {sTrial=0;sPhase=17;return 0;}
             sDirection=0;sPhase=1;return 0;
@@ -415,6 +435,7 @@ u8 AtlasGeo_Step(void)
     {
         if(sType==ATLAS_GEO_VOLCANO){sPhase=0;return 0;}
         if(sType==ATLAS_GEO_SAND_EDGE){sDirection++;SandDirection();return 0;}
+        if(sType==ATLAS_GEO_CREEK){sPhase=25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
         {if(++sDirection<4)Direction();else sPhase=0;return 0;}
         if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
@@ -426,6 +447,8 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_CREEK)
+        {sPhase=AtlasWater_CreekNear(sLX,sLY,8)?9:25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
         {
             AtlasTerrain_Sample(sLX,sLY,&c);

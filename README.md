@@ -24,7 +24,9 @@ Generation 16 exposes connected small-channel drainage down to coastal outlets,
 with safe small-river inspection and corresponding atlas overlays.
 Generation 17 scales dry floodplain incision and river-fed soil moisture with
 channel width, with named floodplain inspection and a close soil-moisture atlas.
-Existing generation-3 through generation-16 worlds keep their original geography and walkability.
+Generation 18 refines suitable inland reaches with deterministic, terrain-checked
+local tributary creeks, creekbank names and developer inspection.
+Existing generation-3 through generation-17 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
