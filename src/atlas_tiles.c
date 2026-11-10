@@ -40,7 +40,7 @@ u16 AtlasTiles_Describe(s32 x, s32 y, u16 *floor)
 static u16 Ground(u16 floor, const u16 *cells)
 {
     static const u8 sides[4] = {1, 5, 7, 3}; /* N E S W */
-    u8 i, mask = 0, sandMask=0, snowMask=0, green=0, sand=0, snow=0;
+    u8 i, mask = 0, sandMask=0, snowMask=0, green=0, sand=0, snow=0, rock=0;
     if (!AtlasTiles_GroundEdge(floor, cells[4])) return floor;
     for (i = 0; i < 4; i++)
     {
@@ -50,11 +50,14 @@ static u16 Ground(u16 floor, const u16 *cells)
         else sandMask|=1<<i;
         if(!(neighbor&3) && ((neighbor>>2)&3)==3)snow=1;
         else snowMask|=1<<i;
+        if(!(neighbor&3) && ((neighbor>>2)&3)==2)rock=1;
         if(!(neighbor&3) && !(neighbor&12))green=1;
     }
     u8 material=(cells[4]>>2)&3;
     /* Preserve established green outlines and rock/sand priority at mixed
      * junctions. Water continues the floor; dry two-material snowlines round. */
+    if(material==3 && sand && !rock && !green)
+        return (floor&~1023)|(ATLAS_SNOW_SAND_EDGE_FIRST+sandMask);
     if(material==2 && snow && !sand && !green)
         return (floor&~1023)|(ATLAS_ROCK_SNOW_EDGE_FIRST+snowMask);
     if(material==2 && sand && !green)

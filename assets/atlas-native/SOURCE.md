@@ -84,3 +84,11 @@ Cave rock. Eleven compiled 4bpp subtiles use unused palette-12 entries 1–4 for
 native snow colors and existing rock entries 11–14. Other palettes and original
 input assets stay unchanged. The compile step performs this adaptation once;
 there is no runtime art conversion. Native terrain graphic usage is 68/512.
+
+Snow/sand boundaries reclaim Atlas-only primary roles 322–336. They use the
+same rounded native silhouette, native snow interiors and textured General sand
+outside. Eleven additional compiled subtiles use palette-12 entries 5–8 for sand,
+preserving all earlier 68 graphics exactly. Total graphic use is79/512. This is
+renderer/asset support; controlled host terrain validates the rare pair. No claim
+is made that every random world contains it or that a natural cold beach was
+visited in the native emulator. Existing green and rock junction priority stays.

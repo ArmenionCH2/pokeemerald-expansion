@@ -23,16 +23,17 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 337<=role<367 or 384<=role<512:continue
+    if 322<=role<367 or 384<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
-assert all(primary_attrs[i]==0x1000 for i in range(337,367))
+assert all(primary_attrs[i]==0x1000 for i in range(322,367))
 # The only newly used palette belongs to rock/sand edges. Existing terrain and
 # native animation references retain all original palette words.
 assert not any(w>>12==12 for w in metatiles)
-assert not any(w>>12==12 for i,w in enumerate(primary) if not 337*8<=i<367*8)
+assert not any(w>>12==12 for i,w in enumerate(primary) if not 322*8<=i<367*8)
 pals=array('gAtlasNaturePalettes')
 assert pals[12*16+1:12*16+5]==pals[6*16+12:6*16+16]
+assert pals[12*16+5:12*16+9]==pals[5*16+11:5*16+15]
 assert pals[12*16+15]==pals[5*16+12] # dominant native sand floor outside
 assert pals[12*16+11:12*16+15]==pals[10*16+11:10*16+15] # rock inside
 for mask in range(15):

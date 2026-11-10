@@ -419,7 +419,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   validates the border and checks a safe 3x3 landing. Other layouts keep General's
   original building roles. Rock/snow transitions reclaim primary roles 337–351 and reuse the same rounded
   silhouette with native snow texture outside and actual Cave rock interiors.
-  Eleven compiled 4bpp subtiles raise graphic use to 68/512; primary/secondary
+  Eleven compiled 4bpp subtiles initially raise graphic use to 68/512; primary/secondary
   catalogue sizes and RAM stay fixed. Previously unused palette-12 entries 1–4
   hold native snow colors, preserving its rock/sand entries 11–15. The selector
   reads existing prepared cardinal semantics and adds no geography queries.
@@ -427,7 +427,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
   Native QA checks visible edges, cached walking and cold save reload there.
   Primary roles 367–383 remain untouched.
-  Diagonal-only notches, snow/sand blends remain future work.
+  Snow/sand boundaries additionally reclaim primary roles 322–336 and eleven
+  compiled subtiles, bringing current graphic use to 79/512. They retain actual
+  snow interiors and textured native sand outside. Palette-12 entries 5–8 hold
+  native sand shades; all first 68 graphic tiles remain byte-identical. Water,
+  green and rock junctions retain their existing priority. A controlled coastal
+  terrain fixture verifies the actual temperature boundary and ring/direct
+  agreement; six-seed random worlds are not assumed to contain this rare pair.
+  There is no dedicated snow/sand inspector entry, and no claim of a native visit
+  to a natural cold beach. Native snowline travel/save checks cover the combined
+  graphics bank. Diagonal-only notches and complete three-material blends remain
+  future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native
