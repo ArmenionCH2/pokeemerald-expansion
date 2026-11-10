@@ -18,7 +18,9 @@ Generation 13 adds rare dormant volcanic cones, raised crater rims and lower
 caldera floors, with native cliff terraces and a walkable radial gap.
 Generation 14 adds exposed native rock ground in volcanic interiors and high
 uplands, with matching cliff material and snow priority.
-Existing generation-3 through generation-13 worlds keep their original geography and walkability.
+Generation 15 flares selected lowland river outlets toward their fitted sea
+intersection, with a dedicated estuary bank inspection target.
+Existing generation-3 through generation-14 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision

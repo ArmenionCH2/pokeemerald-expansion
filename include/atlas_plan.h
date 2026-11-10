@@ -46,6 +46,10 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan);
 u8 AtlasTerrain_RawHeight(s32 x,s32 y);
 void AtlasHabitat_Sample(s32 y, u8 elevation, u8 rain, u8 vapor, u8 waterform, struct AtlasHabitat *out);
 void AtlasWater_Reset(void);
+/* Read-only cached cartographic stroke, not physical water membership.
+ * Padding must fit the existing 80-tile apron. Never prepares a bucket. */
+bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding);
+bool8 AtlasWater_IsEstuary(u16 node);
 bool8 AtlasWater_IsTributary(u16 node);
 u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley);
 u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley,struct AtlasBankProfile *bank);

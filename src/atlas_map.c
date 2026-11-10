@@ -51,10 +51,16 @@ static u8 sPainted[(WIDTH * HEIGHT + 7) / 8];
 
 static void VBlank(void) { LoadOam(); ProcessSpriteCopyRequests(); TransferPlttBuffer(); }
 static s32 Wrap(s32 x) { x %= ATLAS_WORLD_WIDTH; return x < 0 ? x + ATLAS_WORLD_WIDTH : x; }
+static bool8 MacroSummary(void)
+{
+    /* At 100 tiles/pixel the 3 km outlet and its width are resolvable. */
+    return sAdminView && sScales[sAtlasMapZoom]>=100
+        && !(AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100);
+}
 static struct AtlasCell Sample(s32 x, s32 y)
 {
     struct AtlasCell cell={0};
-    if (sAdminView && sScales[sAtlasMapZoom]>=100)
+    if (MacroSummary())
     {
         struct AtlasPlanSample plan;
         struct AtlasHabitat habitat;
@@ -103,7 +109,7 @@ static u8 Color(s32 x, s32 y)
     }
     if (sAtlasMapLayer==LAYER_ELEVATION)
     {
-        if(cell.waterform==ATLAS_SEA && (!sAdminView || sScales[sAtlasMapZoom]<100))
+        if(cell.waterform==ATLAS_SEA && !MacroSummary())
         {
             struct AtlasPlanSample floor;
             cell.elevation=AtlasTerrain_GroundHeight(x,y,&floor);
@@ -119,6 +125,8 @@ static u8 Color(s32 x, s32 y)
         return 3+place.basin%13;
     }
     if (cell.waterform != ATLAS_DRY) return 2;
+    if(sAdminView && AtlasWorld_Generation()>=15 && sScales[sAtlasMapZoom]==100
+     && AtlasWater_RiverNear(x,y,71))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
     if (cell.landform == ATLAS_MOUNTAIN) return 6;
     if (cell.biome == ATLAS_DESERT || cell.landform == ATLAS_COAST) return 4;
@@ -128,7 +136,7 @@ static bool8 Pixel(u32 px, u32 py, s32 x, s32 y)
 {
     u32 bit = py * WIDTH + px;
     if (sPainted[bit / 8] & (1 << (bit % 8))) return TRUE;
-    if (sAtlasMapLayer!=LAYER_REGIONS && (!sAdminView || sScales[sAtlasMapZoom]<100) && !AtlasWater_Prewarm(x,y)) return FALSE;
+    if (sAtlasMapLayer!=LAYER_REGIONS && !MacroSummary() && !AtlasWater_Prewarm(x,y)) return FALSE;
     sPainted[bit / 8] |= 1 << (bit % 8);
     FillWindowPixelRect(0, PIXEL_FILL(Color(x,y)), px*4, TOP+py*4, 4, 4);
     return TRUE;

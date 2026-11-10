@@ -20,6 +20,7 @@ EWRAM_DATA static bool8 sInitialized = 0;
 EWRAM_DATA static u8 sSceneAt = 0, sSceneWalls = 0, sSceneTarget = 0;
 static s32 Abs(s32 n){return n<0?-n:n;}
 static s32 Wrap(s32 x){x%=ATLAS_WORLD_WIDTH;return x<0?x+ATLAS_WORLD_WIDTH:x;}
+static bool8 MouthTarget(void){return sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_ESTUARY;}
 static bool8 ReliefTarget(void){return sType==ATLAS_GEO_MOUNTAIN || sType==ATLAS_GEO_RIDGE || sType==ATLAS_GEO_FOOTHILLS;}
 static bool8 Sand(const struct AtlasCell *c)
 {
@@ -54,12 +55,12 @@ static bool8 Wet(s32 x,s32 y)
 {
     struct AtlasCell c;
     AtlasTerrain_Sample(x,y,&c);
-    return c.waterform==(sType==ATLAS_GEO_LAKE?ATLAS_LAKE:(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY)?ATLAS_RIVER:ATLAS_SEA);
+    return c.waterform==(sType==ATLAS_GEO_LAKE?ATLAS_LAKE:(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?ATLAS_RIVER:ATLAS_SEA);
 }
 static void Direction(void)
 {
-    s32 distance = (sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY)?512:ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
-    if(sType==ATLAS_GEO_MOUTH)sTrial=0;
+    s32 distance = (sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY)?512:ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+    if(MouthTarget())sTrial=0;
     sDX=sCX;sDY=sCY;sWX=sCX;sWY=sCY;
     if(sDirection==0)sDX+=distance;
     if(sDirection==1)sDX-=distance;
@@ -77,6 +78,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_ESTUARY && AtlasWorld_Generation()<15)gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_VOLCANO && AtlasWorld_Generation()<13) gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_GROVE && AtlasWorld_Generation()<7) gAtlasGeoStatus=3;
     if (type==ATLAS_GEO_ISLAND && AtlasWorld_Generation()<12) gAtlasGeoStatus=3;
@@ -84,6 +86,7 @@ void AtlasGeo_Begin(u8 type)
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(sType==ATLAS_GEO_ESTUARY)return AtlasWater_IsEstuary(id);
     if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
     if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
@@ -105,7 +108,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_RIDGE)return n->height>=218;
     if(sType==ATLAS_GEO_FOOTHILLS)return n->height>=172 && n->height<=184;
     if(sType==ATLAS_GEO_TRIBUTARY)return AtlasWater_IsTributary(id);
-    if(sType==ATLAS_GEO_MOUTH)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA;
+    if(MouthTarget())return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA;
     if(sType==ATLAS_GEO_VALLEY)return n->height>=(AtlasWorld_Generation()>=9?ATLAS_PLAN_SEA:175) && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     if(sType==ATLAS_GEO_LAKE)return (n->basin&ATLAS_LAKE_FLAG) && n->water>ATLAS_PLAN_SEA && n->water>n->height+2;
     if(sType==ATLAS_GEO_RIVER)return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
@@ -186,8 +189,8 @@ u8 AtlasGeo_Step(void)
                 sCheck=sAttempt=0;sPhase=4;return 0;
             }
             if(sType==ATLAS_GEO_SAND_EDGE){sPhase=20;return 0;}
-            if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
-            if(sType==ATLAS_GEO_MOUTH){sTrial=0;sPhase=11;return 0;}
+            if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
+            if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
             if (sType>=ATLAS_GEO_FOREST) {sTrial=0;sPhase=17;return 0;}
             sDirection=0;sPhase=1;return 0;
@@ -198,6 +201,12 @@ u8 AtlasGeo_Step(void)
     {
         u8 status=AtlasWater_MouthStep(sNode,&sCX,&sCY,&sMouthDX,&sMouthDY);
         if(!status)return 0;
+        if(status==1 && sType==ATLAS_GEO_ESTUARY)
+        {
+            /* Inspect the funnel upstream of its sea cut, where a dry bank
+             * need not fit inside the rounded mouth's receiving-water cap. */
+            sCX-=sMouthDX;sCY-=sMouthDY;
+        }
         sPhase=status==1?12:0;return 0;
     }
     if(sPhase==12)
@@ -210,13 +219,15 @@ u8 AtlasGeo_Step(void)
     if(sPhase==14)
     {
         /* Require both receiving sea and upstream freshwater in the actual
-         * camera rectangle, one resumable point per inspector update. */
+         * camera rectangle, one resumable point per inspector update. The
+         * estuary inspector may use the flared bank upstream of the sea edge;
+         * the narrower river-mouth inspector still requires both waters. */
         x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
         if(!Warm(x,y))return 0;
         AtlasTerrain_Sample(x,y,&c);
         if(c.waterform==ATLAS_SEA)sSceneWalls=1;
         if(c.waterform==ATLAS_RIVER)sSceneTarget=1;
-        if(sSceneWalls && sSceneTarget){sPhase=9;return 0;}
+        if(sSceneTarget && (sSceneWalls || sType==ATLAS_GEO_ESTUARY)){sPhase=9;return 0;}
         if(++sSceneAt<117)return 0;
         if(!sTrial && sSceneTarget && !sSceneWalls)
         {
@@ -294,7 +305,7 @@ u8 AtlasGeo_Step(void)
     {
         if(Abs(sDX-sWX)+Abs(sDY-sWY)<=1)
         {
-            s32 offset=sType==ATLAS_GEO_MOUTH?2:4;
+            s32 offset=MouthTarget()?2:4;
             sLX=sDX+(sDX>sWX?offset:sDX<sWX?-offset:0);sLY=sDY+(sDY>sWY?offset:sDY<sWY?-offset:0);
             sCheck=0;sAttempt=0;sPhase=4;return 0;
         }
@@ -402,7 +413,7 @@ u8 AtlasGeo_Step(void)
         if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
         if(++sAttempt<4 && sType!=ATLAS_GEO_LAND && !ReliefTarget())
         {sLX+=sDX>sWX?3:sDX<sWX?-3:0;sLY+=sDY>sWY?3:sDY<sWY?-3:0;sCheck=0;return 0;}
-        if(sType==ATLAS_GEO_MOUTH && ++sDirection<4)Direction();
+        if(MouthTarget() && ++sDirection<4)Direction();
         else sPhase=ReliefTarget()?6:0;
         return 0;
     }
@@ -410,7 +421,7 @@ u8 AtlasGeo_Step(void)
     {
         if(sType==ATLAS_GEO_VOLCANO){sSceneAt=0;sPhase=24;return 0;}
         if (sType==ATLAS_GEO_GROVE) {sSceneAt=sSceneTarget=0;sPhase=18;return 0;}
-        if(sType==ATLAS_GEO_MOUTH){sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=14;return 0;}
+        if(MouthTarget()){sSceneAt=sSceneWalls=sSceneTarget=0;sPhase=14;return 0;}
         if(ReliefTarget() || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_VOLCANO)
         {
             if(sType==ATLAS_GEO_VALLEY)

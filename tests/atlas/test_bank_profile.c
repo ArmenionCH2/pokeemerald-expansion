@@ -1,6 +1,7 @@
 #include "../../src/atlas_water.c"
 #include <assert.h>
 #include <stdio.h>
+u16 AtlasWorld_Generation(void){return 3;}
 struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT];
 u32 gAtlasWorldSeed;
 bool8 gAtlasPlanReady;
@@ -12,7 +13,7 @@ int main(void)
     struct AtlasPlanSample plan={200,96,96,121,0};
     struct AtlasBankProfile bank;
     AtlasWater_Reset();UseBucket(0,0);sBuckets[sActive].ready=TRUE;sPieceCount=1;
-    sPieces[0]=(struct RiverPiece){0,1000,4000,1000,140*256,140*256,30};
+    sPieces[0]=(struct RiverPiece){0,1000,4000,1000,140*256,140*256,30,0};
     unsigned last=0,wet=255;
     for(s32 d=31;d<=120;d++)
     {

@@ -134,7 +134,30 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   topology; snow retains priority. Exposed rock clears vegetation, so new saves
   receive generation 14 rather than changing old worlds' walkability. This is a
   material/exposure layer, not sediment/soil ageing or every biome transition.
-  Existing versions 3 through 13 retain their original
+  Generation 15 flares selected lowland main-river outlets near their fitted sea
+  intersection. Selection uses the existing runoff threshold 600, node water
+  height at most 30 units above sea, and a seed predicate. The final straight
+  coastal piece contributes a tapered overlay up to 3000 tiles long, widening
+  from the main-channel width to four times that width (capped at 400). Original
+  endpoints are retained for short tapers, so adjacent water buckets evaluate
+  the same width, height and bank profile without independent clipping rounding.
+  The 80-tile dry apron remains inside the 480-tile cache margin. Macro nodes and
+  climate are unchanged. New worlds admit up to 96 pieces per bucket: 16 owners
+  times four base pieces, one possible receiving-shore split and one flare.
+  Older generations retain their original 24-piece admission cap and fixed
+  widths. The four bounded piece banks add approximately 4.6 KiB of static RAM;
+  no world-sized river list or new saved state is introduced. Estuary GEO TP
+  searches a safe visible bank upstream of the sea cut; ordinary river-mouth TP
+  still requires both sea and river in its viewport. These are flared outlets,
+  not simulated tides, salinity, sediment transport, deltas or distributary fans.
+  New-world admin views at 100 tiles/pixel use actual prepared local terrain and
+  water rather than macro summaries, so resolvable outlet widths are visible.
+  A minimum-width cartographic stroke reads prepared channel capsules with a
+  bounded 71-tile footprint to keep narrow stretches visible between samples;
+  this does not change physical water membership or any other climate layer.
+  The stroke never touches LRU state or prepares terrain. Painting still yields,
+  accepts input and leaves the exploration journal alone.
+  Existing versions 3 through 14 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

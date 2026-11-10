@@ -4,6 +4,7 @@
 #include "../../src/atlas_water.c"
 #include <assert.h>
 #include <stdio.h>
+u16 AtlasWorld_Generation(void){return 3;}
 struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT];
 u32 gAtlasWorldSeed;
 bool8 gAtlasPlanReady=TRUE;
@@ -33,7 +34,7 @@ static void ownership(void)
 {
     struct AtlasPlanSample p={180,96,96,150,1};u8 h,v,type;
     AtlasWater_Reset();UseBucket(0,0);sBuckets[sActive].ready=TRUE;sPieceCount=1;
-    sPieces[0]=(struct RiverPiece){0,0,1000,0,150*256,150*256,30};
+    sPieces[0]=(struct RiverPiece){0,0,1000,0,150*256,150*256,30,0};
     type=AtlasWater_Sample(500,0,140,&p,&h,&v);assert(type==ATLAS_LAKE && h==150);
     p.water=160;type=AtlasWater_Sample(500,0,140,&p,&h,&v);
     assert(type==ATLAS_RIVER && h==150); /* incompatible plane is not raised */

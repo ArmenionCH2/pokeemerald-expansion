@@ -5,11 +5,14 @@
 /* Cache only short river pieces intersecting a 4 km tile-query neighborhood. */
 #define WATER_BUCKET 4096
 #define WATER_MARGIN 480
-#define WATER_SEGMENTS 24
+/* Sixteen candidate owners, each with four base pieces, at most one shore
+ * split and one flare. New worlds retain all 96 possible clipped pieces.
+ * Older generation identities retain their original 24-piece admission cap. */
+#define WATER_SEGMENTS 96
 #define WATER_T_ONE 16777216
 #define COAST_ONE 1048576u
 #define COAST_QUARTER (COAST_ONE / 4)
-struct RiverPiece { s16 ax, ay, bx, by; u16 ha, hb, width; };
+struct RiverPiece { s16 ax, ay, bx, by; u16 ha, hb, width, widthB; };
 EWRAM_DATA static struct RiverPiece sPieceBank[4][WATER_SEGMENTS] = {{{0}}};
 struct WaterBucket { s32 x,y,col,row; u32 stamp,coastLo,coastHi; u16 coastNode; u8 count,cursor,coastPhase,coastPart; bool8 valid,ready; };
 EWRAM_DATA static struct WaterBucket sBuckets[4] = {{0}};
@@ -64,24 +67,38 @@ static bool8 ClipAxis(s32 start, s32 delta, s32 low, s32 high, s32 *first, s32 *
     if (b < *last) *last = b;
     return *first <= *last;
 }
-static void AddPiece(s32 ax, s32 ay, s32 bx, s32 by, u16 ha, u16 hb, u16 width)
+static void AddTaper(s32 ax, s32 ay, s32 bx, s32 by, u16 ha, u16 hb, u16 width,u16 widthB)
 {
     s32 first = 0, last = WATER_T_ONE, dx = bx - ax, dy = by - ay;
     struct RiverPiece *piece;
-    if (sPieceCount == WATER_SEGMENTS) return;
+    if (sPieceCount >= (AtlasWorld_Generation()>=15?WATER_SEGMENTS:24)) return;
     ax -= sBucketX * WATER_BUCKET; bx -= sBucketX * WATER_BUCKET;
     ay -= sBucketY * WATER_BUCKET; by -= sBucketY * WATER_BUCKET;
     /* Reject before fixed-point clipping, keeping parameter calculations bounded. */
     if ((ax < -WATER_MARGIN && bx < -WATER_MARGIN) || (ax > WATER_BUCKET + WATER_MARGIN && bx > WATER_BUCKET + WATER_MARGIN)
         || (ay < -WATER_MARGIN && by < -WATER_MARGIN) || (ay > WATER_BUCKET + WATER_MARGIN && by > WATER_BUCKET + WATER_MARGIN)) return;
-    if (!ClipAxis(ax, dx, -WATER_MARGIN, WATER_BUCKET + WATER_MARGIN, &first, &last)
+    /* Short tapers retain their original endpoints. Re-clipping and rounding
+     * their width ramp independently in adjacent buckets would create seams. */
+    if(widthB)
+    {
+        if(dx< -3000 || dx>3000 || dy< -3000 || dy>3000)return;
+    }
+    else if (!ClipAxis(ax, dx, -WATER_MARGIN, WATER_BUCKET + WATER_MARGIN, &first, &last)
         || !ClipAxis(ay, dy, -WATER_MARGIN, WATER_BUCKET + WATER_MARGIN, &first, &last)) return;
     piece = &sPieces[sPieceCount++];
     piece->ax = ax + (s64)dx * first / WATER_T_ONE; piece->ay = ay + (s64)dy * first / WATER_T_ONE;
     piece->bx = ax + (s64)dx * last / WATER_T_ONE; piece->by = ay + (s64)dy * last / WATER_T_ONE;
     piece->ha = ha + (s64)((s32)hb - ha) * first / WATER_T_ONE;
-    piece->hb = ha + (s64)((s32)hb - ha) * last / WATER_T_ONE; piece->width = width;
+    piece->hb = ha + (s64)((s32)hb - ha) * last / WATER_T_ONE;
+    piece->width=width;piece->widthB=0;
+    if(widthB)
+    {
+        piece->width=width+(s64)((s32)widthB-width)*first/WATER_T_ONE;
+        piece->widthB=width+(s64)((s32)widthB-width)*last/WATER_T_ONE;
+    }
 }
+static void AddPiece(s32 ax,s32 ay,s32 bx,s32 by,u16 ha,u16 hb,u16 width)
+{AddTaper(ax,ay,bx,by,ha,hb,width,0);}
 static void UseBucket(s32 x, s32 y)
 {
     s32 bx = x / WATER_BUCKET, by = AtlasTerrain_FloorDiv(y, WATER_BUCKET);
@@ -173,6 +190,16 @@ static u16 ReceiverLevel(u16 node,u32 t,u32 coast)
     if(t>=coast)return base;
     return base+(s64)rise*(coast-t)/coast;
 }
+/* Flared lowland river outlets; this does not simulate tides or salinity. */
+bool8 AtlasWater_IsEstuary(u16 id)
+{
+    if(AtlasWorld_Generation()<15 || id>=ATLAS_PLAN_COUNT)return FALSE;
+    const struct AtlasPlanNode *n=&gAtlasPlan[id];
+    return n->height>=ATLAS_PLAN_SEA && n->water<=ATLAS_PLAN_SEA+30 && n->runoff>=600
+        && n->parent<ATLAS_PLAN_COUNT && n->parent!=id
+        && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA
+        && Mix(gAtlasWorldSeed^id^0x45535455u)%3!=0;
+}
 bool8 AtlasWater_IsTributary(u16 id)
 {
     struct AtlasPlanNode *n,*parent;
@@ -212,6 +239,19 @@ static void PreparePart(void)
             {
                 s32 cx=ax+(s64)(bx-ax)*(coast-start)/COAST_QUARTER;
                 s32 cy=ay+(s64)(by-ay)*(coast-start)/COAST_QUARTER;
+                if(AtlasWater_IsEstuary(id))
+                {
+                    s32 dx=cx-ax,dy=cy-ay,length=dx<0?-dx:dx;
+                    if((dy<0?-dy:dy)>length)length=dy<0?-dy:dy;
+                    if(length>=128)
+                    {
+                        s32 span=length<3000?length:3000;
+                        s32 ux=cx-(s64)dx*span/length,uy=cy-(s64)dy*span/length;
+                        u32 t=coast-(s64)(coast-start)*span/length;
+                        unsigned mouth=width*4;if(mouth>400)mouth=400;
+                        AddTaper(ux+shift,uy,cx+shift,cy,ReceiverLevel(id,t,coast),hb,width,mouth);
+                    }
+                }
                 AddPiece(ax+shift,ay,cx+shift,cy,ha,hb,width);
                 ax=cx;ay=cy;ha=hb;
             }
@@ -257,13 +297,14 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
         struct RiverPiece *p = &sPieces[i];
         s32 minX = p->ax < p->bx ? p->ax : p->bx, maxX = p->ax > p->bx ? p->ax : p->bx;
         s32 minY = p->ay < p->by ? p->ay : p->by, maxY = p->ay > p->by ? p->ay : p->by;
-        s32 margin = p->width, dx, dy, px, py, length, dot;
+        s32 width=p->width,maximum=p->widthB>p->width?p->widthB:p->width;
+        s32 margin = maximum, dx, dy, px, py, length, dot;
         s64 metric, unit;
         u8 cap;
         /* Once a previous piece has supplied a floor, only water can change
          * the answer. Reject remote pieces before any distance products. */
         if (terrainHeight > 155 && *valley) margin += 48;
-        if(bank && margin<p->width+80)margin=p->width+80;
+        if(bank && margin<maximum+80)margin=maximum+80;
         if (localX < minX - margin || localX > maxX + margin
             || localY < minY - margin || localY > maxY + margin) continue;
         dx = p->bx - p->ax; dy = p->by - p->ay;
@@ -281,10 +322,15 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
             s32 cross = px*dy - py*dx;
             metric = (s64)cross*cross; unit = length;
         }
+        if(p->widthB && p->widthB!=p->width)
+        {
+            if(dot>=length && length)width=p->widthB;
+            else if(dot>0 && length)width+=(s64)((s32)p->widthB-p->width)*dot/length;
+        }
         /* Water and its valley use the same capsule distance. A wet tile is
          * necessarily inside the innermost valley band. Preserve first-water
          * ownership and the minimum cap from preceding overlapping pieces. */
-        if (metric > (s64)p->width*p->width*unit)
+        if (metric > (s64)width*width*unit)
         {
             if(bank && terrainHeight>=ATLAS_PLAN_SEA)
             {
@@ -293,7 +339,7 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
                  * cached-piece margin, including maximum-width rivers. */
                 for(band=1;band<=8;band++)
                 {
-                    s32 radius=p->width+band*10;
+                    s32 radius=width+band*10;
                     if(metric<=(s64)radius*radius*unit)
                     {
                         unsigned bed=PieceHeight(p,dot,length),target=terrainHeight;
@@ -307,7 +353,7 @@ static u8 Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *p
             if (terrainHeight > 155)
                 for (cap = 0; cap < 4 && cap < *valley; cap++)
                 {
-                    s32 radius = p->width + (cap == 0 ? 8 : cap == 1 ? 18 : cap == 2 ? 30 : 48);
+                    s32 radius = width + (cap == 0 ? 8 : cap == 1 ? 18 : cap == 2 ? 30 : 48);
                     if (metric <= (s64)radius*radius*unit) { *valley = cap; break; }
                 }
             continue;
@@ -339,4 +385,43 @@ u8 AtlasWater_Sample(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *
 u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley,struct AtlasBankProfile *bank)
 {
     return Sample(x,y,terrainHeight,plan,surface,valley,bank);
+}
+
+/* Minimum-width cartographic stroke from prepared local channel geometry.
+ * A bounded footprint prevents narrow rivers aliasing out of a close atlas.
+ * No LRU touch, preparation, terrain query, or exploration write is allowed. */
+bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding)
+{
+    if(!gAtlasPlanReady || padding>80 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    s32 bx=x/WATER_BUCKET,by=AtlasTerrain_FloorDiv(y,WATER_BUCKET);
+    for(unsigned bucket=0;bucket<4;bucket++)
+    {
+        const struct WaterBucket *b=&sBuckets[bucket];
+        if(!b->valid || !b->ready || b->x!=bx || b->y!=by)continue;
+        x-=bx*WATER_BUCKET;y-=by*WATER_BUCKET;
+        for(unsigned i=0;i<b->count;i++)
+        {
+            const struct RiverPiece *p=&sPieceBank[bucket][i];
+            s32 maximum=p->widthB>p->width?p->widthB:p->width;
+            s32 margin=maximum+padding;
+            if(x<(p->ax<p->bx?p->ax:p->bx)-margin || x>(p->ax>p->bx?p->ax:p->bx)+margin
+             || y<(p->ay<p->by?p->ay:p->by)-margin || y>(p->ay>p->by?p->ay:p->by)+margin)continue;
+            s32 dx=p->bx-p->ax,dy=p->by-p->ay,px=x-p->ax,py=y-p->ay;
+            s32 length=dx*dx+dy*dy,dot=px*dx+py*dy,width=p->width;
+            s64 metric,unit;
+            if(dot<=0 || !length){metric=px*px+py*py;unit=1;}
+            else if(dot>=length)
+            {px=x-p->bx;py=y-p->by;metric=px*px+py*py;unit=1;if(p->widthB)width=p->widthB;}
+            else
+            {
+                s32 cross=px*dy-py*dx;metric=(s64)cross*cross;unit=length;
+                if(p->widthB && p->widthB!=p->width)width+=(s64)((s32)p->widthB-p->width)*dot/length;
+            }
+            width+=padding;
+            if(metric<=(s64)width*width*unit)return TRUE;
+        }
+        return FALSE;
+    }
+    return FALSE;
 }

@@ -4,6 +4,7 @@
 #include "../../src/atlas_water.c"
 #include <assert.h>
 #include <stdio.h>
+u16 AtlasWorld_Generation(void){return 3;}
 struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT];
 u32 gAtlasWorldSeed;
 bool8 gAtlasPlanReady;
@@ -108,7 +109,7 @@ int main(void)
         s32 availableX = bx ? ATLAS_WORLD_WIDTH - bx * WATER_BUCKET : WATER_BUCKET;
         AtlasWater_Reset(); UseBucket(bx * WATER_BUCKET, by * WATER_BUCKET);
         sBuckets[sActive].ready = TRUE;
-        sPieceCount = bank % (WATER_SEGMENTS + 1);
+        sPieceCount = bank % (24 + 1) /* frozen legacy admission capacity */;
         for (piece = 0; piece < sPieceCount; piece++)
         {
             struct RiverPiece *p = &sPieces[piece];
@@ -134,7 +135,7 @@ int main(void)
             static const s32 radii[] = {24,32,42,54,72};
             s32 side, delta, at;
             sPieceCount = 1;
-            sPieces[0] = (struct RiverPiece){512,2048,3072,2048,60000,32000,24};
+            sPieces[0] = (struct RiverPiece){512,2048,3072,2048,60000,32000,24,0};
             for (j = 0; j < 5; j++) for (side = -1; side <= 1; side += 2)
                 for (delta = -1; delta <= 1; delta++) for (at = 0; at < 3; at++)
                 {
@@ -144,7 +145,7 @@ int main(void)
                     Check(x,y,175,&plan); Check(x,y,176,&plan);
                 }
             sPieceCount = 2;
-            sPieces[1] = (struct RiverPiece){3072,2048,512,2048,32000,60000,400};
+            sPieces[1] = (struct RiverPiece){3072,2048,512,2048,32000,60000,400,0};
             for (query = 0; query < WATER_BUCKET; query++)
                 for (j = 0; j < 4; j++)
                     Check(query, by*WATER_BUCKET+1600+j*224, 174+j, &plan);
@@ -158,7 +159,7 @@ int main(void)
     {
         s32 distance=256+hi-lo;
         s32 transition=((hi+1)*1000+distance-1)/distance;
-        sPieces[0]=(struct RiverPiece){0,100,1000,100,200*256+hi,199*256+lo,30};
+        sPieces[0]=(struct RiverPiece){0,100,1000,100,200*256+hi,199*256+lo,30,0};
         Check(0,100,180,&plan);Check(1000,100,180,&plan);
         for(s32 x=transition-1;x<=transition+1;x++)if(x>=0 && x<=1000)Check(x,100,180,&plan);
     }
