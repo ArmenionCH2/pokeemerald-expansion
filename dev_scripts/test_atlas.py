@@ -18,7 +18,7 @@ groups = {
     'actor_identity': ['atlas_actor_identity', 'actor_identity_property'],
     'actor_identity actor_admission': ['actor_admission'],
     'actor_identity actor_admission actor_runtime': ['actor_runtime'],
-    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','relief_generation','bank_generation','climate_transport','vegetation'],
+    ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','relief_generation','bank_generation','erosion_generation','climate_transport','vegetation'],
     'habitat': ['habitat_equivalence'],
     'mountain tiles tiles_data': ['atlas_tiles'],
     '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions','bank_profile'],

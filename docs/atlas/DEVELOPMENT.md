@@ -81,7 +81,16 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   lowered inland banks do not become beaches; coarse coastal context also requires
   a sea corner in the interpolation footprint. These are bounded local profiles,
   not sediment transport, channel migration or full regional erosion.
-  Existing versions 3 through 8 retain their original
+  Generation 10 adds one bounded regional erosion pass after initial runoff.
+  Incision depends on discharge and downhill grade, is capped at 12 ordinal
+  height units, and cannot cut below the downstream base level or sea margin.
+  Frozen input heights make the pass independent of iteration order. The pass
+  reuses temporary scratch, then rebuilds climate, flood routing and runoff;
+  statistics and lake spill levels come from that final reconstruction. Importing
+  final height notes skips erosion, avoiding a second incision on restore.
+  Creation progress accounts for both passes and land/ocean component labeling.
+  This does not simulate transported sediment or repeated geological epochs.
+  Existing versions 3 through 9 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

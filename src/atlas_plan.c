@@ -29,6 +29,7 @@ static EWRAM_DATA u16 sAtlasGenerationVersion = 0, sCoastalTies = 0;
 static EWRAM_DATA u8 sSeaCutoff = 0;
 static EWRAM_DATA u16 sOceans = 0;
 static EWRAM_DATA bool8 sWaterPass = FALSE;
+static EWRAM_DATA bool8 sEroded = FALSE, sEroding = FALSE;
 u16 AtlasWorld_Generation(void) {return sAtlasGenerationVersion?sAtlasGenerationVersion:ATLAS_GENERATION_LEGACY;}
 bool8 AtlasWorld_SetGeneration(u16 version)
 {
@@ -90,6 +91,7 @@ static u16 Pop(void)
 }
 bool8 AtlasPlan_Begin(u32 seed)
 {
+    sEroded=sEroding=FALSE;
     AtlasPlan_ResetSample();
     AtlasStream_Reset();
     if (sScratch) Free(sScratch);
@@ -210,6 +212,9 @@ bool8 AtlasPlan_ImportHeights(const u8 *heights)
         gAtlasPlan[i].parent = 0xFFFF;
     }
     gAtlasPlanStats.land = land;
+    /* Imported notes already contain final eroded heights. Reconstruct their
+     * climate/drainage once; never erode a saved recipe for a second time. */
+    sEroded=AtlasWorld_Generation()>=10;
     sStage = 2;
     return TRUE;
 }
@@ -222,13 +227,13 @@ bool8 AtlasPlan_Step(u16 work)
         struct AtlasPlanNode *n = &gAtlasPlan[sAt];
         if (sStage == 0)
         {
-            struct AtlasCell c;
+            u8 detail;
             s32 x = (u32)(sAt % ATLAS_PLAN_WIDTH) * ATLAS_WORLD_WIDTH / ATLAS_PLAN_WIDTH;
             s32 y = (sAt / ATLAS_PLAN_WIDTH) * (2 * ATLAS_WORLD_HALF_HEIGHT / (ATLAS_PLAN_HEIGHT - 1)) - ATLAS_WORLD_HALF_HEIGHT;
             if (y >= ATLAS_WORLD_HALF_HEIGHT) y = ATLAS_WORLD_HALF_HEIGHT - 1;
-            AtlasTerrain_Sample(x, y, &c);
-            n->height = c.elevation; n->rain = 96; n->parent = 0xFFFF;
-            if (AtlasWorld_Generation()>=5) n->height=ContinentalHeight(sAt,c.elevation);
+            detail=AtlasTerrain_RawHeight(x,y);
+            n->height = detail; n->rain = 96; n->parent = 0xFFFF;
+            if (AtlasWorld_Generation()>=5) n->height=ContinentalHeight(sAt,detail);
             if (AtlasWorld_Generation()>=4) sScratch->heights[n->height]++;
             if (++sAt == ATLAS_PLAN_COUNT)
             {
@@ -347,6 +352,7 @@ bool8 AtlasPlan_Step(u16 work)
         {
             u16 id = sScratch->order[ATLAS_PLAN_COUNT - 1 - sAt], parent = gAtlasPlan[id].parent;
             u32 runoff = gAtlasPlan[id].runoff;
+            if(AtlasWorld_Generation()>=10 && !sEroded)sScratch->rain[id]=gAtlasPlan[id].height;
             if (gAtlasPlan[id].height >= ATLAS_PLAN_SEA)
             {
                 runoff += gAtlasPlan[id].rain > 60 ? gAtlasPlan[id].rain - 60 : 1;
@@ -360,7 +366,34 @@ bool8 AtlasPlan_Step(u16 work)
                 if (gAtlasPlan[id].runoff > 600) gAtlasPlanStats.rivers++;
 
             }
-            if (++sAt == ATLAS_PLAN_COUNT) Advance();
+            if (++sAt == ATLAS_PLAN_COUNT)
+            {
+                if(AtlasWorld_Generation()>=10 && !sEroded)sEroding=TRUE;
+                Advance();
+            }
+        }
+        else if (sStage == 6 && sEroding)
+        {
+            unsigned height=sScratch->rain[sAt],parent=n->parent;
+            if(n->runoff>=600 && height>ATLAS_PLAN_SEA+1 && parent<ATLAS_PLAN_COUNT
+             && height>sScratch->rain[parent])
+            {
+                unsigned discharge=n->runoff/600,strength=0,depth,base=sScratch->rain[parent]+1;
+                while(discharge){strength++;discharge>>=1;}
+                depth=1+(height-sScratch->rain[parent])*strength/16;
+                if(depth>12)depth=12;
+                if(base<ATLAS_PLAN_SEA+1)base=ATLAS_PLAN_SEA+1;
+                if(depth>height-base)depth=height-base;
+                n->height=height-depth;
+            }
+            n->parent=0xFFFF;n->runoff=0;n->water=0;
+            if(++sAt==ATLAS_PLAN_COUNT)
+            {
+                sEroding=FALSE;sEroded=TRUE;
+                sAt=sHeapSize=sOrderSize=sFlooded=sQueueHead=sQueueTail=0;
+                sStage=2;sRainPass=0;sLabeling=FALSE;
+                gAtlasPlanStats.rivers=0;
+            }
         }
         else if (sStage == 6)
         {
@@ -466,13 +499,21 @@ bool8 AtlasPlan_Step(u16 work)
     return FALSE;
 }
 u8 AtlasPlan_Stage(void) { return sStage; }
+bool8 AtlasPlan_Eroding(void) { return sEroding; }
 u8 AtlasPlan_Progress(void)
 {
+    unsigned percent;
     if (sStage >= ATLAS_PLAN_STAGES) return 100;
-    if (sStage == 0) return (u32)sAt * 7 / ATLAS_PLAN_COUNT;
-    if (sStage == 1) return 7 + (u32)sAt * 7 / ATLAS_PLAN_COUNT;
-    if (sStage == 2) return 14 + sRainPass * 48 / ATLAS_PLAN_HEIGHT;
-    return 62 + (sStage - 3) * 4 + (u32)sAt * 4 / ATLAS_PLAN_COUNT;
+    if (sStage == 0) percent=(u32)sAt * 7 / ATLAS_PLAN_COUNT;
+    else if (sStage == 1) percent=7 + (u32)sAt * 7 / ATLAS_PLAN_COUNT;
+    else if (sStage == 2) percent=14 + sRainPass * 48 / ATLAS_PLAN_HEIGHT;
+    else if (sStage == 7 && AtlasWorld_Generation()>=4)
+        percent=78+(sWaterPass?2:0)+(u32)sAt*2/ATLAS_PLAN_COUNT;
+    else percent=62 + (sStage - 3) * 4 + (u32)sAt * 4 / ATLAS_PLAN_COUNT;
+    if(AtlasWorld_Generation()<10)return percent;
+    if(sEroding)return 45+(u32)sAt*5/ATLAS_PLAN_COUNT;
+    if(!sEroded)return percent<=14?percent:14+(percent-14)*31/60;
+    return 50+(percent-14)*50/86;
 }
 static u8 Blend(u32 a, u32 b, u32 c, u32 d, u32 fx, u32 fy)
 {

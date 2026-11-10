@@ -90,6 +90,16 @@ u8 AtlasTerrain_ReliefNoise(s32 x,s32 y,bool8 broad)
 {
     return Noise(Wrap(x),y,broad?8:7);
 }
+u8 AtlasTerrain_RawHeight(s32 x,s32 y)
+{
+    s32 e,ridge;
+    x=Wrap(x);
+    e=(Noise(x,y,0)*3+Noise(x,y,1))/4;
+    ridge=Noise(x,y,2)-128;if(ridge<0)ridge=-ridge;
+    ridge=255-ridge*2;
+    if(e>132 && ridge>140)e+=(ridge-140)*(e-132)/150;
+    return Clamp(e+(Noise(x,y,3)-128)/12);
+}
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
 {
     x=Wrap(x);
@@ -100,7 +110,7 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
 }
 void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
 {
-    s32 e, rain, vapor, ridge, t, m;
+    s32 e, rain, vapor, t, m;
     struct AtlasHabitat habitat;
     u8 water = ATLAS_DRY, surface = 0;
     struct AtlasBankProfile bank={0};
@@ -143,12 +153,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     }
     else
     {
-        e = (Noise(x, y, 0) * 3 + Noise(x, y, 1)) / 4;
-        ridge = Noise(x, y, 2) - 128;
-        if (ridge < 0) ridge = -ridge;
-        ridge = 255 - ridge * 2;
-        if (e > 132 && ridge > 140) e += (ridge - 140) * (e - 132) / 150;
-        e = Clamp(e + (Noise(x, y, 3) - 128) / 12);
+        e=AtlasTerrain_RawHeight(x,y);
         rain = vapor = Noise(x, y, 4);
         if (e < ATLAS_PLAN_SEA) water = ATLAS_SEA;
     }

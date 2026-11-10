@@ -58,5 +58,7 @@ bool8 AtlasMountain_Foothill(s32 x,s32 y,const struct AtlasCell *c)
     s32 score;
     if(c->waterform || c->elevation<168 || c->elevation>189)return FALSE;
     score=ReliefScore(x,y,c->elevation);
-    return score>=60 && score<=72;
+    /* Inspection needs the first contour inside the camera, not a point
+     * deep inside a raised tier. Leave room for a safe 3x3 landing as well. */
+    return score>=58 && score<=61;
 }
