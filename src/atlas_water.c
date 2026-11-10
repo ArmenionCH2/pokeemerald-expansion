@@ -206,10 +206,22 @@ bool8 AtlasWater_IsTributary(u16 id)
     if(id>=ATLAS_PLAN_COUNT)return FALSE;
     n=&gAtlasPlan[id];if(n->parent>=ATLAS_PLAN_COUNT)return FALSE;
     parent=&gAtlasPlan[n->parent];
-    /* Reveal a bounded first tier of the existing drainage graph. The parent
-     * already owns a main channel; no disconnected random stream is added. */
+    /* Older worlds reveal only the first tier beside a main channel. New
+     * worlds retain qualifying upstream tributaries throughout that graph. */
     return n->height>=ATLAS_PLAN_SEA && n->runoff>=240 && n->runoff<600
-        && n->parent!=id && parent->height>=ATLAS_PLAN_SEA && parent->runoff>=600;
+        && n->parent!=id && parent->height>=ATLAS_PLAN_SEA && parent->runoff>=(AtlasWorld_Generation()>=16?240:600);
+}
+bool8 AtlasWater_IsSmallRiver(u16 id)
+{
+    if(AtlasWorld_Generation()<16)return AtlasWater_IsTributary(id);
+    if(id>=ATLAS_PLAN_COUNT)return FALSE;
+    const struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(n->height<ATLAS_PLAN_SEA || n->runoff<240 || n->runoff>=600
+     || n->parent>=ATLAS_PLAN_COUNT || n->parent==id)return FALSE;
+    /* Every selected edge continues into another qualifying small/main edge,
+     * a receiving lake, or the sea. No isolated random stream is fabricated. */
+    return gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA
+        || gAtlasPlan[n->parent].runoff>=240;
 }
 static void PreparePart(void)
 {
@@ -221,7 +233,7 @@ static void PreparePart(void)
     if (gx < 0) { gx += ATLAS_PLAN_WIDTH; shift = -ATLAS_WORLD_WIDTH; }
     if (gx >= ATLAS_PLAN_WIDTH) { gx -= ATLAS_PLAN_WIDTH; shift = ATLAS_WORLD_WIDTH; }
     id = gy * ATLAS_PLAN_WIDTH + gx;
-    if (gAtlasPlan[id].height < ATLAS_PLAN_SEA || (gAtlasPlan[id].runoff < 600 && !AtlasWater_IsTributary(id)) || gAtlasPlan[id].parent >= ATLAS_PLAN_COUNT || gAtlasPlan[id].parent == id) goto next;
+    if (gAtlasPlan[id].height < ATLAS_PLAN_SEA || (gAtlasPlan[id].runoff < 600 && !AtlasWater_IsSmallRiver(id)) || gAtlasPlan[id].parent >= ATLAS_PLAN_COUNT || gAtlasPlan[id].parent == id) goto next;
     fit=gAtlasPlan[gAtlasPlan[id].parent].height<ATLAS_PLAN_SEA
         || ((gAtlasPlan[gAtlasPlan[id].parent].basin&ATLAS_LAKE_FLAG)
             && gAtlasPlan[id].water>gAtlasPlan[gAtlasPlan[id].parent].water);

@@ -347,10 +347,10 @@ static void shoreTour(uint32_t savePointer)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
-        unsigned type=targets[visit],isShore=(type>=2 && type<=4) || type==20;
+        unsigned type=targets[visit],isShore=(type>=2 && type<=4) || type==20 || type==11;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
@@ -392,8 +392,15 @@ static void shoreTour(uint32_t savePointer)
             }
             else if (isShore || type==16)
             {
-                unsigned expected=type==16?13:type==2?2:(type==3 || type==20)?1:3;
+                unsigned expected=type==16?13:type==2?2:(type==3 || type==20 || type==11)?1:3;
                 assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
+                if(type==11)
+                {
+                    unsigned node=core->busRead16(core,symbol("gAtlasGeoResult")+10);
+                    unsigned runoff=core->busRead16(core,symbol("gHeap")+60672+node*12+2);
+                    assert(runoff>=240 && runoff<600);
+                    printf("PASS native connected small-river bank: node %u runoff %u and safe landing\n",node,runoff);
+                }
                 if(type==20)
                 {
                     uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned tapers=0;
@@ -474,7 +481,7 @@ static void shoreTour(uint32_t savePointer)
             printf("PASS native local feature %u atlas completes in %u frames and leaves journal unchanged\n",type,painted);
             cachedCrossing(savePointer);
         }
-        if (type==17 || type==18) cachedCrossing(savePointer);
+        if (type==17 || type==18 || type==11) cachedCrossing(savePointer);
     }
 }
 static void cancelGeoSearch(uint32_t savePointer)
@@ -537,9 +544,9 @@ int main(int argc,char **argv)
         printf("CHECKSUM %08x HABITAT %08x\n",core->busRead32(core,stats+4),core->busRead32(core,stats+24));
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==15);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==16);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 15 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 16 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();

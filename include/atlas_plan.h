@@ -50,6 +50,7 @@ void AtlasWater_Reset(void);
  * Padding must fit the existing 80-tile apron. Never prepares a bucket. */
 bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding);
 bool8 AtlasWater_IsEstuary(u16 node);
+bool8 AtlasWater_IsSmallRiver(u16 node);
 bool8 AtlasWater_IsTributary(u16 node);
 u8 AtlasWater_Sample(s32 x, s32 y, u8 terrainHeight, const struct AtlasPlanSample *plan, u8 *surface, u8 *valley);
 u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSample *plan,u8 *surface,u8 *valley,struct AtlasBankProfile *bank);

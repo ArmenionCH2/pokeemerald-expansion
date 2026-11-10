@@ -107,7 +107,7 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_MOUNTAIN)return n->height>=195;
     if(sType==ATLAS_GEO_RIDGE)return n->height>=218;
     if(sType==ATLAS_GEO_FOOTHILLS)return n->height>=172 && n->height<=184;
-    if(sType==ATLAS_GEO_TRIBUTARY)return AtlasWater_IsTributary(id);
+    if(sType==ATLAS_GEO_TRIBUTARY)return AtlasWater_IsSmallRiver(id);
     if(MouthTarget())return n->height>=ATLAS_PLAN_SEA && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT && gAtlasPlan[n->parent].height<ATLAS_PLAN_SEA;
     if(sType==ATLAS_GEO_VALLEY)return n->height>=(AtlasWorld_Generation()>=9?ATLAS_PLAN_SEA:175) && n->runoff>=600 && n->parent!=id && n->parent<ATLAS_PLAN_COUNT;
     if(sType==ATLAS_GEO_LAKE)return (n->basin&ATLAS_LAKE_FLAG) && n->water>ATLAS_PLAN_SEA && n->water>n->height+2;

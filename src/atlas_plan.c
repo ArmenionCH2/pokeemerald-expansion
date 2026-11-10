@@ -25,7 +25,7 @@ struct PlanScratch {
     u16 heap[ATLAS_PLAN_COUNT], order[ATLAS_PLAN_COUNT];
     u8 level[ATLAS_PLAN_COUNT], rain[ATLAS_PLAN_COUNT];
     u16 heights[256];
-    struct {u32 hash;s16 cx,cy,rx,ry;} cores[5];
+    struct {u32 hash,invX,invY,invX2,invY2;s16 cx,cy,rx,ry;} cores[5];
     bool8 coresValid;
     u32 islandRank;
     u16 fallbackIsland,warpNode;
@@ -63,6 +63,20 @@ static u32 Mix(u32 n)
     n ^= n >> 16; n *= 0x7FEB352D;
     n ^= n >> 15; n *= 0x846CA68B;
     return n ^ (n >> 16);
+}
+/* Exact unsigned division from a seed-only reciprocal. The product is at
+ * most one quotient step low; one remainder correction preserves all older
+ * generation rounding. Frame divisors are at least eight. */
+static u32 FrameDivide(u32 value,u32 divisor,u32 inverse)
+{
+    u32 q=((u64)value*inverse)>>32;
+    return q+(value-q*divisor>=divisor);
+}
+static s32 FrameSignedDivide(s32 value,u32 divisor,u32 inverse)
+{
+    u32 magnitude=value<0?0u-(u32)value:(u32)value;
+    s32 q=FrameDivide(magnitude,divisor,inverse);
+    return value<0?-q:q;
 }
 static u16 Neighbor(u16 id, u8 dir)
 {
@@ -173,6 +187,11 @@ static u32 ContinentalFrame(u16 id,unsigned i,s32 *dx,s32 *dy,s32 *rx,s32 *ry)
             sScratch->cores[k].cy=8+(h>>8)%32;
             sScratch->cores[k].rx=11+(h>>16)%10;
             sScratch->cores[k].ry=8+(h>>24)%8;
+            u32 rx=sScratch->cores[k].rx,ry=sScratch->cores[k].ry;
+            sScratch->cores[k].invX=0xFFFFFFFFu/rx;
+            sScratch->cores[k].invY=0xFFFFFFFFu/ry;
+            sScratch->cores[k].invX2=0xFFFFFFFFu/(rx*rx);
+            sScratch->cores[k].invY2=0xFFFFFFFFu/(ry*ry);
         }
         sScratch->coresValid=TRUE;
     }
@@ -203,7 +222,8 @@ static u8 ContinentalHeight(u16 id,u8 detail)
     {
         s32 dx,dy,rx,ry,score;
         ContinentalFrame(id,i,&dx,&dy,&rx,&ry);
-        score=220-(dx*dx*4096/(rx*rx)+dy*dy*4096/(ry*ry))/32;
+        score=220-(s32)(FrameDivide(dx*dx*4096,rx*rx,sScratch->cores[i].invX2)
+            +FrameDivide(dy*dy*4096,ry*ry,sScratch->cores[i].invY2))/32;
         if (score>best) best=score;
     }
     best+=(detail-128)/3;
@@ -220,7 +240,8 @@ static u8 ContinentalUplift(u16 id)
     {
         s32 dx,dy,rx,ry,along,across,curve,score;
         u32 h=ContinentalFrame(id,i,&dx,&dy,&rx,&ry);
-        dx=dx*256/rx;dy=dy*256/ry;
+        dx=FrameSignedDivide(dx*256,rx,sScratch->cores[i].invX);
+        dy=FrameSignedDivide(dy*256,ry,sScratch->cores[i].invY);
         along=(h&2)?dx:dy;across=(h&2)?dy:dx;
         if (along<0) along=-along;
         if (along>=224) continue;

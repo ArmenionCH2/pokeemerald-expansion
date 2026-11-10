@@ -20,7 +20,9 @@ Generation 14 adds exposed native rock ground in volcanic interiors and high
 uplands, with matching cliff material and snow priority.
 Generation 15 flares selected lowland river outlets toward their fitted sea
 intersection, with a dedicated estuary bank inspection target.
-Existing generation-3 through generation-14 worlds keep their original geography and walkability.
+Generation 16 exposes connected small-channel drainage down to coastal outlets,
+with safe small-river inspection and corresponding atlas overlays.
+Existing generation-3 through generation-15 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision

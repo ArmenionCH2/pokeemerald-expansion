@@ -157,7 +157,23 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   this does not change physical water membership or any other climate layer.
   The stroke never touches LRU state or prepares terrain. Painting still yields,
   accepts input and leaves the exploration journal alone.
-  Existing versions 3 through 14 retain their original
+  Generation 16 renders every qualifying small-channel edge (runoff 240–599)
+  whose parent is another qualifying channel, a main river or the sea. This
+  exposes upstream chains and small coastal outlets that the previous direct-to-
+  main-river filter hid. Tributary classification retains land receivers, while
+  the small-river predicate also includes coastal outlets. Each selected path
+  follows the existing priority-flood parent graph all the way downstream;
+  no random disconnected stream or new macro runoff is introduced. Existing
+  receiving-shore fitting, narrow channel width, bank carving and wetness apply.
+  The small-river inspector and coarse river overlay use the same predicate.
+  River statistics still count main channels at runoff 600 and above. Coarse
+  notes remain approximately 420 km apart: this is not metre-scale drainage
+  refinement or a claim that all local creeks have been generated.
+  Seed-only continental reciprocals replace repeated divisions with a high
+  product and exact remainder correction. Signed frame calculations retain C's
+  truncation toward zero. They use creation scratch only and preserve older
+  macro outputs; the full-width arithmetic contract covers every frame divisor.
+  Existing versions 3 through 15 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

@@ -129,7 +129,7 @@ static u8 Color(s32 x, s32 y)
      && AtlasWater_RiverNear(x,y,71))return 2;
     if (cell.biome == ATLAS_TUNDRA || cell.biome == ATLAS_TAIGA) return 5;
     if (cell.landform == ATLAS_MOUNTAIN) return 6;
-    if (cell.biome == ATLAS_DESERT || cell.landform == ATLAS_COAST) return 4;
+    if (cell.biome == ATLAS_DESERT || (cell.landform == ATLAS_COAST && cell.biome != ATLAS_WETLAND)) return 4;
     return cell.biome == ATLAS_WETLAND ? 7 : 3;
 }
 static bool8 Pixel(u32 px, u32 py, s32 x, s32 y)
@@ -191,7 +191,7 @@ static void RiverOverlay(void)
     while (budget-- && sAtlasMapRiver<ATLAS_PLAN_COUNT)
     {
         u16 id=sAtlasMapRiver++,parent=gAtlasPlan[id].parent;
-        if (parent>=ATLAS_PLAN_COUNT || parent==id || gAtlasPlan[id].height<ATLAS_PLAN_SEA || gAtlasPlan[id].runoff<600) continue;
+        if (parent>=ATLAS_PLAN_COUNT || parent==id || gAtlasPlan[id].height<ATLAS_PLAN_SEA || (gAtlasPlan[id].runoff<600 && !AtlasWater_IsSmallRiver(id))) continue;
         s32 ax=(s32)((u32)(id%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH)-sX;
         s32 bx=(s32)((u32)(parent%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH)-sX;
         if (ax>ATLAS_WORLD_WIDTH/2) ax-=ATLAS_WORLD_WIDTH;
