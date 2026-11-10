@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands` or `--tour lakes`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes` or `--tour distributaries`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -405,7 +405,30 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   retaining bounded work and responsive menu input. Pixel-for-pixel native image
   comparisons verify that batching changes preparation timing, not final colors
   or exploration state.
-  Existing versions 3 through 24 retain their original
+  Generation 26 adds two short coastal distributaries at suitable fitted estuary
+  mouths. Their canonical split is 1,600 tiles upstream of the sea cut, with
+  outlets 512 tiles seaward and 640 tiles to either side. Parent receiving height
+  must lie within half a height bin of sea level, keeping both branches on the
+  same integer plane. Width follows parent runoff, capped at 48. Both branches
+  must pass 17 fixed ground probes: dry lowland root, no lake, ground at most
+  sea+12, a sea endpoint, and no sampled return to land after entering sea.
+  Both pass or neither is admitted. This is sampled morphological validation,
+  not a continuous slope proof, sediment model, tides/salinity or deposited land.
+  The parent and existing estuary flare remain intact and own overlapping water.
+  Whole short endpoints are retained in neighboring water banks; flag decoding
+  preserves the real width. Warm steps still make at most one ground query.
+  Four banks grow from 192 to 224 pieces each (2,048 bytes total), covering the
+  conservative bound of 128 main plus 96 local pieces. The three validation bytes
+  reuse bucket padding; its size stays 68 bytes. Older generations retain their
+  original admission caps. No new raw art or journal fields are added.
+  Sixth-page Coastal distributary inspection warms the actual branch, bisects its
+  bank and validates safe 3x3 collision plus proximity. Location announcements use
+  Distributary bank; close atlas strokes include the prepared branch geometry.
+  Seven-seed tests check connected centerlines and unchanged macro notes; strict
+  camera walks check streaming, with a one-query budget/rejection fixture.
+  Native QA visits, labels, maps, cached crossings and cold save reloads cover the
+  actual feature. Use a new generation-26 world for these channels.
+  Existing versions 3 through 25 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

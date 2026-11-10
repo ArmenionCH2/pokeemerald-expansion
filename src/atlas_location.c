@@ -95,7 +95,9 @@ void AtlasLocation_Tick(void)
             AtlasPlace_ApplyShore(&sPlace,watermask);
             if(sPlace.kind==ATLAS_PLACE_LAKE)AtlasPlace_SetLandmark(&sPlace,x,y);
             if(sPlace.kind==ATLAS_PLACE_COAST && cell.landform==ATLAS_ROCK_COAST)sPlace.kind=ATLAS_PLACE_SEA_CLIFF;
-            if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))
+            if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_DistributaryNear(x,y,4))
+                sPlace.kind=ATLAS_PLACE_DISTRIBUTARY;
+            else if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))
                 sPlace.kind=AtlasWater_HeadwaterNear(x,y,4)?ATLAS_PLACE_HEADWATER:ATLAS_PLACE_CREEK;
         }
         sX = x; sY = y;

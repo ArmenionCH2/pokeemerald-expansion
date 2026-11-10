@@ -299,7 +299,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<35;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<36;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -349,24 +349,24 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
     unsigned completed=0;
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21,22,23,24,25,26,27,28,29,30,31,32,33,34};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit];
-        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31) || (focus==8 && type!=5 && type!=26 && type!=30) || (focus==9 && type!=32) || (focus==10 && type!=33 && type!=34) || (focus==11 && type!=2))continue;
-        unsigned isShore=(type>=2 && type<=4) || type==20 || type==11 || type==22 || type==27;
+        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31) || (focus==8 && type!=5 && type!=26 && type!=30) || (focus==9 && type!=32) || (focus==10 && type!=33 && type!=34) || (focus==11 && type!=2) || (focus==12 && type!=35))continue;
+        unsigned isShore=(type>=2 && type<=4) || type==20 || type==11 || type==22 || type==27 || type==35;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<35;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<36;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         for(unsigned retry=0;retry<3;retry++)
         {
             waited=0;
             while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
-            if(core->busRead8(core,status)!=2 || (type!=27 && type!=28 && type!=29 && type!=30 && type!=31 && type!=32 && type!=33 && type!=34) || retry==2)break;
+            if(core->busRead8(core,status)!=2 || (type!=27 && type!=28 && type!=29 && type!=30 && type!=31 && type!=32 && type!=33 && type!=34 && type!=35) || retry==2)break;
             printf("NOTE inspector %u reached its bounded search limit; retrying the next cursor batch\n",type);
             frames(0,30);press(1);
         }
@@ -403,7 +403,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             }
             else if (isShore || type==16)
             {
-                unsigned expected=type==27?22:type==22?19:type==16?13:type==2?2:(type==3 || type==20 || type==11)?1:3;
+                unsigned expected=type==35?29:type==27?22:type==22?19:type==16?13:type==2?2:(type==3 || type==20 || type==11)?1:3;
                 assert(core->busRead8(core,symbol("sAtlasPlaceTracker")+4)==expected);
                 if(type==11)
                 {
@@ -416,12 +416,12 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                 {
                     uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned creeks=0;
                     for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*68+30);p++)
-                        creeks+=!!(core->busRead16(core,pieces+(b*192+p)*16+14)&0x8000);
+                        creeks+=!!(core->busRead16(core,pieces+(b*224+p)*16+14)&0x8000);
                     if(type==27)
                     {
                         unsigned children=0;
                         for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*68+30);p++)
-                            children+=(core->busRead16(core,pieces+(b*192+p)*16+14)&0x8080)==0x8080;
+                            children+=(core->busRead16(core,pieces+(b*224+p)*16+14)&0x8080)==0x8080;
                         assert(children);printf("PASS native second-level headwater: %u resident child pieces, named safe bank\n",children);
                     }
                     assert(creeks);printf("PASS native validated local tributary creek: %u resident creek pieces, %s name and safe landing\n",creeks,type==27?"Headwater creek":"Creekbank");
@@ -431,8 +431,8 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                     uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned tapers=0;
                     for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*68+30);p++)
                     {
-                        unsigned tip=core->busRead16(core,pieces+(b*192+p)*16+14);
-                        tapers+=!(tip&0x8000) && tip>core->busRead16(core,pieces+(b*192+p)*16+12);
+                        unsigned tip=core->busRead16(core,pieces+(b*224+p)*16+14);
+                        tapers+=!(tip&0xc000) && tip>core->busRead16(core,pieces+(b*224+p)*16+12);
                     }
                     assert(tapers);printf("PASS native flared river outlet: %u resident taper pieces and safe flared river bank landing\n",tapers);
                 }
@@ -483,11 +483,11 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             printf("PASS native physical location for inspection type %u at world %d,%d\n",type,(int32_t)core->busRead32(core,symbol("gAtlasGeoResult")),(int32_t)core->busRead32(core,symbol("gAtlasGeoResult")+4));completed++;
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
-        if(type==2 || type==5 || type==26 || type==30 || type==33 || type==34)
+        if(type==2 || type==5 || type==26 || type==30 || type==33 || type==34 || type==35)
         {
-            const char *suffix=type==2?" Lake":type==5?" Cone":type==26?" Mesa":type==30?" Sinkhole":type==33?"Backswamp":"Natural levee";
+            const char *suffix=type==2?" Lake":type==5?" Cone":type==26?" Mesa":type==30?" Sinkhole":type==33?"Backswamp":type==34?"Natural levee":"Distributary bank";
             uint16_t owner=core->busRead16(core,symbol("sAtlasPlaceTracker")+6);
-            if(type==33 || type==34)assert(!owner);
+            if(type==33 || type==34 || type==35)assert(!owner);
             else {assert(owner && owner<=4608);if(type!=2)assert(owner==core->busRead16(core,symbol("gAtlasGeoResult")+10)+1);}
             uint32_t popup=symbol("sAtlasLocationPopup");unsigned named=0;
             for(unsigned tick=0;tick<1200 && !named;tick++)
@@ -498,7 +498,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                     unsigned c=core->busRead8(core,popup+n);if(c==255)break;
                     name[n]=c>=0xbb && c<=0xd4?'A'+c-0xbb:c>=0xd5 && c<=0xee?'a'+c-0xd5:' ';
                 }
-                name[n]=0;unsigned length=strlen(suffix);named=(type==33 || type==34)?!strcmp(name,suffix):n>length && !strcmp(name+n-length,suffix);
+                name[n]=0;unsigned length=strlen(suffix);named=(type==33 || type==34 || type==35)?!strcmp(name,suffix):n>length && !strcmp(name+n-length,suffix);
                 if(named)printf("PASS native named landmark %s, stable site %u\n",name,owner);
                 if(!named)frames(0,1);
             }
@@ -506,7 +506,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             assert(named);frames(0,64);
         }
         char path[80];snprintf(path,sizeof(path),"build/atlas-emulator/shore-%u.ppm",type);shot(path);
-        if(type==5 || type==20 || type==21 || type==23 || type==26 || type==27 || type==28 || type==30 || type==32 || type==33 || type==34)
+        if(type==5 || type==20 || type==21 || type==23 || type==26 || type==27 || type==28 || type==30 || type==32 || type==33 || type==34 || type==35)
         {
             unsigned char before[1456],after[1456];
             press(8);
@@ -516,14 +516,14 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             uint32_t journal=core->busRead32(core,symbol("gSaveBlock3Ptr"));
             bytes(journal,before,sizeof(before));
             if(!core->busRead8(core,symbol("sAdminView")))press(4);
-            unsigned targetZoom=type==5?4:type==27?2:3,targetLayer=type==5?1:(type==21 || type==33 || type==34)?4:(type==23 || type==26 || type==28 || type==30 || type==32 || type==33 || type==34)?8:0;
+            unsigned targetZoom=type==5?4:type==27?2:3,targetLayer=type==5?1:(type==21 || type==33 || type==34)?4:(type==23 || type==26 || type==28 || type==30 || type==32 || type==33 || type==34 || type==35)?8:0;
             for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapZoom"))!=targetZoom && i<8;i++)press(core->busRead8(core,symbol("sAtlasMapZoom"))<targetZoom?256:512);
             for(unsigned i=0;core->busRead8(core,symbol("sAtlasMapLayer"))!=targetLayer && i<9;i++)press(8);
             unsigned painted=0;
             while(core->busRead8(core,symbol("sAtlasMapRow"))<25 && painted++<1800)frames(0,1);
             assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
             frames(0,2); // Observe completed window copies in the next rendered frame.
-            shot(type==5?"build/atlas-emulator/volcano-elevation.ppm":type==21?"build/atlas-emulator/floodplain-moisture.ppm":type==23?"build/atlas-emulator/dune-relief.ppm":type==26?"build/atlas-emulator/mesa-relief.ppm":type==27?"build/atlas-emulator/headwater-geography.ppm":type==33?"build/atlas-emulator/backswamp-moisture.ppm":type==34?"build/atlas-emulator/levee-moisture.ppm":type==32?"build/atlas-emulator/canyon-relief.ppm":type==30?"build/atlas-emulator/karst-relief.ppm":type==28?"build/atlas-emulator/coast-relief.ppm":"build/atlas-emulator/estuary-geography.ppm");
+            shot(type==35?"build/atlas-emulator/distributary-geography.ppm":type==5?"build/atlas-emulator/volcano-elevation.ppm":type==21?"build/atlas-emulator/floodplain-moisture.ppm":type==23?"build/atlas-emulator/dune-relief.ppm":type==26?"build/atlas-emulator/mesa-relief.ppm":type==27?"build/atlas-emulator/headwater-geography.ppm":type==33?"build/atlas-emulator/backswamp-moisture.ppm":type==34?"build/atlas-emulator/levee-moisture.ppm":type==32?"build/atlas-emulator/canyon-relief.ppm":type==30?"build/atlas-emulator/karst-relief.ppm":type==28?"build/atlas-emulator/coast-relief.ppm":"build/atlas-emulator/estuary-geography.ppm");
             bytes(journal,after,sizeof(after));assert(!memcmp(before,after,sizeof(before)));
             press(2);frames(0,180);press(2);frames(0,60);
             printf("PASS native local feature %u atlas completes in %u frames and leaves journal unchanged\n",type,painted);
@@ -531,7 +531,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
         }
         if (type==17 || type==18 || type==11 || type==22) cachedCrossing(savePointer);
         if(type==24 || type==25 || type==29 || type==31)cachedCrossing(savePointer);
-        if(type==2 || type==22 || type==23 || type==25 || type==26 || type==27 || type==28 || type==30 || type==31 || type==32 || type==33 || type==34)featureColdContinue(type);
+        if(type==2 || type==22 || type==23 || type==25 || type==26 || type==27 || type==28 || type==30 || type==31 || type==32 || type==33 || type==34 || type==35)featureColdContinue(type);
     }
     assert(!focus || completed);
 }
@@ -543,7 +543,7 @@ static void cancelGeoSearch(uint32_t savePointer)
     press(8);
     for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
     assert(core->busRead8(core,cursor)==3);press(1);
-    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<35;i++) press(128);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<36;i++) press(128);
     assert(core->busRead8(core,choice)==17);press(1);
     if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
     press(2);frames(0,30);
@@ -554,7 +554,7 @@ static void cancelGeoSearch(uint32_t savePointer)
 }
 static void featureColdContinue(unsigned type)
 {
-    const char *feature=type==2?"lake":type==22?"creek":type==23?"dune":type==25?"snow":type==27?"headwater":type==28?"coast":type==30?"karst":type==31?"snowline":type==32?"canyon":type==33?"backswamp":type==34?"levee":"mesa";
+    const char *feature=type==35?"distributary":type==2?"lake":type==22?"creek":type==23?"dune":type==25?"snow":type==27?"headwater":type==28?"coast":type==30?"karst":type==31?"snowline":type==32?"canyon":type==33?"backswamp":type==34?"levee":"mesa";
     char label[80],path[120];
     unsigned char before[1456],after[1456];uint16_t tiles[117];
     uint32_t savePointer=symbol("gSaveBlock1Ptr"),journalPointer=symbol("gSaveBlock3Ptr");
@@ -591,13 +591,13 @@ static void featureColdContinue(unsigned type)
         assert(tiles[(dy+4)*13+dx+6]==core->busRead16(core,map+(((int)y+7+dy)*35+(int)x+7+dx)*2));
     uint32_t buckets=symbol("sBuckets"),pieces=symbol("sPieceBank");unsigned creeks=0;
     for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*68+30);p++)
-        creeks+=!!(core->busRead16(core,pieces+(b*192+p)*16+14)&0x8000);
+        creeks+=!!(core->busRead16(core,pieces+(b*224+p)*16+14)&0x8000);
     if(type==22)assert(creeks);
     if(type==27)
     {
         unsigned children=0;
         for(unsigned b=0;b<4;b++)for(unsigned p=0;p<core->busRead8(core,buckets+b*68+30);p++)
-            children+=(core->busRead16(core,pieces+(b*192+p)*16+14)&0x8080)==0x8080;
+            children+=(core->busRead16(core,pieces+(b*224+p)*16+14)&0x8080)==0x8080;
         assert(children);
     }
     actors();snprintf(path,sizeof(path),"build/atlas-emulator/%s-continue.ppm",feature);shot(path);
@@ -640,10 +640,10 @@ int main(int argc,char **argv)
     shot("build/atlas-emulator/world.ppm");
     printf("WORLD SEED %u\n",core->busRead32(core,symbol("gAtlasWorldSeed")));
     printf("PASS native world entry at frame %u, position %d,%d, visited chunks %u\n",frame,(int16_t)core->busRead16(core,savePtr),(int16_t)core->busRead16(core,savePtr+2),core->busRead8(core,statePtr+15));
-    if(argc==4 && (!strcmp(argv[3],"--materials") || !strcmp(argv[3],"--mesa") || !strcmp(argv[3],"--headwaters") || !strcmp(argv[3],"--coasts") || !strcmp(argv[3],"--rock-sand") || !strcmp(argv[3],"--karst") || !strcmp(argv[3],"--snowline") || !strcmp(argv[3],"--landmarks") || !strcmp(argv[3],"--canyons") || !strcmp(argv[3],"--wetlands") || !strcmp(argv[3],"--lakes")))
+    if(argc==4 && (!strcmp(argv[3],"--materials") || !strcmp(argv[3],"--mesa") || !strcmp(argv[3],"--headwaters") || !strcmp(argv[3],"--coasts") || !strcmp(argv[3],"--rock-sand") || !strcmp(argv[3],"--karst") || !strcmp(argv[3],"--snowline") || !strcmp(argv[3],"--landmarks") || !strcmp(argv[3],"--canyons") || !strcmp(argv[3],"--wetlands") || !strcmp(argv[3],"--lakes") || !strcmp(argv[3],"--distributaries")))
     {
-        unsigned focus=!strcmp(argv[3],"--materials")?1:!strcmp(argv[3],"--mesa")?2:!strcmp(argv[3],"--headwaters")?3:!strcmp(argv[3],"--coasts")?4:!strcmp(argv[3],"--rock-sand")?5:!strcmp(argv[3],"--karst")?6:!strcmp(argv[3],"--snowline")?7:!strcmp(argv[3],"--landmarks")?8:!strcmp(argv[3],"--canyons")?9:!strcmp(argv[3],"--wetlands")?10:11;
-        assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))>=(focus==1 || focus==5 || focus==7?14:focus==2?20:focus==3?21:focus==4?22:focus==9?24:focus==10?25:focus==11?3:23));
+        unsigned focus=!strcmp(argv[3],"--materials")?1:!strcmp(argv[3],"--mesa")?2:!strcmp(argv[3],"--headwaters")?3:!strcmp(argv[3],"--coasts")?4:!strcmp(argv[3],"--rock-sand")?5:!strcmp(argv[3],"--karst")?6:!strcmp(argv[3],"--snowline")?7:!strcmp(argv[3],"--landmarks")?8:!strcmp(argv[3],"--canyons")?9:!strcmp(argv[3],"--wetlands")?10:!strcmp(argv[3],"--lakes")?11:12;
+        assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))>=(focus==1 || focus==5 || focus==7?14:focus==2?20:focus==3?21:focus==4?22:focus==9?24:focus==10?25:focus==11?3:focus==12?26:23));
         shoreTour(sav1,focus);
         core->deinit(core);return 0;
     }
@@ -666,9 +666,9 @@ int main(int argc,char **argv)
         printf("TERRAIN %08x\n",terrainHash);
         core->deinit(core);return 0;
     }
-    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==25);
+    assert(core->busRead16(core,symbol("sAtlasGenerationVersion"))==26);
     assert(core->busRead16(core,symbol("gAtlasPlanStats")+8)==1345);
-    printf("PASS native generation 25 macro atlas: 1345/4608 land cells (29.19 percent)\n");
+    printf("PASS native generation 26 macro atlas: 1345/4608 land cells (29.19 percent)\n");
     fieldWeather();
     placeNames();
     nativeAnimations();

@@ -57,6 +57,8 @@ void AtlasWater_Reset(void);
  * Padding must fit the existing 80-tile apron. Never prepares a bucket. */
 bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding);
 bool8 AtlasWater_IsEstuary(u16 node);
+bool8 AtlasWater_DistributaryNear(s32 x,s32 y,u8 padding);
+bool8 AtlasWater_DistributaryProbe(s32 x,s32 y,s32 *outX,s32 *outY);
 bool8 AtlasWater_CreekSource(u16 node);
 bool8 AtlasWater_CreekProbe(u16 node,u8 attempt,s32 *x,s32 *y);
 bool8 AtlasWater_CreekNear(s32 x,s32 y,u8 padding);
