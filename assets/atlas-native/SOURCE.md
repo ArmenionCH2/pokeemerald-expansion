@@ -49,3 +49,9 @@ remain shared. Rock ground uses Cave 0x201 pixels quantized offline to the deriv
 rock palette. Cliff quarters retain native General geometry, with Cave ground
 beneath grey rock walls. This adds four secondary graphic tiles and no extra VRAM
 bank. It does not import cave maps, scripts, movement restrictions or a cave system.
+
+Generation-19 sand ridges reclaim primary roles 435–481 using the same original
+General cliff quarters over native sand. The derived sand palette is shared with
+sand banks. Their attributes retain native sand behavior/layer 0x1021; Atlas
+renders these low ridge faces without cliff collision. Original primary roles
+outside 384–481 remain identical, and other layouts still use General directly.

@@ -19,7 +19,7 @@ static u8 Material(const struct AtlasCell *c)
 {
     if (c->biome == ATLAS_TUNDRA) return 3;
     if (c->elevation > 205) return 2;
-    if (c->biome == ATLAS_DESERT || (c->landform == ATLAS_COAST && c->biome != ATLAS_WETLAND)) return 1;
+    if (c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST || c->biome == ATLAS_DESERT || (c->landform == ATLAS_COAST && c->biome != ATLAS_WETLAND)) return 1;
     return 0;
 }
 static u16 Describe(s32 x, s32 y, const struct AtlasCell *c, u16 *floor)
@@ -58,6 +58,20 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
     u8 i, mask = 0, material = 0, count[4] = {0};
     if (!water)
     {
+        if(AtlasWorld_Generation()>=19 && tier>=4)
+        {
+            if(tier==4)return Ground(floor,cells);
+            for(i=0;i<8;i++)
+            {
+                u16 next=cells[neighbors[i]];
+                if(next&3)return Ground(floor,cells);
+                unsigned other=(next>>4)&7;
+                if((other>=5) || (other<4 && (next>>8)>=(center>>8)))mask|=1<<i;
+            }
+            if(mask==255)return Ground(floor,cells);
+            u16 first=((center>>2)&3)==3?ATLAS_NATURE_MOUNTAIN_FIRST+47:ATLAS_DUNE_EDGE_FIRST;
+            return PACK_METATILE(first+gAtlasNatureMaskIndex[mask])|PACK_ELEVATION(3);
+        }
         if (center & 0x80)
         {
             u16 id=floor&1023;

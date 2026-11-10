@@ -131,6 +131,11 @@
       "first": 431,
       "count": 4,
       "role": "primary_rock_floor"
+    },
+    {
+      "first": 435,
+      "count": 47,
+      "role": "primary_walkable_sand_ridges"
     }
   ]
 }

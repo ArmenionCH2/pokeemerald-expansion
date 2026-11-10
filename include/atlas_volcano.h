@@ -4,5 +4,7 @@
 struct AtlasVolcano {s32 x,y;u16 radius,distance;u8 uplift,relief;};
 bool8 AtlasVolcano_Bare(s32 x,s32 y);
 bool8 AtlasVolcano_Site(u16 node,struct AtlasVolcano *out);
+/* Nearest site region; distance saturates at 65535 outside the cone. */
+bool8 AtlasVolcano_Region(s32 x,s32 y,struct AtlasVolcano *out);
 bool8 AtlasVolcano_Sample(s32 x,s32 y,struct AtlasVolcano *out);
 #endif

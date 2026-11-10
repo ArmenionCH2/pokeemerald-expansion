@@ -210,7 +210,26 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   visible terrain, position, seed and journal. This is one bounded local branch
   level, not a complete fine-resolution watershed solver, spring/groundwater
   simulation or proof of physically exact flow everywhere between probes.
-  Existing versions 3 through 17 retain their original
+  Generation 19 adds elongated sand ridges in coherent warm, dry lower-upland
+  fields. An independent broad substrate field and smooth climate/height envelope
+  bound their occurrence; local relief contributes 0–6 ordinal height units to
+  both direct ground queries and final terrain before water carving. Volcanic
+  cones suppress dunes with a surrounding fade. New local creeks reject dune
+  fields during their existing bounded terrain probes; established river and lake
+  ownership retains priority. This is seeded morphology, not wind transport,
+  sediment conservation or migrating dunes. Macro nodes remain generation 18's.
+  Dune trough/crest landforms append existing cell enums without changing layouts
+  or saved fields; the native fauna validator admits both. Atlas primary roles
+  435–481 reuse original cliff quarters over sand, with derived sand colors and
+  native sand behavior. These ridge faces remain walkable at the ground elevation,
+  unlike mountain walls. Other layouts retain General. A yielding Dunes GEO TP
+  search validates a safe 3x3 patch and visible native ridge faces. The ninth admin
+  layer shows local relief, including dunes, at close zoom; queries do not mark
+  exploration. Native QA checks cold Continue independently at a creek and dune,
+  preserving visible tiles, seed, position and discovery. Floodplain inspection
+  additionally checks the location announcer's three-tile shoreline stencil and
+  rejects volcanic precedence, so a curved bank is not mislabeled as a plain.
+  Existing versions 3 through 18 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing
@@ -249,7 +268,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   longitudinal samples, with higher/lower cross-slopes on both sides. Closed pits
   and isolated peaks fail that profile test. A relative ridge need not exceed an
   absolute highland threshold. These descriptions do not carve terrain heights.
-  The eight-layer admin atlas exposes this relief classification;
+  The nine-layer admin atlas exposes this relief classification;
   GEO TP can locate a classified plateau with a safe final 3x3 landing. These are
   annotations of existing geography, not newly carved features or individually
   named components. No generation/save version change is needed. Regional queries
@@ -281,7 +300,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   animation references and fill the remaining two secondary metatile slots (512/512); future
   catalog expansion needs reuse/bank planning, not an out-of-range tile index.
 - The player map projects only genuinely visited tiles at every zoom. Admin-map
-  reads never mark discovery. START cycles eight diagnostic layers in admin view.
+  reads never mark discovery. START cycles nine diagnostic layers in admin view.
   Distant admin pixels summarize macro notes; close views use final terrain, with
   resumable water preparation and bounded sampling work to preserve input response.
   Large terrain/elevation/basin views overlay major macro drainage paths with a

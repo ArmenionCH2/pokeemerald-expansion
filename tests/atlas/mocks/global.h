@@ -2,6 +2,7 @@
 #define MOCK_GLOBAL
 #include <stdint.h>
 #include <string.h>
+typedef int8_t s8;
 typedef int16_t s16;
 typedef int64_t s64;
 typedef uint64_t u64;

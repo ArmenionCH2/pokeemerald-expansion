@@ -40,9 +40,24 @@ static void CheckBoundaryAndInvalidInputs(void)
     cell.waterform = ATLAS_LAKE + 1;
     assert(!AtlasPokemon_Select(1, 1, 1, &cell, &a));
     cell.waterform = ATLAS_DRY;
-    cell.landform = ATLAS_COAST + 1;
+    cell.landform = ATLAS_DUNE_CREST + 1;
     assert(!AtlasPokemon_Select(1, 1, 1, &cell, &a));
     cell.landform = ATLAS_PLAIN;
+    unsigned duneSpawns=0;
+    for(s32 x=0;x<10000;x++)
+    {
+        cell.landform=ATLAS_PLAIN;
+        bool8 selected=AtlasPokemon_Select(x,1,1,&cell,&a);
+        for(unsigned form=ATLAS_DUNE;form<=ATLAS_DUNE_CREST;form++)
+        {
+            cell.landform=form;
+            assert(selected==AtlasPokemon_Select(x,1,1,&cell,&b));
+            assert(a.species==b.species && a.graphicsId==b.graphicsId && a.rarity==b.rarity);
+        }
+        duneSpawns+=selected;
+    }
+    assert(duneSpawns>0);
+    cell.landform=ATLAS_PLAIN;
     assert(!AtlasPokemon_Select(1, 1, 1, NULL, &a));
     assert(a.species == SPECIES_NONE && a.graphicsId == 0);
     assert(!AtlasPokemon_Select(1, 1, 1, &cell, NULL));

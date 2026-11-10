@@ -26,7 +26,9 @@ Generation 17 scales dry floodplain incision and river-fed soil moisture with
 channel width, with named floodplain inspection and a close soil-moisture atlas.
 Generation 18 refines suitable inland reaches with deterministic, terrain-checked
 local tributary creeks, creekbank names and developer inspection.
-Existing generation-3 through generation-17 worlds keep their original geography and walkability.
+Generation 19 adds warm, dry dune fields with shared height sampling, walkable
+native sand ridges, physical naming and developer inspection.
+Existing generation-3 through generation-18 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
@@ -52,10 +54,11 @@ access and geographic teleport tools. Neither target produces an official game.
 In Atlas: START opens the menu; WORLD MAP uses D-pad to pan, L/R to zoom,
 A to center on the player and B to return. Unknown terrain stays black. Development
 builds allow SELECT to toggle the admin map and START to cycle terrain, elevation,
-temperature, humidity, soil moisture, drainage, weather-front and regional-relief layers. GEO TP
+temperature, humidity, soil moisture, drainage, weather-front, regional-relief and local-relief layers. GEO TP
 in the start menu can find landforms, waters and forest/desert/tundra/wetland
 locations, plus regional plateaus. Its fourth page also finds a sand/grass boundary
-for inspecting native ground edges, and islands for checking small landmasses.
+for inspecting native ground edges, islands for checking small landmasses, and
+dunes for checking actual sand relief.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
 The exploration journal has a fixed save capacity and warns when space is low.

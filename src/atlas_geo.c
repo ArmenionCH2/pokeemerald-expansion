@@ -6,6 +6,7 @@
 #include "atlas_region.h"
 #include "atlas_vegetation.h"
 #include "atlas_volcano.h"
+#include "atlas_dune.h"
 
 EWRAM_DATA struct AtlasGeoResult gAtlasGeoResult = {0};
 EWRAM_DATA u8 gAtlasGeoStatus = 0;
@@ -78,6 +79,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_DUNES && AtlasWorld_Generation()<19)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_CREEK && AtlasWorld_Generation()<18)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_FLOODPLAIN && AtlasWorld_Generation()<17)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_ESTUARY && AtlasWorld_Generation()<15)gAtlasGeoStatus=3;
@@ -88,6 +90,13 @@ void AtlasGeo_Begin(u8 type)
 static bool8 Candidate(u16 id)
 {
     struct AtlasPlanNode *n=&gAtlasPlan[id];
+    if(sType==ATLAS_GEO_DUNES)
+    {
+        struct AtlasPlanSample plan={n->height,n->rain,n->humidity,n->water,(n->basin&ATLAS_LAKE_FLAG)?1:0};
+        s32 x=(u32)(id%ATLAS_PLAN_WIDTH)*ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
+        s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        return AtlasDune_Envelope(x,y,&plan)>=64;
+    }
     if(sType==ATLAS_GEO_CREEK)return AtlasWater_CreekSource(id);
     if(sType==ATLAS_GEO_FLOODPLAIN)return n->height>=132 && n->height<155
         && n->parent<ATLAS_PLAN_COUNT && n->parent!=id && gAtlasPlan[n->parent].height>=ATLAS_PLAN_SEA
@@ -177,6 +186,46 @@ u8 AtlasGeo_Step(void)
         if(++sSceneAt>=117)sPhase=0;
         return 0;
     }
+    if(sPhase==30)
+    {
+        static const s8 offsets[4][2]={{1,0},{-1,0},{0,1},{0,-1}};
+        unsigned direction=sSceneAt%4,distance=1+sSceneAt/4;
+        x=sLX+offsets[direction][0]*(s32)distance;y=sLY+offsets[direction][1]*(s32)distance;
+        if(!Warm(x,y))return 0;
+        AtlasTerrain_Sample(x,y,&c);
+        if(c.waterform)
+        {if(++sDirection<4)Direction();else sPhase=0;return 0;}
+        if(++sSceneAt==12)sPhase=9;
+        return 0;
+    }
+    if(sPhase==27)
+    {
+        for(i=0;i<4 && sTrial<4096;i++)
+        {
+            u16 trial=sTrial++;
+            x=sCX+((s32)(trial%64)-32)*16;y=sCY+((s32)(trial/64)-32)*16;
+            if(!AtlasDune_Probe(x,y))continue;
+            sLX=x;sLY=y;sPhase=28;return 0;
+        }
+        if(sTrial>=4096)sPhase=0;
+        return 0;
+    }
+    if(sPhase==28)
+    {
+        if(!Warm(sLX,sLY))return 0;
+        AtlasTerrain_Sample(sLX,sLY,&c);
+        if(c.waterform || (c.landform!=ATLAS_DUNE && c.landform!=ATLAS_DUNE_CREST)){sPhase=27;return 0;}
+        sCheck=sAttempt=0;sPhase=4;return 0;
+    }
+    if(sPhase==29)
+    {
+        x=sLX+(s32)(sSceneAt%13)-6;y=sLY+(s32)(sSceneAt/13)-4;
+        if(!ReadyPoint(x,y))return 0;
+        u16 id=AtlasTerrain_Tile(x,y)&1023;
+        if(id>=ATLAS_DUNE_EDGE_FIRST && id<ATLAS_DUNE_EDGE_FIRST+ATLAS_DUNE_EDGE_COUNT){sPhase=9;return 0;}
+        if(++sSceneAt>=117)sPhase=27;
+        return 0;
+    }
     if(sPhase==25)
     {
         for(i=0;i<4 && sTrial<128;i++)
@@ -215,6 +264,7 @@ u8 AtlasGeo_Step(void)
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
+            if(sType==ATLAS_GEO_DUNES){sTrial=0;sPhase=27;return 0;}
             if(sType==ATLAS_GEO_CREEK){sTrial=0;sPhase=25;return 0;}
             if(sType==ATLAS_GEO_FLOODPLAIN){sDirection=0;sPhase=1;return 0;}
             if (sType>=ATLAS_GEO_FOREST) {sTrial=0;sPhase=17;return 0;}
@@ -435,6 +485,7 @@ u8 AtlasGeo_Step(void)
     {
         if(sType==ATLAS_GEO_VOLCANO){sPhase=0;return 0;}
         if(sType==ATLAS_GEO_SAND_EDGE){sDirection++;SandDirection();return 0;}
+        if(sType==ATLAS_GEO_DUNES){sPhase=27;return 0;}
         if(sType==ATLAS_GEO_CREEK){sPhase=25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
         {if(++sDirection<4)Direction();else sPhase=0;return 0;}
@@ -447,12 +498,15 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_DUNES){sSceneAt=0;sPhase=29;return 0;}
         if(sType==ATLAS_GEO_CREEK)
         {sPhase=AtlasWater_CreekNear(sLX,sLY,8)?9:25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
         {
             AtlasTerrain_Sample(sLX,sLY,&c);
-            if(c.valley==0 && c.elevation<155 && c.moisture>=132 && c.landform!=ATLAS_COAST)sPhase=9;
+            struct AtlasVolcano volcano;
+            if(c.valley==0 && c.elevation<155 && c.moisture>=132 && c.landform!=ATLAS_COAST
+             && !AtlasVolcano_Sample(sLX,sLY,&volcano)){sSceneAt=0;sPhase=30;}
             else if(++sDirection<4)Direction();else sPhase=0;
             return 0;
         }

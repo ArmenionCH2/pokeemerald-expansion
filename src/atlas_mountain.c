@@ -23,6 +23,7 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     bool8 pass;
     struct AtlasVolcano volcano;
     if(c->waterform!=ATLAS_DRY)return 0;
+    if(c->landform==ATLAS_DUNE || c->landform==ATLAS_DUNE_CREST)return c->landform==ATLAS_DUNE_CREST?0x50:0x40;
     if(c->valley==255 && AtlasVolcano_Sample(x,y,&volcano))return volcano.relief;
     if(c->elevation<=155)return 0;
     if(c->valley==0)return 0x80;

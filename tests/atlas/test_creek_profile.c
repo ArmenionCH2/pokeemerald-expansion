@@ -1,6 +1,7 @@
 #include "../../src/atlas_water.c"
 #include <assert.h>
 #include <stdio.h>
+u8 AtlasDune_Envelope(s32 x,s32 y,const struct AtlasPlanSample *p){return 0;}
 struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT];
 u32 gAtlasWorldSeed;
 bool8 gAtlasPlanReady=TRUE;

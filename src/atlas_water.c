@@ -1,6 +1,7 @@
 #include "global.h"
 #include "atlas_world.h"
 #include "atlas_plan.h"
+#include "atlas_dune.h"
 
 /* Cache only short river pieces intersecting a 4 km tile-query neighborhood. */
 #define WATER_BUCKET 4096
@@ -338,7 +339,7 @@ static bool8 CreekStep(struct WaterBucket *b,u16 id,u8 part,s32 shift)
         {
             struct AtlasPlanSample rootPlan;
             unsigned height=AtlasTerrain_GroundHeight(line->bx,line->by,&rootPlan);
-            if(rootPlan.lake || height*256<line->hb){b->microProbe=0;b->microSlot++;}
+            if(rootPlan.lake || AtlasDune_Envelope(line->bx,line->by,&rootPlan) || height*256<line->hb){b->microProbe=0;b->microSlot++;}
             else b->microProbe=16;
             return FALSE;
         }
@@ -354,7 +355,7 @@ static bool8 CreekStep(struct WaterBucket *b,u16 id,u8 part,s32 shift)
         u32 surface=line->hb;
         if(along>flat && line->ha>=line->hb)
             surface+=(u32)(line->ha-line->hb)*(along-flat)/((128-line->join)*16);
-        if(plan.lake || line->ha<line->hb+64 || height*256<surface+512)
+        if(plan.lake || AtlasDune_Envelope(x,y,&plan) || line->ha<line->hb+64 || height*256<surface+512)
         {b->microProbe=0;b->microSlot++;return FALSE;}
         if(!--b->microProbe)
         {
