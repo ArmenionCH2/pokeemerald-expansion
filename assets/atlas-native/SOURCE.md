@@ -53,5 +53,14 @@ bank. It does not import cave maps, scripts, movement restrictions or a cave sys
 Generation-19 sand ridges reclaim primary roles 435–481 using the same original
 General cliff quarters over native sand. The derived sand palette is shared with
 sand banks. Their attributes retain native sand behavior/layer 0x1021; Atlas
-renders these low ridge faces without cliff collision. Original primary roles
-outside 384–481 remain identical, and other layouts still use General directly.
+renders these low ridge faces without cliff collision. Other layouts still use General directly.
+
+Primary roles 482–496 and 497–511 round rock/grass and snow/grass ground borders.
+They retain the original General sand-edge quarter geometry, recolored with
+secondary palettes 10/11; fully interior quarters use the actual Cave-derived rock
+or native snow floor. No additional graphic tiles are needed. Edges use normal
+walkable-ground attributes 0x1000, preserve map collision/elevation, and add no
+terrain height or saved state. General primary roles 0–383 remain byte-identical;
+Atlas now uses all reclaimed primary roles as well as all secondary metatile slots.
+The borders use cardinal topology. Diagonal-only notches and transitions between
+two non-green materials still require additional catalogue planning.

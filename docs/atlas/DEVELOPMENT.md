@@ -128,7 +128,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   into the shared secondary graphics with a derived rock palette; Atlas alone uses
   a clone of General's primary metatile catalogue. Reclaimed primary roles 384–430
   supply 47 rock cliff masks and 431–434 supply four floor variants. All other
-  primary definitions/attributes remain byte-identical; primary graphics, palette
+  primary definitions/attributes initially remained byte-identical; primary graphics, palette
   ownership and animation callback remain General's. Other layouts keep General.
   Rock, grass and snow cliff selections preserve the same collision/elevation
   topology; snow retains priority. Exposed rock clears vegetation, so new saves
@@ -283,8 +283,20 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Sand/grass borders use cardinal neighbor semantics and native sand quarters,
   preserving movement/elevation and the native sand behavior. The ring waits for
   the already scheduled stencil; border rendering performs no terrain queries.
-  Fourteen spare roles plus one shared full-water duplicate supply the catalogue
-  within 512 slots. Diagonal-only notches and other biome blends remain future work.
+  Rock/grass and snow/grass boundaries use primary roles 482–496 and 497–511,
+  with the same rounded native cardinal geometry and derived palettes 10/11.
+  Interior quarters retain the existing floor art; no graphic tile, height,
+  collision or saved-state expansion is needed. Flat material floors wait for
+  the already prepared ring stencil, with no terrain query during border rendering.
+  Rock connectors retain their floor behavior. Water and other colored materials
+  suppress a false green fringe. A fifth GEO TP page bisects real dry material/
+  grass transitions and validates an actual edge tile plus the safe 3x3 patch.
+  Native QA times cold Continue at the snow boundary and checks cached crossings.
+  All reclaimed primary roles and the 512 secondary metatile slots are now used;
+  future catalogue additions need reuse or bank planning. These are presentation
+  changes; supported worlds retain their existing height and collision rules.
+  Fourteen spare roles plus one shared full-water duplicate supply the sand catalogue
+  within 512 slots. Diagonal-only notches and blends between two non-green materials remain future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native

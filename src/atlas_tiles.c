@@ -40,13 +40,15 @@ static u16 Ground(u16 floor, const u16 *cells)
 {
     static const u8 sides[4] = {1, 5, 7, 3}; /* N E S W */
     u8 i, mask = 0;
-    if (!AtlasTiles_SandEdge(floor, cells[4])) return floor;
+    if (!AtlasTiles_GroundEdge(floor, cells[4])) return floor;
     for (i = 0; i < 4; i++)
     {
         u16 neighbor = cells[sides[i]];
         if ((neighbor & 3) || (neighbor & 12)) mask |= 1 << i;
     }
     if (mask == 15) return floor;
+    u8 material=(cells[4]>>2)&3;
+    if(material>=2)return (floor&~1023)|((material==3?ATLAS_SNOW_GROUND_EDGE_FIRST:ATLAS_ROCK_GROUND_EDGE_FIRST)+mask);
     return (floor & ~1023) | (mask == 14 ? ATLAS_NATURE_SAND_EDGE_NORTH : ATLAS_NATURE_SAND_EDGE_FIRST + mask);
 }
 u16 AtlasTiles_Render(u16 floor, const u16 *cells)
@@ -75,7 +77,7 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
         if (center & 0x80)
         {
             u16 id=floor&1023;
-            if(id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)return floor;
+            if(id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)return Ground(floor,cells);
             if (id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4) return Ground(floor,cells);
             /* Mark only a connector crossing a terrace change. Flat valley
              * reservations and broad saddle interiors keep their own floor.

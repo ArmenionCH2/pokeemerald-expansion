@@ -4,6 +4,9 @@
 #define ATLAS_ROCK_FLOOR_FIRST 431
 #define ATLAS_DUNE_EDGE_FIRST 435
 #define ATLAS_DUNE_EDGE_COUNT 47
+#define ATLAS_ROCK_GROUND_EDGE_FIRST 482
+#define ATLAS_SNOW_GROUND_EDGE_FIRST 497
+#define ATLAS_MATERIAL_GROUND_EDGE_COUNT 15
 #define ATLAS_NATURE_WATER_FIRST 0x200
 #define ATLAS_NATURE_WATER_COUNT 375
 #define ATLAS_NATURE_GRASS_FIRST 888
@@ -28,6 +31,13 @@ static inline bool8 AtlasTiles_SandEdge(u16 floor, u16 semantic)
     u16 id = floor & 1023;
     return !(semantic & 3) && ((semantic >> 2) & 3) == 1
         && id >= ATLAS_NATURE_SAND_FIRST && id < ATLAS_NATURE_SAND_FIRST + 4;
+}
+static inline bool8 AtlasTiles_GroundEdge(u16 floor,u16 semantic)
+{
+    u16 id=floor&1023,material=(semantic>>2)&3;
+    return AtlasTiles_SandEdge(floor,semantic) || (!(semantic&3)
+        && ((material==2 && id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)
+         || (material==3 && id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4)));
 }
 static inline bool8 AtlasTiles_IsCliff(u16 id)
 {

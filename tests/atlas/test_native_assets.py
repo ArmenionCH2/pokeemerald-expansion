@@ -23,11 +23,12 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 384<=role<482:continue
+    if 384<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(384,435))
 assert all(primary_attrs[i]==0x1021 for i in range(435,482))
+assert all(primary_attrs[i]==0x1000 for i in range(482,512))
 assert (R/'data/layouts/layouts.json').read_text().count('gTileset_AtlasPrimary')==1
 for role,original in [(888,1),(892,0x124),(558,0xA1),(746,0x170),(1022,4),(900,0x15)]:
     assert metatiles[(role-512)*8:(role-511)*8]==list(native[original*8:(original+1)*8])

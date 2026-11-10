@@ -32,6 +32,23 @@ static bool8 Green(const struct AtlasCell *c)
 {
     return !c->waterform && c->elevation<175 && c->biome!=ATLAS_TUNDRA && !Sand(c);
 }
+static bool8 GroundBoundary(void)
+{return sType==ATLAS_GEO_SAND_EDGE || sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE;}
+static bool8 BoundaryMaterial(s32 x,s32 y,const struct AtlasCell *c)
+{
+    if(sType==ATLAS_GEO_SAND_EDGE)return Sand(c);
+    if(c->waterform)return FALSE;
+    u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
+    unsigned first=sType==ATLAS_GEO_ROCK_EDGE?ATLAS_ROCK_FLOOR_FIRST:ATLAS_NATURE_SNOW_FIRST;
+    return id>=first && id<first+4;
+}
+static bool8 BoundaryGreen(s32 x,s32 y,const struct AtlasCell *c)
+{
+    if(sType==ATLAS_GEO_SAND_EDGE)return Green(c);
+    if(c->waterform)return FALSE;
+    u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
+    return id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4;
+}
 static void SandDirection(void)
 {
     s32 distance=ATLAS_WORLD_WIDTH/ATLAS_PLAN_WIDTH;
@@ -79,6 +96,7 @@ void AtlasGeo_Begin(u8 type)
     }
     sType=type;sPhase=0;sVisited=0;sDirection=0;sWork=0;
     gAtlasGeoStatus=type<ATLAS_GEO_COUNT && type!=ATLAS_GEO_RETURN?0:3;
+    if(type==ATLAS_GEO_ROCK_EDGE && AtlasWorld_Generation()<14)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_DUNES && AtlasWorld_Generation()<19)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_CREEK && AtlasWorld_Generation()<18)gAtlasGeoStatus=3;
     if(type==ATLAS_GEO_FLOODPLAIN && AtlasWorld_Generation()<17)gAtlasGeoStatus=3;
@@ -104,6 +122,15 @@ static bool8 Candidate(u16 id)
     if(sType==ATLAS_GEO_ESTUARY)return AtlasWater_IsEstuary(id);
     if(sType==ATLAS_GEO_VOLCANO){struct AtlasVolcano v;return AtlasVolcano_Site(id,&v);}
     if(sType==ATLAS_GEO_ISLAND)return n->height>=ATLAS_PLAN_SEA && AtlasPlan_IsIsland(n->continent);
+    if(sType==ATLAS_GEO_ROCK_EDGE)
+    {struct AtlasVolcano volcano;return n->height>205 || AtlasVolcano_Site(id,&volcano);}
+    if(sType==ATLAS_GEO_SNOW_EDGE)
+    {
+        struct AtlasHabitat habitat;
+        s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
+        return n->height>=ATLAS_PLAN_SEA && habitat.temperature<75;
+    }
     if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
     if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
     if (sType>=ATLAS_GEO_FOREST)
@@ -136,14 +163,14 @@ u8 AtlasGeo_Step(void)
     struct AtlasCell c;
     if(gAtlasGeoStatus)return gAtlasGeoStatus;
     if(++sWork>=ATLAS_GEO_SEARCH_STEPS){gAtlasGeoStatus=2;return 2;}
-    /* Bisect a dry sand/green interval, yielding after each prepared point.
+    /* Bisect a dry material/green interval, yielding after each prepared point.
      * A water interruption rejects the ray rather than treating an aquatic
      * bank as a ground transition. The final normal 3x3 collision gate still applies. */
     if(sPhase==20)
     {
         if(!Warm(sCX,sCY))return 0;
         AtlasTerrain_Sample(sCX,sCY,&c);
-        if(!Sand(&c)){sPhase=0;return 0;}
+        if(!BoundaryMaterial(sCX,sCY,&c)){sPhase=0;return 0;}
         sDirection=0;SandDirection();return 0;
     }
     if(sPhase==21)
@@ -152,7 +179,7 @@ u8 AtlasGeo_Step(void)
         {sDirection++;SandDirection();return 0;}
         if(!Warm(sDX,sDY))return 0;
         AtlasTerrain_Sample(sDX,sDY,&c);
-        if(!Green(&c)){sDirection++;SandDirection();return 0;}
+        if(!BoundaryGreen(sDX,sDY,&c)){sDirection++;SandDirection();return 0;}
         sPhase=22;return 0;
     }
     if(sPhase==22)
@@ -162,8 +189,8 @@ u8 AtlasGeo_Step(void)
         x=sWX+(sDX-sWX)/2;y=sWY+(sDY-sWY)/2;
         if(!Warm(x,y))return 0;
         AtlasTerrain_Sample(x,y,&c);
-        if(Sand(&c)){sWX=x;sWY=y;}
-        else if(Green(&c)){sDX=x;sDY=y;}
+        if(BoundaryMaterial(x,y,&c)){sWX=x;sWY=y;}
+        else if(BoundaryGreen(x,y,&c)){sDX=x;sDY=y;}
         else{sDirection++;SandDirection();}
         return 0;
     }
@@ -260,7 +287,7 @@ u8 AtlasGeo_Step(void)
                 sLX=v.x;sLY=v.y+v.radius-32*(v.radius-v.radius/4)/v.uplift;
                 sCheck=sAttempt=0;sPhase=4;return 0;
             }
-            if(sType==ATLAS_GEO_SAND_EDGE){sPhase=20;return 0;}
+            if(GroundBoundary()){sPhase=20;return 0;}
             if(sType==ATLAS_GEO_RIVER || sType==ATLAS_GEO_VALLEY || sType==ATLAS_GEO_FLOODPLAIN || sType==ATLAS_GEO_CREEK || MouthTarget() || sType==ATLAS_GEO_TRIBUTARY){u16 height;AtlasWater_Point(sNode,2,&sCX,&sCY,&height);}
             if(MouthTarget()){sTrial=0;sPhase=11;return 0;}
             if(ReliefTarget()){sTrial=0;sPhase=sType==ATLAS_GEO_FOOTHILLS?10:6;return 0;}
@@ -484,7 +511,7 @@ u8 AtlasGeo_Step(void)
     if(y<=-ATLAS_WORLD_HALF_HEIGHT+12 || y>=ATLAS_WORLD_HALF_HEIGHT-12 || (AtlasTerrain_Tile(x,y)&0xC00))
     {
         if(sType==ATLAS_GEO_VOLCANO){sPhase=0;return 0;}
-        if(sType==ATLAS_GEO_SAND_EDGE){sDirection++;SandDirection();return 0;}
+        if(GroundBoundary()){sDirection++;SandDirection();return 0;}
         if(sType==ATLAS_GEO_DUNES){sPhase=27;return 0;}
         if(sType==ATLAS_GEO_CREEK){sPhase=25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
@@ -498,6 +525,14 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE)
+        {
+            u16 id=AtlasTerrain_Tile(sLX,sLY)&1023;
+            unsigned first=sType==ATLAS_GEO_ROCK_EDGE?ATLAS_ROCK_GROUND_EDGE_FIRST:ATLAS_SNOW_GROUND_EDGE_FIRST;
+            if(id>=first && id<first+ATLAS_MATERIAL_GROUND_EDGE_COUNT)sPhase=9;
+            else if(++sDirection<4)SandDirection();else sPhase=0;
+            return 0;
+        }
         if(sType==ATLAS_GEO_DUNES){sSceneAt=0;sPhase=29;return 0;}
         if(sType==ATLAS_GEO_CREEK)
         {sPhase=AtlasWater_CreekNear(sLX,sLY,8)?9:25;return 0;}

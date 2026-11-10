@@ -58,7 +58,9 @@ temperature, humidity, soil moisture, drainage, weather-front, regional-relief a
 in the start menu can find landforms, waters and forest/desert/tundra/wetland
 locations, plus regional plateaus. Its fourth page also finds a sand/grass boundary
 for inspecting native ground edges, islands for checking small landmasses, and
-dunes for checking actual sand relief.
+dunes for checking actual sand relief. The fifth page locates rounded rock/grass
+and snow/grass ground borders. These presentation changes preserve terrain heights
+and walking collision in supported saves.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
 The exploration journal has a fixed save capacity and warns when space is low.

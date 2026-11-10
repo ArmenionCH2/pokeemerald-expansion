@@ -81,9 +81,9 @@ static void Render(s32 x, s32 y)
         entry=AtlasVegetation_Result(entry,AtlasVegetation_Valid(floors,semantics));
         goto ready;
     }
-    /* Sand borders also read the prepared stencil. This adds no sampling;
+    /* Material borders also read the prepared stencil. This adds no sampling;
      * ordinary flat grass still takes the neighbor-free fast path. */
-    if((center&3) || ((center&0x80)?(entry&3):(center&0x70)) || AtlasTiles_SandEdge(entry,center))
+    if((center&3) || ((center&0x80)?(entry&3):(center&0x70)) || AtlasTiles_GroundEdge(entry,center))
     {
         col=sPX+x-sX;if(col>=SIDE)col-=SIDE;
         row=sPY+y-sY;if(row>=SIDE)row-=SIDE;
