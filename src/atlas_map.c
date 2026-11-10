@@ -160,7 +160,10 @@ static bool8 Pixel(u32 px, u32 py, s32 x, s32 y)
     if (sPainted[bit / 8] & (1 << (bit % 8))) return TRUE;
     if (sAtlasMapLayer!=LAYER_REGIONS && !MacroSummary() && !AtlasWater_Prewarm(x,y)) return FALSE;
     sPainted[bit / 8] |= 1 << (bit % 8);
-    FillWindowPixelRect(0, PIXEL_FILL(Color(x,y)), px*4, TOP+py*4, 4, 4);
+    /* PIXEL_FILL evaluates its argument twice. Geography is stateful and
+     * expensive, so sample once and reuse the palette index. */
+    u8 color=Color(x,y);
+    FillWindowPixelRect(0, PIXEL_FILL(color), px*4, TOP+py*4, 4, 4);
     return TRUE;
 }
 static void Marker(s32 x, s32 y, u8 color)

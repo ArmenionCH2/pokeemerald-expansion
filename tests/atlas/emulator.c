@@ -479,7 +479,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                 else if(type==8){assert(water);printf("PASS native valley inspection: %u visible water tiles and safe carved bank landing\n",water);}
                 else{assert(walls);printf("PASS native terrain inspection type %u: %u visible cliff tiles and safe 3x3 landing\n",type,walls);}
             }
-            printf("PASS native physical location for inspection type %u (plateau or dry shore)\n",type);completed++;
+            printf("PASS native physical location for inspection type %u at world %d,%d\n",type,(int32_t)core->busRead32(core,symbol("gAtlasGeoResult")),(int32_t)core->busRead32(core,symbol("gAtlasGeoResult")+4));completed++;
         }
         else printf("NOTE shore TP type %u has no reachable bank in the test viewport\n",type);
         if(type==5 || type==26 || type==30)
@@ -520,6 +520,7 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             unsigned painted=0;
             while(core->busRead8(core,symbol("sAtlasMapRow"))<25 && painted++<1800)frames(0,1);
             assert(core->busRead8(core,symbol("sAtlasMapRow"))==25);
+            frames(0,2); // Observe completed window copies in the next rendered frame.
             shot(type==5?"build/atlas-emulator/volcano-elevation.ppm":type==21?"build/atlas-emulator/floodplain-moisture.ppm":type==23?"build/atlas-emulator/dune-relief.ppm":type==26?"build/atlas-emulator/mesa-relief.ppm":type==27?"build/atlas-emulator/headwater-geography.ppm":type==32?"build/atlas-emulator/canyon-relief.ppm":type==30?"build/atlas-emulator/karst-relief.ppm":type==28?"build/atlas-emulator/coast-relief.ppm":"build/atlas-emulator/estuary-geography.ppm");
             bytes(journal,after,sizeof(after));assert(!memcmp(before,after,sizeof(before)));
             press(2);frames(0,180);press(2);frames(0,60);
