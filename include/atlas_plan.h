@@ -41,6 +41,9 @@ bool8 AtlasPlan_ShapingOceans(void);
 void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain);
 void AtlasPlan_SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample);
 void AtlasPlan_ResetSample(void);
+/* Connected, equal-level lake identity (root node + 1), including its fitted
+ * shoreline apron. Zero outside lake context. No terrain/water preparation. */
+u16 AtlasPlan_LakeId(s32 x,s32 y);
 bool8 AtlasPlan_HasSea(s32 x,s32 y);
 /* Interpolated ocean contribution, 0..255; no detailed water preparation. */
 u8 AtlasPlan_SeaContext(s32 x,s32 y);

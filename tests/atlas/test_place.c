@@ -9,6 +9,7 @@
 struct AtlasPlanNode gAtlasPlan[ATLAS_PLAN_COUNT];
 bool8 gAtlasPlanReady;
 u32 gAtlasWorldSeed = 123;
+u16 AtlasPlan_LakeId(s32 x,s32 y){return 0;} /* No planner in this hierarchy fixture. */
 
 int main(void)
 {

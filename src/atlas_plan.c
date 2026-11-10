@@ -30,6 +30,9 @@ EWRAM_DATA struct AtlasPlanStats gAtlasPlanStats = {0};
 EWRAM_DATA u32 gAtlasWorldSeed = 0;
 EWRAM_DATA bool8 gAtlasPlanReady = FALSE;
 EWRAM_DATA static u8 sCanyonOpen[(ATLAS_PLAN_COUNT+7)/8]={0};
+/* Three bits per node retain stage 8's lake spanning forest: 0 absent,
+ * 1 root, 2..5 cardinal parent. No per-node 16-bit component array or flash. */
+EWRAM_DATA static u8 sLakeLinks[(ATLAS_PLAN_COUNT*3+7)/8]={0};
 struct PlanScratch {
     u16 heap[ATLAS_PLAN_COUNT], order[ATLAS_PLAN_COUNT];
     u8 level[ATLAS_PLAN_COUNT], rain[ATLAS_PLAN_COUNT];
@@ -65,6 +68,7 @@ EWRAM_DATA static struct AtlasPlanSample sSample = {0};
 EWRAM_DATA static s32 sSampleX0 = 0, sSampleX1 = 0, sSampleY0 = 0, sSampleY1 = 0;
 EWRAM_DATA static bool8 sSampleValid = 0;
 EWRAM_DATA static u8 sSampleSeaContext = 0;
+EWRAM_DATA static u16 sSampleLakeNode = 0;
 
 void AtlasPlan_ResetSample(void) { sSampleValid = FALSE; }
 
@@ -96,6 +100,25 @@ static u16 ATLAS_MACRO_ARM Neighbor(u16 id, u8 dir)
     if (dir == 2) { if (!y) return id; y--; }
     if (dir == 3) { if (y == ATLAS_PLAN_HEIGHT - 1) return id; y++; }
     return y * ATLAS_PLAN_WIDTH + x;
+}
+static void SetLakeLink(u16 node,u8 link)
+{
+    unsigned bit=node*3,byte=bit/8,shift=bit%8;
+    sLakeLinks[byte]=(sLakeLinks[byte]&~(7u<<shift))|(link<<shift);
+    if(shift>5)sLakeLinks[byte+1]=(sLakeLinks[byte+1]&~(7u>>(8-shift)))|(link>>(8-shift));
+}
+static u16 LakeRoot(u16 node)
+{
+    for(unsigned step=0;node<ATLAS_PLAN_COUNT && step<ATLAS_PLAN_COUNT;step++)
+    {
+        unsigned bit=node*3,byte=bit/8,shift=bit%8,link=sLakeLinks[byte]>>shift;
+        if(shift>5)link|=sLakeLinks[byte+1]<<(8-shift);
+        link&=7;
+        if(link==1)return node+1;
+        if(link<2 || link>5)return 0;
+        node=Neighbor(node,link-2);
+    }
+    return 0;
 }
 static bool8 Before(u16 a, u16 b)
 {
@@ -129,6 +152,7 @@ bool8 AtlasPlan_Begin(u32 seed)
     sOceanReady=FALSE;
     sIslandCount=0;sIslandClass.valid=FALSE;
     AtlasPlan_ResetSample();
+    memset(sLakeLinks,0,sizeof(sLakeLinks));
     AtlasStream_Reset();
     if (sScratch) Free(sScratch);
 #ifdef __arm__
@@ -553,7 +577,8 @@ bool8 ATLAS_MACRO_ARM AtlasPlan_Step(u16 work)
                     u16 other = Neighbor(id, d);
                     if (!(gAtlasPlan[other].basin & ATLAS_LAKE_FLAG) || sScratch->rain[other]
                         || gAtlasPlan[other].water != gAtlasPlan[id].water) continue;
-                    sScratch->rain[other] = 1; sScratch->heap[sQueueTail++] = other;
+                    sScratch->rain[other] = 1; SetLakeLink(other,(d^1)+2);
+                    sScratch->heap[sQueueTail++] = other;
                 }
                 if (sQueueHead == sQueueTail) sLabeling = FALSE;
             }
@@ -561,7 +586,7 @@ bool8 ATLAS_MACRO_ARM AtlasPlan_Step(u16 work)
             {
                 if ((n->basin & ATLAS_LAKE_FLAG) && !sScratch->rain[sAt])
                 {
-                    gAtlasPlanStats.lakes++; sScratch->rain[sAt] = 1;
+                    gAtlasPlanStats.lakes++; sScratch->rain[sAt] = 1; SetLakeLink(sAt,1);
                     sQueueHead = 0; sQueueTail = 1; sScratch->heap[0] = sAt; sLabeling = TRUE;
                 }
                 if (++sAt == ATLAS_PLAN_COUNT) { if (sLabeling) sAt--; else Advance(); }
@@ -623,6 +648,7 @@ static u8 Blend(u32 a, u32 b, u32 c, u32 d, u32 fx, u32 fy)
 }
 static void SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample)
 {
+    sSampleLakeNode=ATLAS_PLAN_COUNT;
     u32 sx = (u32)x * ATLAS_PLAN_WIDTH, sy = (u32)(y + ATLAS_WORLD_HALF_HEIGHT) * (ATLAS_PLAN_HEIGHT - 1);
     u32 col = sx / ATLAS_WORLD_WIDTH, row = sy / (2 * ATLAS_WORLD_HALF_HEIGHT);
     u32 fx = (sx % ATLAS_WORLD_WIDTH) / (ATLAS_WORLD_WIDTH / 256);
@@ -669,7 +695,7 @@ static void SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample)
         if(distance<65536)
         {
             floor=n->water-depth+(u32)depth*distance/65536;
-            if(!lake||distance<nearest){chosenLevel=n->water;nearest=distance;}
+            if(!lake||distance<nearest){chosenLevel=n->water;nearest=distance;sSampleLakeNode=ids[k];}
             if(!lake||floor<lakeFloor)lakeFloor=floor;
             lake=1;
         }
@@ -678,7 +704,7 @@ static void SampleDetail(s32 x, s32 y, struct AtlasPlanSample *sample)
             floor=n->water+1;
             /* Taper the fitted bank into the unmodified surrounding relief. */
             floor=(floor*(98304-distance)+(u32)sample->height*(distance-65536))/32768;
-            if(distance<nearest){lakeFloor=floor;chosenLevel=n->water;nearest=distance;}
+            if(distance<nearest){lakeFloor=floor;chosenLevel=n->water;nearest=distance;sSampleLakeNode=ids[k];}
         }
     }
     if(lakeFloor<255 && lakeFloor>sample->height)sample->height=lakeFloor;
@@ -698,6 +724,14 @@ void AtlasPlan_Sample(s32 x, s32 y, u8 *height, u8 *rain)
 {
     struct AtlasPlanSample s;
     AtlasPlan_SampleDetail(x,y,&s); *height = s.height; *rain = s.rain;
+}
+u16 AtlasPlan_LakeId(s32 x,s32 y)
+{
+    struct AtlasPlanSample sample;
+    if(!gAtlasPlanReady || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return 0;
+    x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
+    AtlasPlan_SampleDetail(x,y,&sample);
+    return sample.lake?LakeRoot(sSampleLakeNode):0;
 }
 /* Coarse shoreline context from the same four interpolation corners. A low
  * inland basin is not a coast. This never prepares detailed water or changes

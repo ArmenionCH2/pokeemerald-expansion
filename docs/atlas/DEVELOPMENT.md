@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks` `--tour canyons` or `--tour wetlands`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands` or `--tour lakes`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -444,6 +444,15 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   This identifier lives only in the ephemeral place/tracker; no saved fields,
   world generation, geometry, map fog or journal format change. Native landmark
   tours verify actual owner IDs, visible proper-name labels and cold reloads.
+  Lakes additionally retain stage 8's connected equal-level component identity
+  in a 1,728-byte packed cardinal forest. Roots use the smallest node ID, with
+  longitude wrapping and latitude capped. The existing lake-fitting owner supplies
+  that identity on actual lake water and nearby shores; it does not reuse the
+  surrounding catchment ID. Different lakes in one catchment can have distinct
+  names. Dry shoreline detection still reads only resident terrain semantics.
+  This derived index is rebuilt during normal New Game/Continue, never saved;
+  it preserves generation-3 through generation-25 geometry and the journal.
+  `--tour lakes` verifies a proper-name shore popup and identity after cold reload.
   Generic forest/ridge/river labels remain contextual descriptors. Names are seed
   stable, cross chunk boundaries and announce only changed hierarchy levels after
   a debounce/cooldown. This adds no terrain or save identity change.
