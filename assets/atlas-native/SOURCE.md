@@ -35,7 +35,7 @@ behavior/layer (0x1021) is retained for every border. Full-water roles share
 their identical native animation references, freeing 887 without dropping a bank
 material. Water, rock and snow neighbors do not introduce a green fringe.
 This cardinal catalogue rounds outer corners; it does not yet treat diagonal-only
-concave notches or provide snow/grass, rock/grass and every other biome blend.
+concave notches or every biome blend. Rock/grass and snow/grass are described below.
 
 Run `python3 dev_scripts/compile_atlas_native.py`. Generated C and manifest are
 reviewed source; the preview stays under `build/atlas-native/`. No PNG decoding,
@@ -68,3 +68,11 @@ two non-green materials still require additional catalogue planning.
 Generation-22 sea cliffs reuse the existing native rock/snow cliff masks and
 bank materials. Grassy tops retain their native ground artwork; exposed dry tops
 use the existing Cave-derived rock floor. This adds no graphics or metatile roles.
+
+Rock/sand borders reclaim Atlas-only unused primary building roles 352–366. They
+reuse the General rounded sand-edge silhouette with textured Cave rock interiors.
+Derived secondary palette 12 uses the same rock shades as palette 10 and the
+native sand floor's dominant outside color. No original graphics, palettes, native
+animation bindings or other layouts are modified. This adds no raw graphic tiles.
+Three-material junctions retain the existing green outline priority; diagonal-only
+notches and other non-green material pairs remain future work.

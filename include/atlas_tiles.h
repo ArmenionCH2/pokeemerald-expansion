@@ -1,5 +1,6 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
+#define ATLAS_ROCK_SAND_EDGE_FIRST 352
 #define ATLAS_ROCK_CLIFF_FIRST 384
 #define ATLAS_ROCK_FLOOR_FIRST 431
 #define ATLAS_DUNE_EDGE_FIRST 435
@@ -24,8 +25,8 @@
 #define ATLAS_NATURE_FLOWER_FIRST 1022
 #define ATLAS_NATURE_FLOWER_COUNT 2
 struct AtlasCell;
-/* Only sand beside green land needs this stencil. Water continues the sand
- * edge, so a beach never receives a green fringe along its ocean-facing side. */
+/* Material borders read the prepared cardinal stencil. Water continues the
+ * dry material rather than introducing a false green fringe. */
 static inline bool8 AtlasTiles_SandEdge(u16 floor, u16 semantic)
 {
     u16 id = floor & 1023;

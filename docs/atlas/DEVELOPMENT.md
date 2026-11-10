@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters` or `--tour coasts`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts` or `--tour rock-sand`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. Full tours allow up to ten
 minutes of host wall time as inspector coverage grows; GBA frame budgets are
@@ -377,11 +377,21 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   suppress a false green fringe. A fifth GEO TP page bisects real dry material/
   grass transitions and validates an actual edge tile plus the safe 3x3 patch.
   Native QA times cold Continue at the snow boundary and checks cached crossings.
-  All reclaimed primary roles and the 512 secondary metatile slots are now used;
-  future catalogue additions need reuse or bank planning. These are presentation
+  The 512 secondary metatile slots and previously reclaimed primary roles 384–511
+  are occupied; additional catalogues require explicit unused-role/bank planning. These are presentation
   changes; supported worlds retain their existing height and collision rules.
   Fourteen spare roles plus one shared full-water duplicate supply the sand catalogue
-  within 512 slots. Diagonal-only notches and blends between two non-green materials remain future work.
+  within 512 slots. Rock/sand borders additionally reclaim Atlas-only primary building roles 352–366.
+  They use the same native rounded cardinal geometry, textured rock interiors and
+  derived secondary palette 12, whose outside color matches the dominant native
+  sand floor. Palette 12 participates in the normal terrain weather/time blending.
+  This uses no new graphic tiles, saved data, height changes or terrain queries.
+  Water/snow continue the rock edge. At three-material junctions, existing green
+  outlines retain priority; a complete three-material blend remains future work.
+  The sixth entry on the fifth inspector page bisects a real dry rock/sand interval,
+  validates the border and checks a safe 3x3 landing. Other layouts keep General's
+  original building roles. Primary roles 367–383 remain untouched.
+  Diagonal-only notches, snow/sand and rock/snow blends remain future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native

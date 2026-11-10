@@ -40,15 +40,22 @@ u16 AtlasTiles_Describe(s32 x, s32 y, u16 *floor)
 static u16 Ground(u16 floor, const u16 *cells)
 {
     static const u8 sides[4] = {1, 5, 7, 3}; /* N E S W */
-    u8 i, mask = 0;
+    u8 i, mask = 0, sandMask=0, green=0, sand=0;
     if (!AtlasTiles_GroundEdge(floor, cells[4])) return floor;
     for (i = 0; i < 4; i++)
     {
         u16 neighbor = cells[sides[i]];
         if ((neighbor & 3) || (neighbor & 12)) mask |= 1 << i;
+        if(!(neighbor&3) && ((neighbor>>2)&3)==1)sand=1;
+        else sandMask|=1<<i;
+        if(!(neighbor&3) && !(neighbor&12))green=1;
     }
-    if (mask == 15) return floor;
     u8 material=(cells[4]>>2)&3;
+    /* Keep established green borders at three-material junctions. Water and
+     * snow continue rock; only actual dry sand creates the new rounded cut. */
+    if(material==2 && sand && !green)
+        return (floor&~1023)|(ATLAS_ROCK_SAND_EDGE_FIRST+sandMask);
+    if (mask == 15) return floor;
     if(material>=2)return (floor&~1023)|((material==3?ATLAS_SNOW_GROUND_EDGE_FIRST:ATLAS_ROCK_GROUND_EDGE_FIRST)+mask);
     return (floor & ~1023) | (mask == 14 ? ATLAS_NATURE_SAND_EDGE_NORTH : ATLAS_NATURE_SAND_EDGE_FIRST + mask);
 }

@@ -138,6 +138,11 @@
       "role": "primary_walkable_sand_ridges"
     },
     {
+      "first": 352,
+      "count": 15,
+      "role": "primary_rock_sand_edges"
+    },
+    {
       "first": 482,
       "count": 15,
       "role": "primary_rock_ground_edges"

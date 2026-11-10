@@ -65,7 +65,7 @@ in the start menu can find landforms, waters and forest/desert/tundra/wetland
 locations, plus regional plateaus. Its fourth page also finds a sand/grass boundary
 for inspecting native ground edges, islands for checking small landmasses, and
 dunes for checking actual sand relief. The fifth page locates rounded rock/grass
-and snow/grass ground borders, mesas, headwater creeks and sea cliffs. The border artwork preserves terrain
+and snow/grass ground borders, mesas, headwater creeks, sea cliffs and rounded rock/sand boundaries. The border artwork preserves terrain
 heights and walking collision. Mesas require generation 20 or newer; headwaters require 21 and sea cliffs 22.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain; regional plateau/valley/ridge descriptors use surrounding relief.
