@@ -92,3 +92,11 @@ preserving all earlier 68 graphics exactly. Total graphic use is79/512. This is
 renderer/asset support; controlled host terrain validates the rare pair. No claim
 is made that every random world contains it or that a natural cold beach was
 visited in the native emulator. Existing green and rock junction priority stays.
+
+Walkable forest understory reclaims Atlas-only primary roles 367–368. These
+copy General's original leafy shrub metatile 0x193, using only a horizontal
+mirror for the second variant so its vertical lighting stays intact. Native
+graphic references and palettes remain unchanged; no new raw tiles are added.
+The adapter uses normal ground behavior/layer (0x1000), while terrain placement
+keeps tree footprints, tall grass and protected approaches intact. This is
+small ground-cover variety, not new palm/conifer artwork or canopy layering.

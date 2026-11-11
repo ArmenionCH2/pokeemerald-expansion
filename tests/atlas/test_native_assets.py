@@ -23,10 +23,15 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 322<=role<367 or 384<=role<512:continue
+    if 322<=role<369 or 384<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
+for variant in range(2):
+    words=list(native[0x193*8:0x194*8]);h=variant;v=0
+    expected=[words[(i//4)*4+((i%4)^h^(v*2))]^(1024 if h else 0)^(2048 if v else 0) for i in range(8)]
+    assert primary[(367+variant)*8:(368+variant)*8]==expected
+    assert primary_attrs[367+variant]==0x1000
 # The only newly used palette belongs to rock/sand edges. Existing terrain and
 # native animation references retain all original palette words.
 assert not any(w>>12==12 for w in metatiles)

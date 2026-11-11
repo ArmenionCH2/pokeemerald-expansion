@@ -162,6 +162,11 @@ for mirrored in range(4):
  rock_floor.append([subtile(im.crop(((q%2)*8,(q//2)*8,(q%2)*8+8,(q//2)*8+8)),8) for q in range(4)]+[0]*4)
 primary=list(native)
 primary_attrs=list(struct.unpack('<512H',(P/'metatile_attributes.bin').read_bytes()))
+# A small native leafy shrub supplies walkable forest understory. Reclaim only
+# Atlas's spare primary roles; keep native subtiles, palettes and ground scale.
+for variant in range(2):
+ primary[(367+variant)*8:(368+variant)*8]=flip(meta(0x193),variant,False)
+ primary_attrs[367+variant]=0x1000
 for i,mask in enumerate(masks):
  words=mountain(mask,False)
  words=rock_floor[0][:4]+remap(words,{3:8})[4:]
@@ -248,6 +253,7 @@ families += [dict(first=384,count=47,role='primary_rock_cliffs'),dict(first=431,
 families += [dict(first=322,count=15,role='primary_snow_sand_edges')]
 families += [dict(first=337,count=15,role='primary_rock_snow_edges')]
 families += [dict(first=352,count=15,role='primary_rock_sand_edges')]
+families += [dict(first=367,count=2,role='primary_leafy_undergrowth',source='General 0x193; hardware flips, normal walkable ground')]
 families += [dict(first=482,count=15,role='primary_rock_ground_edges'),dict(first=497,count=15,role='primary_snow_ground_edges')]
 manifest=dict(source='Original Emerald assets in this Expansion checkout; not open-source artwork',inputs={str(p.relative_to(R)):hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},raw_tiles=len(raw),metatiles=len(attrs),families=families)
 (ASSETS/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries` or `--tour rivers`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers` or `--tour forests`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -549,7 +549,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Green and rock/sand outlines keep priority at mixed junctions. A sixth-page
   Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
   Native QA checks visible edges, cached walking and cold save reload there.
-  Primary roles 367–383 remain untouched.
+  Primary roles 369–383 remain untouched; roles 367–368 now supply leafy understory.
   Snow/sand boundaries additionally reclaim primary roles 322–336 and eleven
   compiled subtiles, bringing current graphic use to 79/512. They retain actual
   snow interiors and textured native sand outside. Palette-12 entries 5–8 hold
@@ -571,6 +571,20 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   global route through pre-existing cliffs/water. Direct and ring rendering share
   footprint rules. The ring reads prepared semantics and retries within a two-tile
   radius as cells arrive; it adds no terrain query while rendering a grove.
+  Warm, moist forest/jungle clearings additionally use two horizontally mirrored
+  leafy understory roles from General 0x193. Primary Atlas-only roles 367–368
+  retain native graphic/palette references and normal walkable ground behavior.
+  Coordinate hashing selects sparse clumps, with denser cover in the existing
+  96-tile cover field; variant bits are independent of the density bits. Only
+  plain grass floors qualify, preserving complete grove proposals, tall grass,
+  material edges and protected connectors. No terrain height, collision, save
+  fields, RAM or raw graphic tiles are added. This presentation update applies
+  to supported existing saves. `--tour forests` checks actual visible plants,
+  complete trees, cached movement and exact forest save/Continue terrain. Host
+  checks cover biome/climate gates, hardware attributes, independent variants,
+  world wrap and strict direct/ring agreement through real forest regions.
+  This does not implement new tree species, canopy walk-under collision,
+  waterfall animation or the reference image's overall art direction.
   Two native flowering ground tiles decorate suitable mild/moist clearings without
   changing collision, elevation or normal-ground behavior. They retain native
   animation references and fill the remaining two secondary metatile slots (512/512); future

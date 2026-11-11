@@ -550,6 +550,14 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
       || (id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4)))
         id=ATLAS_NATURE_PASS_FIRST+(c->biome==ATLAS_TUNDRA)+(((detail>>22)&1)<<1);
 
+    /* Small understory clumps share the existing cover field. Preserve grove
+     * footprints, tall grass, mountain approaches and every collision bit. */
+    if(!clearCover && c->elevation<175 && c->temperature>=85 && c->moisture>=132
+     && (c->biome==ATLAS_FOREST || c->biome==ATLAS_JUNGLE)
+     && id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4
+     && ((detail>>8)&31)<(Noise(x,y,6)>=96?4u:1u))
+        id=ATLAS_UNDERGROWTH_FIRST+((detail>>13)&1);
+
     if (!clearCover && c->elevation<175 && c->temperature>=85 && c->moisture>=100
      && id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4
      && ((detail>>16)&31)==0)

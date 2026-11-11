@@ -153,6 +153,12 @@
       "role": "primary_rock_sand_edges"
     },
     {
+      "first": 367,
+      "count": 2,
+      "role": "primary_leafy_undergrowth",
+      "source": "General 0x193; hardware flips, normal walkable ground"
+    },
+    {
       "first": 482,
       "count": 15,
       "role": "primary_rock_ground_edges"
