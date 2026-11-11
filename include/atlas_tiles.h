@@ -8,6 +8,8 @@
 #define ATLAS_ALT_TREE_FIRST 369
 #define ATLAS_WARM_FLOWER_FIRST 378
 #define ATLAS_WARM_FLOWER_COUNT 4
+#define ATLAS_BLOOM_TILE_FIRST 616
+extern const u32 gAtlasBloomAnimFrames[96]; /* Three frames, four 4bpp tiles each. */
 #define ATLAS_ROCK_CLIFF_FIRST 384
 #define ATLAS_ROCK_FLOOR_FIRST 431
 #define ATLAS_DUNE_EDGE_FIRST 435

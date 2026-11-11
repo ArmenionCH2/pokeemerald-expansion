@@ -1563,5 +1563,5 @@ const struct Tileset gTileset_AtlasPrimary =
     .palettes = gTilesetPalettes_General,
     .metatiles = gAtlasPrimaryMetatiles,
     .metatileAttributes = gAtlasPrimaryAttributes,
-    .callback = InitTilesetAnim_General,
+    .callback = InitTilesetAnim_AtlasGeneral,
 };

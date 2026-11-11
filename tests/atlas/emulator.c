@@ -299,7 +299,7 @@ static void biomeTour(uint32_t savePointer)
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
         assert(core->busRead8(core,cursor)==3);press(1);
         assert(core->busRead32(core,main+4)==(geo|1));
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<37;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<39;i++) press(128);
         assert(core->busRead8(core,choice)==type);
         if (type==12) shot("build/atlas-emulator/geo-biome-menu.ppm");
         press(1);
@@ -344,16 +344,44 @@ static void biomeTour(uint32_t savePointer)
     printf("Weather effects observed (native IDs): mask 0x%x; rain=3, snow=4, fog=6\n",weatherMask);
     if (!(weatherMask&(1u<<4))) printf("NOTE no natural snow front encountered during this seed's bounded cold-region tour\n");
 }
+/* Observe real VBlank transfers. Both reindexed strips must match the live
+ * native flower frame (or its half-cycle partner), while water still changes. */
+static void bloomAnimation(unsigned type)
+{
+    static const unsigned char remap[16]={0,0,1,2,3,0,0,0,0,4,0,5,6,7,8,9};
+    unsigned seen[2]={0},waterChanged=0;unsigned char native[128],colored[128],expected[128],water[960],firstWater[960];
+    unsigned char guards[64],afterGuards[64];
+    uint32_t vram=0x06000000,bloom=vram+616*32,data=symbol("gAtlasBloomAnimFrames");
+    bytes(bloom-32,guards,32);bytes(bloom+256,guards+32,32);bytes(vram+432*32,firstWater,sizeof(firstWater));
+    for(unsigned tick=0;tick<80;tick++)
+    {
+        bytes(vram+508*32,native,sizeof(native));
+        for(unsigned i=0;i<128;i++)expected[i]=remap[native[i]&15]|(remap[native[i]>>4]<<4);
+        bytes(bloom,colored,128);assert(!memcmp(colored,expected,128));
+        unsigned frame=3;
+        for(unsigned i=0;i<3;i++){unsigned char candidate[128];bytes(data+i*128,candidate,128);if(!memcmp(candidate,colored,128))frame=i;}
+        assert(frame<3);seen[0]|=1u<<frame;
+        unsigned partner=frame==1?2:frame==2?1:0;
+        bytes(data+partner*128,expected,128);bytes(bloom+128,colored,128);assert(!memcmp(expected,colored,128));seen[1]|=1u<<partner;
+        bytes(vram+432*32,water,sizeof(water));waterChanged|=memcmp(water,firstWater,sizeof(water))!=0;
+        bytes(bloom-32,afterGuards,32);bytes(bloom+256,afterGuards+32,32);assert(!memcmp(guards,afterGuards,64));
+        if(tick<64 && tick%8==0){char path[96];snprintf(path,sizeof(path),"build/atlas-emulator/blooms-live-%u-%u.ppm",type,tick/8);shot(path);}
+        frames(0,1);
+    }
+    assert(seen[0]==7 && seen[1]==7 && waterChanged);
+    printf("PASS native bloom animation: 80 live frames, all three native poses, opposite mirrored phases, continuing water animation and untouched adjacent glyphs\n");
+}
+
 static void shoreTour(uint32_t savePointer,unsigned focus)
 {
     uint32_t main=symbol("gMain"),geo=symbol("GeoMenu_Run"),choice=symbol("sGeoChoice");
     uint32_t cursor=symbol("sStartMenuCursorPos"),status=symbol("gAtlasGeoStatus");
     unsigned completed=0;
-    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36};
+    static const unsigned targets[]={2,3,4,16,17,1,7,8,9,18,18,19,5,20,11,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38};
     for (unsigned visit=0;visit<sizeof(targets)/sizeof(targets[0]);visit++)
     {
         unsigned type=targets[visit];
-        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31) || (focus==8 && type!=5 && type!=26 && type!=30) || (focus==9 && type!=32) || (focus==10 && type!=33 && type!=34) || (focus==11 && type!=2) || (focus==12 && type!=35) || (focus==13 && type!=3 && type!=11 && type!=20) || (focus==14 && type!=17) || (focus==15 && type!=36))continue;
+        if((focus==1 && type!=24 && type!=25) || (focus==2 && type!=26) || (focus==3 && type!=27) || (focus==4 && type!=28) || (focus==5 && type!=29) || (focus==6 && type!=30) || (focus==7 && type!=31) || (focus==8 && type!=5 && type!=26 && type!=30) || (focus==9 && type!=32) || (focus==10 && type!=33 && type!=34) || (focus==11 && type!=2) || (focus==12 && type!=35) || (focus==13 && type!=3 && type!=11 && type!=20) || (focus==14 && type!=17) || (focus==15 && type<36))continue;
         unsigned isShore=(type>=2 && type<=4) || type==20 || type==11 || type==22 || type==27 || type==35;
         press(8);
         for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
@@ -366,14 +394,14 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             printf("PASS native inspector L/R page wrap reaches flowering clearing directly\n");
             shot("build/atlas-emulator/blooms-inspector.ppm");
         }
-        for (unsigned i=0;core->busRead8(core,choice)!=type && i<37;i++) press(128);
+        for (unsigned i=0;core->busRead8(core,choice)!=type && i<39;i++) press(128);
         assert(core->busRead8(core,choice)==type);press(1);
         unsigned waited=0;
         for(unsigned retry=0;retry<3;retry++)
         {
             waited=0;
             while (core->busRead32(core,main+4)==(geo|1) && core->busRead8(core,status)<2 && waited++<6000) frames(0,1);
-            if(core->busRead8(core,status)!=2 || (type!=27 && type!=28 && type!=29 && type!=30 && type!=31 && type!=32 && type!=33 && type!=34 && type!=35) || retry==2)break;
+            if(core->busRead8(core,status)!=2 || (type!=27 && type!=28 && type!=29 && type!=30 && type!=31 && type!=32 && type!=33 && type!=34 && type!=35 && type<36) || retry==2)break;
             printf("NOTE inspector %u reached its bounded search limit; retrying the next cursor batch\n",type);
             frames(0,30);press(1);
         }
@@ -392,13 +420,14 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
         frames(0,300);actors();fieldWeather();
         if (reached)
         {
-            if(type==36)
+            if(type>=36 && type<=38)
             {
                 uint32_t map=core->busRead32(core,symbol("gBackupMapLayout")+8),player=core->busRead32(core,savePointer);
                 unsigned px=core->busRead16(core,player)+7,py=core->busRead16(core,player+2)+7,blooms=0;
-                unsigned target=core->busRead16(core,map+(py*35+px+2)*2)&1023;assert(target>=378 && target<382);
+                unsigned target=core->busRead16(core,map+(py*35+px+2)*2)&1023;assert(target>=378 && target<382);if(type==37)assert(target<380);if(type==38)assert(target>=380);
                 for(int dy=-4;dy<=4;dy++)for(int dx=-6;dx<=6;dx++)
                 {unsigned tile=core->busRead16(core,map+(((int)py+dy)*35+(int)px+dx)*2);if((tile&1023)>=378 && (tile&1023)<382){assert(!(tile&0xC00));blooms++;}}
+                bloomAnimation(type);
                 assert(blooms);printf("PASS native climate blooms: %u visible, adjacent role %u, safe landing\n",blooms,target);
             }
             else if (type==17)
@@ -552,9 +581,9 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             printf("PASS native local feature %u atlas completes in %u frames and leaves journal unchanged\n",type,painted);
             cachedCrossing(savePointer);
         }
-        if (type==17 || type==18 || type==11 || type==22 || type==36) cachedCrossing(savePointer);
+        if (type==17 || type==18 || type==11 || type==22 || (type>=36 && type<=38)) cachedCrossing(savePointer);
         if(type==24 || type==25 || type==29 || type==31)cachedCrossing(savePointer);
-        if(type==2 || type==3 || type==11 || type==17 || type==22 || type==23 || type==25 || type==26 || type==27 || type==28 || type==30 || type==31 || type==32 || type==33 || type==34 || type==35 || type==36)featureColdContinue(type);
+        if(type==2 || type==3 || type==11 || type==17 || type==22 || type==23 || type==25 || type==26 || type==27 || type==28 || type==30 || type==31 || type==32 || type==33 || type==34 || type==35 || (type>=36 && type<=38))featureColdContinue(type);
     }
     assert(!focus || completed);
 }
@@ -566,7 +595,7 @@ static void cancelGeoSearch(uint32_t savePointer)
     press(8);
     for (unsigned i=0;core->busRead8(core,cursor)!=3 && i<8;i++) press(128);
     assert(core->busRead8(core,cursor)==3);press(1);
-    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<37;i++) press(128);
+    for (unsigned i=0;core->busRead8(core,choice)!=17 && i<39;i++) press(128);
     assert(core->busRead8(core,choice)==17);press(1);
     if (core->busRead32(core,main+4)!=(geo|1)) {settle();printf("NOTE grove search completed before cancellation\n");return;}
     press(2);frames(0,30);
@@ -577,7 +606,7 @@ static void cancelGeoSearch(uint32_t savePointer)
 }
 static void featureColdContinue(unsigned type)
 {
-    const char *feature=type==36?"blooms":type==17?"forest":type==3?"river":type==11?"tributary":type==35?"distributary":type==2?"lake":type==22?"creek":type==23?"dune":type==25?"snow":type==27?"headwater":type==28?"coast":type==30?"karst":type==31?"snowline":type==32?"canyon":type==33?"backswamp":type==34?"levee":"mesa";
+    const char *feature=type==37?"purple-blooms":type==38?"gold-blooms":type==36?"blooms":type==17?"forest":type==3?"river":type==11?"tributary":type==35?"distributary":type==2?"lake":type==22?"creek":type==23?"dune":type==25?"snow":type==27?"headwater":type==28?"coast":type==30?"karst":type==31?"snowline":type==32?"canyon":type==33?"backswamp":type==34?"levee":"mesa";
     char label[80],path[120];
     unsigned char before[1456],after[1456];uint16_t tiles[117];
     uint32_t savePointer=symbol("gSaveBlock1Ptr"),journalPointer=symbol("gSaveBlock3Ptr");

@@ -604,10 +604,20 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Site density, protected cover and walkability are unchanged. Primary roles
   378–381 reuse native General 0x004 geometry and grass, reindexed to audited
   unused palette 10/11 entries 1–9. Cliff/snow entries 11–15 and UI palettes
-  13–15 stay intact. Four shared subtiles bring use to 108/512; the new variants
-  are static frames, while original native animated flower references remain.
+  13–15 stay intact. Two reserved four-tile strips bring use to 112/512. Three original General
+  flower animation frames are reindexed at compile time; mirrored plants run
+  half a cycle apart in the same 0,1,0,2 sequence. An Atlas-only General callback
+  retains the native water/shore/flower schedule and queues two 128-byte VBlank
+  transfers every sixteen frames, reusing the native counter/buffer. No animation
+  RAM is added. The strips are excluded from static deduplication and asset tests
+  reject other terrain references into their mutable glyph range. Host checks
+  compile the live callback bodies with a recording DMA adapter over all 256
+  counter values. Native checks observe 80 consecutive VRAM states per visit,
+  verify both phases against live native/ROM frames, keep adjacent glyphs intact
+  and confirm that water continues animating.
   Pixel-level asset tests verify leaf/grass colors and allocation separation.
-  Seventh-page Warm flowering clearing searches real final flower tiles and lands
+  Seventh-page Warm flowering clearing and separate purple/gold targets search
+  real final flower tiles and land
   two tiles west, with a safe 3x3 patch, keeping blooms visible beside the player.
   Search remains bounded/cancellable. L/R jumps inspector pages, wrapping and
   clamping the final partial page; arrows retain item navigation. Native QA checks

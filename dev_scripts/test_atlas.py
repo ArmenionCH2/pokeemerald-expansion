@@ -49,3 +49,6 @@ subprocess.run(['python3', str(R / 'tests/atlas/test_object_script.py')], cwd=R,
 subprocess.run(['python3', str(R / 'tests/atlas/test_native_assets.py')], cwd=R, check=True)
 
 subprocess.run(['python3', str(R / 'tests/atlas/test_emulator_lock.py')], cwd=R, check=True)
+
+if not selected or 'blooms' in selected:
+    subprocess.run(['python3', str(R / 'tests/atlas/test_bloom_animation.py')], cwd=R, check=True)

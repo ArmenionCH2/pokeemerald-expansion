@@ -114,6 +114,10 @@ Warm-climate bloom variants reclaim primary roles 378–381. They reindex the
 native General 0x004 flower frame into spare entries 1–9 of palettes 10/11,
 changing only its center/petal colors to purple or gold. Every leaf and grass
 pixel retains its native color. Existing cliff/snow entries 11–15 stay intact;
-UI palettes 13–15 are not used. Four deduplicated subtiles append after the
-104 existing graphics (108/512 total). These new color variants are static;
-the original native animated flower references remain unchanged.
+UI palettes 13–15 are not used. The initial four reindexed tiles now form two reserved four-tile animation
+strips (112/512 total). Three hashed native General flower frames are reindexed
+at compile time; mirrored plants use the opposite phase of the 0,1,0,2 cycle.
+The Atlas-only primary animation callback retains General's original scheduling
+and queues two 128-byte VBlank transfers every sixteen frames. Native water,
+shore and flower references remain unchanged. No new runtime animation counter
+or buffer is allocated; other tilesets retain their own callbacks.

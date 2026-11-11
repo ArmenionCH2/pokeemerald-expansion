@@ -6,6 +6,7 @@
 #include "task.h"
 #include "battle_transition.h"
 #include "fieldmap.h"
+#include "atlas_tiles.h"
 
 static EWRAM_DATA struct {
     const u16 *src;
@@ -653,6 +654,28 @@ static void QueueAnimTiles_General_Flower(u16 timer)
 {
     u16 i = timer % ARRAY_COUNT(gTilesetAnims_General_Flower);
     AppendTilesetAnimToBuffer(gTilesetAnims_General_Flower[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(508)), 4 * TILE_SIZE_4BPP);
+}
+
+/* Atlas keeps General's water/shore/flower schedule intact. Two reserved
+ * strips receive bounded VBlank DMAs, with mirrored plants half a cycle apart. */
+static void TilesetAnim_AtlasGeneral(u16 timer)
+{
+    static const u8 sequence[]={0,1,0,2};
+    TilesetAnim_General(timer);
+    if(timer%16==0)
+    {
+        for(unsigned strip=0;strip<2;strip++)
+        {
+            unsigned frame=sequence[(timer/16+strip*2)%ARRAY_COUNT(sequence)];
+            AppendTilesetAnimToBuffer((const u16 *)(gAtlasBloomAnimFrames+frame*32),
+                (u16 *)(BG_VRAM+TILE_OFFSET_4BPP(ATLAS_BLOOM_TILE_FIRST+strip*4)),4*TILE_SIZE_4BPP);
+        }
+    }
+}
+void InitTilesetAnim_AtlasGeneral(void)
+{
+    InitTilesetAnim_General();
+    sPrimaryTilesetAnimCallback=TilesetAnim_AtlasGeneral;
 }
 
 static void QueueAnimTiles_General_Water(u16 timer)

@@ -46,6 +46,23 @@ pals=array('gAtlasNaturePalettes')
 # blossoms change only the native petal/center colors; grass and leaves match.
 native_tiles=Image.open(R/'data/tilesets/primary/general/tiles.png')
 raw=b''.join(struct.pack('<I',n) for n in array('gAtlasNatureTiles'))
+frames=b''.join(struct.pack('<I',n) for n in array('gAtlasBloomAnimFrames'))
+assert len(frames)==384 and frames[:128]==raw[104*32:108*32]==raw[108*32:112*32]
+lookup={index:i for i,index in enumerate([2,3,4,9,11,12,13,14,15],1)}
+for frame in range(3):
+    im=Image.open(R/f'data/tilesets/primary/general/anim/flower/{frame}.png');expected=bytearray()
+    for q in range(4):
+        values=[lookup[im.getpixel(((q%2)*8+x,(q//2)*8+y))] for y in range(8) for x in range(8)]
+        expected.extend(values[i]|values[i+1]<<4 for i in range(0,64,2))
+    assert frames[frame*128:(frame+1)*128]==bytes(expected)
+assert len({frames[i*128:(i+1)*128] for i in range(3)})==3
+for role in range(512):
+    if 378<=role<382:continue
+    assert all(not 616<=(w&1023)<624 for w in primary[role*8:(role+1)*8])
+assert all(not 616<=(w&1023)<624 for w in metatiles)
+headers=(R/'src/data/tilesets/headers.h').read_text()
+assert '.callback = InitTilesetAnim_AtlasGeneral' in re.search(r'gTileset_AtlasPrimary\s*=\s*\{(.*?)\};',headers,re.S)[1]
+
 def index_at(w,x,y):
     tile=w&1023;x=7-x if w&1024 else x;y=7-y if w&2048 else y
     if tile<512:return native_tiles.getpixel(((tile%16)*8+x,(tile//16)*8+y))

@@ -22,9 +22,12 @@
     "data/tilesets/primary/general/palettes/15.pal": "1579046ed0c59dcfa931c6d4b181f363f714dd2127fc04f960f74be95287195b",
     "data/tilesets/secondary/cave/tiles.png": "bcffd7ad24c8acb328cee23598dca4dadeb527299c76565e6a9d939e25e40c76",
     "data/tilesets/secondary/cave/metatiles.bin": "fca8629264b6ff2324224864ed98d929cc5a93213a5a512a3798d144470e022b",
-    "data/tilesets/secondary/cave/palettes/06.pal": "f0205efcdd74ead5efd49e4c6b3559cff92ade3010bce19a26882d0dd021867b"
+    "data/tilesets/secondary/cave/palettes/06.pal": "f0205efcdd74ead5efd49e4c6b3559cff92ade3010bce19a26882d0dd021867b",
+    "data/tilesets/primary/general/anim/flower/0.png": "c033e523bb99488b27561957185cf0413a744ce4c994df9cec20f43367639143",
+    "data/tilesets/primary/general/anim/flower/1.png": "3423723ca6d73e793c8c62bb6d500b21a22533dc5cadb769571f3aad8033c300",
+    "data/tilesets/primary/general/anim/flower/2.png": "0bacd2807bd601c49a817090e40cef95ee0865b8be8c75712cc4422a8e194525"
   },
-  "raw_tiles": 108,
+  "raw_tiles": 112,
   "metatiles": 512,
   "families": [
     {
@@ -168,7 +171,7 @@
       "first": 378,
       "count": 4,
       "role": "primary_climate_blooms",
-      "source": "General 0x004 static flower frame; reindexed purple/gold palettes, native geometry"
+      "source": "General 0x004/flower animation; shared reindexed purple/gold glyph strip"
     },
     {
       "first": 482,
@@ -180,5 +183,23 @@
       "count": 15,
       "role": "primary_snow_ground_edges"
     }
-  ]
+  ],
+  "animations": {
+    "blooms": {
+      "first_tile": 616,
+      "tiles": 8,
+      "frames": 3,
+      "sequence": [
+        0,
+        1,
+        0,
+        2
+      ],
+      "phase_offsets": [
+        0,
+        2
+      ],
+      "period_frames": 16
+    }
+  }
 }

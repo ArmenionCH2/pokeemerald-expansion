@@ -23,6 +23,7 @@ EWRAM_DATA static bool8 sInitialized = 0;
 EWRAM_DATA static u8 sSceneAt = 0, sSceneWalls = 0, sSceneTarget = 0;
 static s32 Abs(s32 n){return n<0?-n:n;}
 static s32 Wrap(s32 x){x%=ATLAS_WORLD_WIDTH;return x<0?x+ATLAS_WORLD_WIDTH:x;}
+static bool8 BloomTarget(void){return sType>=ATLAS_GEO_BLOOMS && sType<=ATLAS_GEO_GOLD_BLOOMS;}
 static bool8 WetPlain(void){return sType==ATLAS_GEO_BACKSWAMP || sType==ATLAS_GEO_LEVEE;}
 static bool8 MouthTarget(void){return sType==ATLAS_GEO_MOUTH || sType==ATLAS_GEO_ESTUARY;}
 static bool8 ReliefTarget(void){return sType==ATLAS_GEO_MOUNTAIN || sType==ATLAS_GEO_RIDGE || sType==ATLAS_GEO_FOOTHILLS;}
@@ -127,11 +128,13 @@ static bool8 Candidate(u16 id)
         s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         return AtlasDune_Envelope(x,y,&plan)>=64;
     }
-    if(sType==ATLAS_GEO_BLOOMS)
+    if(BloomTarget())
     {
         struct AtlasHabitat h;s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&h);
-        return n->height>=ATLAS_PLAN_SEA && n->height<170 && h.temperature>=145 && h.moisture>=95;
+        return n->height>=ATLAS_PLAN_SEA && n->height<170 && h.temperature>=145 && h.moisture>=95
+            && (sType!=ATLAS_GEO_PURPLE_BLOOMS || (h.temperature>=150 && h.moisture>=145))
+            && (sType!=ATLAS_GEO_GOLD_BLOOMS || h.moisture<170);
     }
     if(sType==ATLAS_GEO_DISTRIBUTARY)return AtlasWater_IsEstuary(id);
     if(WetPlain())return n->height>=125 && n->height<=155 && n->rain>=96 && n->humidity>=80
@@ -597,10 +600,12 @@ u8 AtlasGeo_Step(void)
         x=sCX+((s32)(sTrial%16)-8)*8;y=sCY+((s32)(sTrial/16)-8)*8;
         if (!Warm(x,y)) return 0;
         sTrial++;AtlasTerrain_Sample(x,y,&c);
-        if(sType==ATLAS_GEO_BLOOMS)
+        if(BloomTarget())
         {
             u16 id=AtlasTerrain_Tile(x,y)&1023;
             if(c.waterform || id<ATLAS_WARM_FLOWER_FIRST || id>=ATLAS_WARM_FLOWER_FIRST+ATLAS_WARM_FLOWER_COUNT)return 0;
+            if(sType==ATLAS_GEO_PURPLE_BLOOMS && id>=ATLAS_WARM_FLOWER_FIRST+2)return 0;
+            if(sType==ATLAS_GEO_GOLD_BLOOMS && id<ATLAS_WARM_FLOWER_FIRST+2)return 0;
             sLX=x-2;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
         }
         u8 target=sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
