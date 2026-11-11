@@ -34,10 +34,10 @@ for i in range(47):
     assert primary_attrs[128+i]==0x1021
 assert all(primary_attrs[i]==0x1000 for first in [192,224] for i in range(first,first+31))
 for variant in range(2):
-    words=list(native[0x193*8:0x194*8]);h=variant;v=0
+    words=list(native[0x1EC*8:0x1ED*8]);h=variant;v=0
     expected=[words[(i//4)*4+((i%4)^h^(v*2))]^(1024 if h else 0)^(2048 if v else 0) for i in range(8)]
     assert primary[(367+variant)*8:(368+variant)*8]==expected
-    assert primary_attrs[367+variant]==0x1000
+    assert primary_attrs[367+variant]==native_attrs[0x1EC]==0x0000
 assert all(primary_attrs[i]==0x2000 for i in range(369,378))
 assert all(primary_attrs[i]==0x1000 for i in range(378,382))
 for role,original,behavior in [(382,0xA1,0x1010),(383,0x170,0x1015)]:
@@ -48,6 +48,35 @@ for role,original,behavior in [(382,0xA1,0x1010),(383,0x170,0x1015)]:
     assert any((w&1023)>=624 for w in words[4:])
 assert all(primary[i*8:i*8+4]==list(native[8:12]) for i in range(369,378))
 assert any((w&1023)>=512+79 for w in primary[369*8:378*8])
+# Preserve opaque native wall faces on both layers. Replacing every bottom
+# quadrant with floor art used to erase these faces from rock/sand variants.
+preserved_wall_bases=0
+for i in range(47):
+    original_wall=metatiles[(924-512+i)*8:(925-512+i)*8]
+    for first,bank,floor_words in [(384,8,primary[431*8:432*8]),(435,7,list(native[0x124*8:0x125*8]))]:
+        words=primary[(first+i)*8:(first+i+1)*8]
+        for q,w in enumerate(original_wall):
+            expected=floor_words[q] if q<4 and w>>12==2 else (w&4095)|((bank if w>>12==3 else w>>12)<<12)
+            assert words[q]==expected
+            if q<4 and w>>12==3:preserved_wall_bases+=1
+assert preserved_wall_bases>0
+
+# The land and underwater plant share leaves, not their ground backgrounds.
+assert primary[367*8+4:368*8]==list(native[0x193*8+4:0x194*8])
+assert all(w>>12==2 for w in primary[367*8:367*8+4])
+# Ordinary concave wall quadrants, never the 0x95..0x97 jump-ledge variants.
+canonical_masks=sorted({(m&15)|sum((1<<(i+4)) if m&(1<<(i+4)) and m&(1<<a) and m&(1<<b) else 0 for i,(a,b) in enumerate([(0,1),(1,2),(2,3),(3,0)])) for m in range(256)})
+for index,mask in enumerate(canonical_masks):
+    for q,(a,b,d) in enumerate([(0,3,3),(0,1,0),(2,3,2),(2,1,1)]):
+        if not(mask&(1<<a) and mask&(1<<b)) or mask&(1<<(d+4)):continue
+        corner_source=(0x6E if q%2==0 else 0x6F)*8+(7 if q%2==0 else 6)
+        expected=native[corner_source]^1024^(2048 if q<2 else 0)
+        words=metatiles[(924-512+index)*8:(925-512+index)*8]
+        assert words[q]==native[8+q] and words[q+4]==expected
+        snow=metatiles[(971-512+index)*8:(972-512+index)*8]
+        assert snow[q]==(native[8+q]&4095)|6<<12
+        assert snow[q+4]==(expected&4095)|9<<12
+
 # The only newly used palette belongs to rock/sand edges. Existing terrain and
 # native animation references retain all original palette words.
 assert not any(w>>12==12 for w in metatiles)
@@ -157,7 +186,7 @@ assert all(primary_attrs[i]==0x1000 for i in range(482,512))
 assert (R/'data/layouts/layouts.json').read_text().count('gTileset_AtlasPrimary')==1
 for role,original in [(888,1),(892,0x124),(558,0xA1),(746,0x170),(1022,4),(900,0x15)]:
     assert metatiles[(role-512)*8:(role-511)*8]==list(native[original*8:(original+1)*8])
-assert attrs[900-512]&255==2
+assert attrs[900-512]&255==7
 for role in [887,*range(901,915)]:
     assert attrs[role-512]==attrs[892-512]==0x1021
 assert any((w&1023)!=0 for w in metatiles[(887-512)*8:(888-512)*8])

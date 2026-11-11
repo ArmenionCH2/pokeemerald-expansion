@@ -181,7 +181,7 @@
       "first": 367,
       "count": 2,
       "role": "primary_leafy_undergrowth",
-      "source": "General 0x193; hardware flips, normal walkable ground"
+      "source": "General 0x1EC land plant; hardware flips, native NORMAL foreground and walkable ground"
     },
     {
       "first": 369,

@@ -40,7 +40,9 @@ def meta(n):return list(native[n*8:n*8+8])
 def flip(words,h=False,v=False):
  return [words[(i//4)*4+((i%4)^int(bool(h))^int(bool(v))*2)]^(1024 if h else 0)^(2048 if v else 0) for i in range(8)]
 def remap(words,changes):return [(w&4095)|(changes.get(w>>12,w>>12)<<12) for w in words]
-def add(name,words,behavior=0,layer=1,source=None):
+LAYER_COVERED=1 # global.fieldmap.h: bottom + middle backgrounds
+LAYER_SPLIT=2   # bottom + top; foliage covers actors
+def add(name,words,behavior=0,layer=LAYER_COVERED,source=None):
  assert len(words)==8
  definitions.extend(words);attrs.append((layer<<12)|behavior)
  roles.append(dict(id=511+len(attrs),role=name,source=source))
@@ -94,7 +96,7 @@ for sea in range(2):
    else:add(f'{"ocean" if sea else "freshwater"}_{material}_{mask:02x}',water(mask,sea,material),0x15 if sea else 0x10,source='General pond/ocean 0xA1/0x170 and 0xB0..0xC2 bank quarters')
 for ground,n,changes,behavior in [('grass',1,{},0),('sand',0x124,{},0x21),('snow',1,{2:6},0)]:
  for variant in range(4):add(f'{ground}_{variant}',remap(flip(meta(n),variant&1,variant&2),changes),behavior,source=n)
-add('marsh_ground_cover',meta(0x15),behavior=2,source='General 0x15 long-grass art, retaining existing short-grass behavior')
+add('marsh_ground_cover',meta(0x15),behavior=7,source='General 0x15 long-grass art with MB_SHORT_GRASS; normal running/cycling, no tall-grass encounters')
 for mask in range(14):add(f'sand_ground_edge_{mask:01x}',sand_edge(mask),behavior=0x21,source='General 0x118..0x12A grass/sand quarters, cardinal topology')
 # Adapt one native two-column tree to Atlas's existing 3x3 collision footprint.
 # Ground colors become transparent so the unscaled native ground remains below.
@@ -114,17 +116,24 @@ def subtile(im,bank):
 for y in range(3):
  for x in range(3):
   top=[subtile(tree.crop((x*16+(q%2)*8,y*16+(q//2)*8,x*16+(q%2)*8+8,y*16+(q//2)*8+8)),2) for q in range(4)]
-  add(f'tree_{x}_{y}',meta(1)[:4]+top,layer=2,source='General 0x1D4/1D5/1E4/1E5; footprint-preserving nearest scaling')
+  add(f'tree_{x}_{y}',meta(1)[:4]+top,layer=LAYER_SPLIT,source='General 0x1D4/1D5/1E4/1E5; footprint-preserving nearest scaling')
 def mountain(mask,snow):
  words=[0]*8
  for q,(a,b,d) in enumerate(corners):
   k=kind(mask,a,b,d)
-  n=1 if k==4 else [0x70,0x72,0x78,0x7A][q] if k==0 else [0x94,0x95,0x96,0x97][q] if k==3 else (0x71 if q<2 else 0x79) if k==1 else (0x78 if q%2==0 else 0x7A)
-  src=remap(meta(n),{2:6,3:9} if snow else {})
+  if k==3:
+   # A concave corner exposes one native rounded wall quadrant. The old
+   # 0x94..0x97 selection mixed opaque rock bases and directional jump ledges.
+   src=meta(1);corner=meta(0x6E if q%2==0 else 0x6F)[7 if q%2==0 else 6]
+   src[q+4]=corner^1024^(2048 if q<2 else 0)
+  else:
+   n=1 if k==4 else [0x70,0x72,0x78,0x7A][q] if k==0 else (0x71 if q<2 else 0x79) if k==1 else (0x78 if q%2==0 else 0x7A)
+   src=meta(n)
+  src=remap(src,{2:6,3:9} if snow else {})
   words[q]=src[q];words[q+4]=src[q+4]
  return words
 for snow in range(2):
- for mask in masks:add(f'mountain_{snow}_{mask:02x}',mountain(mask,snow),source='General rock wall quarters 0x70..0x97')
+ for mask in masks:add(f'mountain_{snow}_{mask:02x}',mountain(mask,snow),source='General ordinary wall quarters 0x6E/0x6F and 0x70..0x7A')
 # Reuse the original water-rock foreground as small walkable surface pebbles.
 # Mask its blue water fringe, then reduce it; never copy the water behavior.
 stone=render([0]*4+meta(0x13B)[4:])
@@ -165,18 +174,24 @@ primary_attrs=list(struct.unpack('<512H',(P/'metatile_attributes.bin').read_byte
 # A small native leafy shrub supplies walkable forest understory. Reclaim only
 # Atlas's spare primary roles; keep native subtiles, palettes and ground scale.
 for variant in range(2):
- primary[(367+variant)*8:(368+variant)*8]=flip(meta(0x193),variant,False)
- primary_attrs[367+variant]=0x1000
-for i,mask in enumerate(masks):
+ primary[(367+variant)*8:(368+variant)*8]=flip(meta(0x1EC),variant,False)
+ primary_attrs[367+variant]=0x0000 # Native NORMAL layer: leaves cover the actor feet.
+def material_mountain(mask,ground,wall_bank):
  words=mountain(mask,False)
- words=rock_floor[0][:4]+remap(words,{3:8})[4:]
+ # Rock walls carry opaque face texture in BOTH native layers. Only the
+ # palette-2 grass base is a replaceable floor; preserve palette-3 wall bases.
+ for q in range(4):
+  if words[q]>>12==2:words[q]=ground[q]
+ return remap(words,{3:wall_bank})
+for i,mask in enumerate(masks):
+ words=material_mountain(mask,rock_floor[0],8)
  primary[(384+i)*8:(385+i)*8]=words;primary_attrs[384+i]=0x1000
 for i,words in enumerate(rock_floor):
  primary[(431+i)*8:(432+i)*8]=words;primary_attrs[431+i]=0x1000
 # Walkable sand ridge faces reuse General wall quarters and native sand ground.
 # Their map collision remains clear; no original cliff behavior is imported.
 for i,mask in enumerate(masks):
- words=meta(0x124)[:4]+remap(mountain(mask,False),{3:7})[4:]
+ words=material_mountain(mask,meta(0x124),7)
  primary[(435+i)*8:(436+i)*8]=words;primary_attrs[435+i]=0x1021
 # Ground transitions preserve native rounded sand-edge geometry. Only the
 # material colors change; fully interior quarters keep the actual floor art.
@@ -352,7 +367,7 @@ families += [dict(first=256,count=31,role='primary_sand_inner_edges',source='Gen
 families += [dict(first=322,count=15,role='primary_snow_sand_edges')]
 families += [dict(first=337,count=15,role='primary_rock_snow_edges')]
 families += [dict(first=352,count=15,role='primary_rock_sand_edges')]
-families += [dict(first=367,count=2,role='primary_leafy_undergrowth',source='General 0x193; hardware flips, normal walkable ground')]
+families += [dict(first=367,count=2,role='primary_leafy_undergrowth',source='General 0x1EC land plant; hardware flips, native NORMAL foreground and walkable ground')]
 families += [dict(first=369,count=9,role='primary_alternate_broadleaf',source='General 0x1D6/1D7/1E6/1E7; existing 3x3 footprint and canopy layer')]
 families += [dict(first=378,count=4,role='primary_climate_blooms',source='General 0x004/flower animation; shared reindexed purple/gold glyph strip')]
 families += [dict(first=382,count=2,role='primary_surface_ice',source='General 0x13B silhouette, derived snow palette and native lake/sea water')]

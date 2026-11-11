@@ -23,7 +23,7 @@ water fringe is masked and its original water behavior is not copied; these
 details remain walkable ground.
 
 Wetland ground cover uses original long-grass graphics from metatile 0x15 while
-retaining Atlas's existing short/tall-grass behavior value 2. It does not import
+using MB_SHORT_GRASS (7), matching Atlas's normal traversal policy. It does not import
 the original long-grass movement restrictions. The previously unused catalogue
 slot 900 supplies this role; terrain and grove collision remain unchanged.
 Dry wetland cover also takes priority over the generic low-coast sand floor.
@@ -94,10 +94,12 @@ is made that every random world contains it or that a natural cold beach was
 visited in the native emulator. Existing green and rock junction priority stays.
 
 Walkable forest understory reclaims Atlas-only primary roles 367–368. These
-copy General's original leafy shrub metatile 0x193, using only a horizontal
+copy General's land-plant metatile 0x1EC (the original 0x193 choice
+was its ocean-background variant), using only a horizontal
 mirror for the second variant so its vertical lighting stays intact. Native
 graphic references and palettes remain unchanged; no new raw tiles are added.
-The adapter uses normal ground behavior/layer (0x1000), while terrain placement
+The adapter retains normal walking behavior and the native NORMAL foreground
+layer (0x0000), allowing leaves to cover actor feet, while terrain placement
 keeps tree footprints, tall grass and protected approaches intact. This is
 small ground-cover variety, not new palm/conifer artwork or canopy layering.
 
@@ -151,3 +153,18 @@ copying the established General-derived sand ridge quarters without new graphics
 or palette changes. Separate terrain IDs distinguish blocked hill slopes from
 walkable dune ridges. Previous Atlas output IDs never referenced these reclaimed
 native layout roles; other layouts retain the original General catalogue.
+
+Metatile-use audit: the plant's land background and native foreground priority
+replace the former ocean-backed 0x193 and covered-layer adaptation. Cliff inner
+quarters use ordinary wall corners 0x6E/0x6F with native hardware flips and a grass
+or material-appropriate base. The previous 0x94..0x97 selections mixed opaque rock
+bases with directional jump-ledge variants, leaving some concave faces absent.
+No original jump behavior is copied. Height fields, metatile IDs, map collision
+and elevation flags remain unchanged. Layer values are NORMAL=0, COVERED=1,
+SPLIT=2, as defined by global.fieldmap.h and implemented by field_camera.c.
+
+Rock and sand wall adaptation now preserves opaque native wall-face texture on
+both bottom and foreground layers. Only palette-2 grass base quarters are
+replaced by Cave rock or sand floors; palette-3 wall quarters on either layer
+are recolored in place. The former blanket bottom-layer replacement erased
+solid faces and made several collision walls look like flat floor strips.

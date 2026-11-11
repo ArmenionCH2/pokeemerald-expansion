@@ -22,7 +22,7 @@ groups = {
     ' '.join(world): ['terrain','plan','geo','stream','stream_wrap','ground_presentation','landing_repair','lake_inlets','confluences','connected_relief','foothills','ocean_generation','relief_generation','bank_generation','erosion_generation','bathymetry','island_generation','volcano','rock_ground','estuary_generation','small_network','floodplain_generation','creek_generation','dune_tiles','dune_generation','material_edges','rock_sand','rock_snow','snow_sand','mesa','headwater_generation','headwater_stream','coast_tiles','coast_generation','coast_stream','karst_stream','karst_search','karst','canyon','canyon_stream','wet_floodplain','wet_floodplain_stream','distributary','distributary_stream','frame_division','climate_transport','vegetation','undergrowth','blooms','ice','sand_corners','material_corners','low_hills','low_hills_water'],
     'habitat': ['habitat_equivalence'],
     'mountain tiles tiles_data': ['atlas_tiles'],
-    '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions','bank_profile','canyon_profile','wet_floodplain_profile','estuary_profile','floodplain_profile','creek_profile','creek_budget','headwater_budget','distributary_budget'],
+    '': ['stream_polar','stream_frontier_native','stream_poison_native','metatile_roles','water_equivalence','water_junctions','bank_profile','canyon_profile','wet_floodplain_profile','estuary_profile','floodplain_profile','creek_profile','creek_budget','headwater_budget','distributary_budget'],
     'plan climate': ['plan_cache_native'],
     ' '.join(world)+' place': ['lake_identity','river_identity'],
 }

@@ -56,6 +56,12 @@ contracts for a focused change; omit it for the complete suite. Native asset/scr
 contracts still run. New regressions should protect behavior
 or data integrity, not mirror source formatting. Use `git diff --check` before commit.
 
+Check an original metatile's graphic layers, behavior, layer type and actual map
+usage before adapting it. NORMAL=0 draws ground on BG2 and foreground on BG1;
+COVERED=1 draws on BG3/BG2; SPLIT=2 draws on BG3/BG1. Bounds and regeneration
+checks do not prove correct visual usage. The metatile-role contract compiles live
+engine behavior predicates; native forest QA checks foreground leaves over land.
+
 Regenerate art with `python3 dev_scripts/compile_atlas_native.py`; review the C,
 header and manifest diff. The PNG preview and detailed role index go to `build/atlas-native/`. Preserve original native inputs and credits. Do not add arbitrary art from other ROM hacks.
 
@@ -535,8 +541,8 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Ground presentation uses native floor details on high grass/snow and four
   sand variants. Sand behavior/layer matches the engine's original sand floor;
   these details preserve collision/elevation and require no new world version.
-  Wetland ground cover uses native long-grass artwork with the existing grass
-  behavior, preserving running/bicycle rules rather than importing new restrictions.
+  Wetland ground cover uses native long-grass artwork with MB_SHORT_GRASS (7),
+  avoiding tall-grass encounter/cut flags and long-grass movement restrictions, preserving running/bicycle rules rather than importing new restrictions.
   It takes priority over generic coast sand on dry wetland cells.
   Its prepared bank material is green as well, matching the ground floor.
   Sand/grass borders use eight-neighbor semantics and native sand quarters,
@@ -638,8 +644,10 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   families and checks actual movement/save reload. This is a crown variation,
   not new tree species, additional forest density or walk-under canopy collision.
   Warm, moist forest/jungle clearings additionally use two horizontally mirrored
-  leafy understory roles from General 0x193. Primary Atlas-only roles 367–368
-  retain native graphic/palette references and normal walkable ground behavior.
+  leafy understory roles from General 0x1EC, the land variant of the previously
+  selected ocean-backed plant 0x193. Primary Atlas-only roles 367–368
+  retain native graphic/palette references, normal walking behavior and the
+  native NORMAL foreground layer, so leaves correctly cover actor feet.
   Coordinate hashing selects sparse clumps, with denser cover in the existing
   96-tile cover field; variant bits are independent of the density bits. Only
   plain grass floors qualify, preserving complete grove proposals, tall grass,

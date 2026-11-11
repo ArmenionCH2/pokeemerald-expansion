@@ -3,6 +3,7 @@
 #include "atlas_plan.h"
 #include "atlas_tiles.h"
 #include "constants/metatile_labels.h"
+#include "constants/metatile_behaviors.h"
 #include <assert.h>
 #include <stdio.h>
 /* Frozen previous renderer: presentation must preserve every native collision
@@ -101,7 +102,7 @@ int main(void)
         assert((AtlasTerrain_BaseTile(i%64,(s32)(i/64)-8,&c,TRUE)&1023)!=ATLAS_NATURE_MARSH_GRASS);
     }
     assert(marsh>512 && marsh<768);
-    assert((gAtlasNatureAttributes[ATLAS_NATURE_MARSH_GRASS-512]&255)==2); // legacy tall-grass behavior retained
+    assert((gAtlasNatureAttributes[ATLAS_NATURE_MARSH_GRASS-512]&255)==MB_SHORT_GRASS); // Traversable wetland cover without tall-grass cut/encounter effects
     assert(tall&&shortCover);
     for(i=0;i<4;i++)
     {

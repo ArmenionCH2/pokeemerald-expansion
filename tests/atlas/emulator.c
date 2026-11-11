@@ -513,6 +513,18 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
                 unsigned px=core->busRead16(core,player)+7,py=core->busRead16(core,player+2)+7;
                 for(int dy=-4;dy<=4;dy++)for(int dx=-6;dx<=6;dx++)
                 {unsigned id=core->busRead16(core,map+(((int)py+dy)*35+(int)px+dx)*2)&1023;visibleUnderstory+=id>=367 && id<369;}
+                if(visibleUnderstory)
+                {
+                    uint32_t foreground=core->busRead32(core,symbol("gOverworldTilemapBuffer_Bg1"));
+                    uint32_t ground=core->busRead32(core,symbol("gOverworldTilemapBuffer_Bg2"));unsigned leaves=0;
+                    for(unsigned at=0;at<1024;at++)
+                    {
+                        unsigned word=core->busRead16(core,foreground+at*2);
+                        if(word!=0x2006 && word!=0x2007 && word!=0x2016 && word!=0x2416)continue;
+                        assert((core->busRead16(core,ground+at*2)>>12)==2);leaves++;
+                    }
+                    assert(leaves);printf("PASS native land understory: %u foreground leaf quadrants over grass, no ocean background\n",leaves);
+                }
                 assert(trees>=9);printf("PASS native visible complete forest groves: %u blocked tree tiles, %u walkable undergrowth tiles (%u visible), %u alternate canopy tiles\n",trees,understory,visibleUnderstory,alternateTrees);
             }
             else if (isShore || type==16)
