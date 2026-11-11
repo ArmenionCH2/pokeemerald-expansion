@@ -17,7 +17,7 @@ struct NoiseCache {
     u16 a, b, c, d;
     bool8 valid;
 };
-EWRAM_DATA static struct NoiseCache sNoise[12] = {{0}};
+EWRAM_DATA static struct NoiseCache sNoise[13] = {{0}};
 static EWRAM_DATA struct {
     s32 x0,x1,y0,y1,cx,cy;
     u16 node,radius;
@@ -34,7 +34,7 @@ void AtlasTerrain_SetSeed(u32 seed)
     AtlasTiles_Reset();
     AtlasPlan_ResetSample();
 }
-static const s32 sScales[12] = {2000000, 350000, 160000, 14000, 600000, 1200, 96, 128, 1024, 256, 80000, 20000};
+static const s32 sScales[13] = {2000000, 350000, 160000, 14000, 600000, 1200, 96, 128, 1024, 256, 80000, 20000, 32};
 s32 AtlasTerrain_FloorDiv(s32 n, s32 d)
 {
     s32 q = n / d;
@@ -395,6 +395,24 @@ u8 AtlasTerrain_RawHeight(s32 x,s32 y)
     if(e>132 && ridge>140)e+=(ridge-140)*(e-132)/150;
     return Clamp(e+(Noise(x,y,3)-128)/12);
 }
+/* Screen-scale positive relief on inland low ground. This same profile feeds
+ * hydrology's terrain fitting and the final playable cell; no render-only hill. */
+u8 AtlasTerrain_KnollRise(s32 x,s32 y,const struct AtlasPlanSample *plan,u8 ground)
+{
+    if(AtlasWorld_Generation()<27 || !plan || plan->lake || plan->height<=132
+     || plan->height>=160 || ground>=164)return 0;
+    x=Wrap(x);
+    if(ground!=Clamp(plan->height+(Noise(x,y,3)-128)/16))return 0;
+    s32 weight=plan->height-132,upper=160-plan->height;
+    if(weight>upper)weight=upper;
+    if(weight>8)weight=8;
+    s32 score=Noise(x,y,12)-104;
+    if(score<=0)return 0;
+    unsigned rise=score*weight/80;
+    if(rise>10)rise=10;
+    if(rise>164u-ground)rise=164u-ground;
+    return rise;
+}
 u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
 {
     x=Wrap(x);
@@ -409,6 +427,7 @@ u8 AtlasTerrain_GroundHeight(s32 x,s32 y,struct AtlasPlanSample *plan)
     if(!plan->lake && AtlasWorld_Generation()>=22)height=Clamp(height+AtlasCoast_Rise(x,y,plan,height));
     if(!plan->lake)height=Clamp(height+AtlasDune_Rise(x,y,plan));
     if(!plan->lake && AtlasWorld_Generation()>=23)height-=KarstCut(x,y,height);
+    height+=AtlasTerrain_KnollRise(x,y,plan,height);
     return height;
 }
 void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
@@ -419,7 +438,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
     struct AtlasBankProfile bank={0};
     bool8 coastalGround=TRUE;
     bool8 lakeBank=FALSE,dune=FALSE,mesaGround=FALSE,rockCoast=FALSE,karstGround=FALSE;
-    u8 duneRise=0;
+    u8 duneRise=0,knollRise=0;
     if (!cell) return;
     cell->valley = 255;
     x = Wrap(x);
@@ -441,6 +460,7 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         unsigned duneWeight=AtlasDune_Envelope(x,y,&plan);dune=duneWeight>0;
         if(dune){duneRise=DuneScore(x,y)*6*duneWeight/(254*128);e=Clamp(e+duneRise);}
         if(!plan.lake && AtlasWorld_Generation()>=23){unsigned cut=KarstCut(x,y,e);karstGround=cut>0;e-=cut;}
+        knollRise=AtlasTerrain_KnollRise(x,y,&plan,e);e+=knollRise;
         rain = Clamp(plan.rain + (Noise(x, y, 4) - 128) / 8); vapor = plan.humidity;
         if(AtlasWorld_Generation()>=9)
         {
@@ -496,6 +516,9 @@ void AtlasTerrain_Sample(s32 x, s32 y, struct AtlasCell *cell)
         if(bank.flood==ATLAS_BANK_BACKSWAMP && t>=85)cell->biome=ATLAS_WETLAND;
     }
     if(water==ATLAS_DRY && bank.canyon)cell->landform=ATLAS_CANYON;
+    if(knollRise>=3 && water==ATLAS_DRY && cell->valley==255 && !bank.wetness
+     && cell->biome!=ATLAS_DESERT && (cell->landform==ATLAS_PLAIN || cell->landform==ATLAS_HILL))
+        cell->landform=ATLAS_KNOLL;
 }
 
 u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCover)

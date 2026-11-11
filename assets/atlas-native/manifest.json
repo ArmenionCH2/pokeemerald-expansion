@@ -141,6 +141,12 @@
       "role": "primary_walkable_sand_ridges"
     },
     {
+      "first": 128,
+      "count": 47,
+      "role": "primary_lowland_sand_cliffs",
+      "source": "Native sand ridge quarters, separate blocking terrain roles"
+    },
+    {
       "first": 192,
       "count": 31,
       "role": "primary_rock_inner_edges"

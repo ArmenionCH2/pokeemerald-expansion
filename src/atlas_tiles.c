@@ -28,6 +28,8 @@ static u16 Describe(s32 x, s32 y, const struct AtlasCell *c, u16 *floor)
     u8 relief = AtlasMountain_Relief(x, y, c);
     *floor = AtlasTerrain_BaseTile(x, y, c, !!(relief & 0x80));
     u8 material=Material(c);
+    u16 id=*floor&1023;
+    if(AtlasWorld_Generation()>=27 && id>=ATLAS_NATURE_SAND_FIRST && id<ATLAS_NATURE_SAND_FIRST+4)material=1;
     if(c->biome!=ATLAS_TUNDRA && AtlasVolcano_Bare(x,y))material=2;
     return ((u16)c->elevation << 8) | relief | (material << 2) | c->waterform;
 }
@@ -148,13 +150,18 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
             return floor;
         }
         if (!tier) return Ground(floor,cells);
+        /* Ordinary mountain tier one cannot occur this low. Each new lowland
+         * hill keeps a southern ramp, so its contour cannot seal its summit. */
+        if(AtlasWorld_Generation()>=27 && tier==1 && (center>>8)<=164
+         && !(cells[7]&3) && !((cells[7]>>4)&7))return Ground(floor,cells);
         for (i = 0; i < 8; i++)
         {
             if (cells[neighbors[i]] & 3) return Ground(floor,cells);
             if (((cells[neighbors[i]] >> 4) & 7) >= tier) mask |= 1 << i;
         }
         if (mask == 255) return Ground(floor,cells);
-        u16 first=AtlasWorld_Generation()>=14 && ((center>>2)&3)==2?ATLAS_ROCK_CLIFF_FIRST
+        u16 first=AtlasWorld_Generation()>=27 && tier==1 && (center>>8)<=164 && ((center>>2)&3)==1?ATLAS_LOW_SAND_CLIFF_FIRST
+            :AtlasWorld_Generation()>=14 && ((center>>2)&3)==2?ATLAS_ROCK_CLIFF_FIRST
             :ATLAS_NATURE_MOUNTAIN_FIRST+(((center>>2)&3)==3?47:0);
         return PACK_METATILE(first+gAtlasNatureMaskIndex[mask])|PACK_COLLISION(1)|PACK_ELEVATION(3);
     }
@@ -180,7 +187,15 @@ static u16 Tree(s32 x,s32 y,u16 floor)
     u16 part=AtlasVegetation_Part(floor);
     x-=part%3;y-=part/3;
     for (i=0;i<9;i++) semantics[i]=AtlasTiles_Describe(x+(s32)(i%3),y+(s32)(i/3),&floors[i]);
-    return AtlasVegetation_Result(floor,AtlasVegetation_Valid(floors,semantics));
+    bool8 valid=AtlasVegetation_Valid(floors,semantics);
+    if(!valid && AtlasVegetation_HillFootprint(floors,semantics))
+    {
+        u16 halo[25],ignored;
+        for(s32 dy=-1;dy<=3;dy++)for(s32 dx=-1;dx<=3;dx++)
+            halo[(dy+1)*5+dx+1]=dx>=0 && dx<3 && dy>=0 && dy<3?semantics[dy*3+dx]:AtlasTiles_Describe(x+dx,y+dy,&ignored);
+        valid=AtlasVegetation_HillHalo(halo);
+    }
+    return AtlasVegetation_Result(floor,valid);
 }
 u16 AtlasTiles_At(s32 x, s32 y, const struct AtlasCell *center)
 {

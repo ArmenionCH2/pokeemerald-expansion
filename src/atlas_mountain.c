@@ -37,6 +37,7 @@ u8 AtlasMountain_Relief(s32 x,s32 y,const struct AtlasCell *c)
     if(c->valley==255 && AtlasVolcano_Sample(x,y,&volcano))return volcano.relief;
     struct AtlasMesa mesa;
     if(c->valley==255 && AtlasMesa_Sample(x,y,&mesa))return mesa.relief;
+    if(AtlasWorld_Generation()>=27 && c->landform==ATLAS_KNOLL)return 0x10;
     if(c->elevation<=155)return 0;
     if(c->valley==0)return 0x80;
     local=AtlasTerrain_ReliefNoise(x,y,FALSE);

@@ -40,7 +40,7 @@ static void CheckBoundaryAndInvalidInputs(void)
     cell.waterform = ATLAS_LAKE + 1;
     assert(!AtlasPokemon_Select(1, 1, 1, &cell, &a));
     cell.waterform = ATLAS_DRY;
-    cell.landform = ATLAS_LEVEE + 1;
+    cell.landform = ATLAS_KNOLL + 1;
     assert(!AtlasPokemon_Select(1, 1, 1, &cell, &a));
     cell.landform = ATLAS_PLAIN;
     unsigned duneSpawns=0;

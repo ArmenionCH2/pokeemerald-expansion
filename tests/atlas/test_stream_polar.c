@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include "../../src/atlas_stream.c"
 
+u16 AtlasWorld_Generation(void){return ATLAS_GENERATION_VERSION;}
+
 static u16 map[35 * 34];
 static unsigned descriptions, prewarms;
 

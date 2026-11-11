@@ -42,7 +42,9 @@ Generation 25 shapes humid lowland riverbanks into raised natural levees and
 lower, wetter backswamps, with native marsh cover and geographic inspection.
 Generation 26 adds terrain-checked coastal distributary channels beside suitable
 lowland river mouths, retaining their parent channel and flared estuary.
-Existing generation-3 through generation-25 worlds keep their original geography and walkability.
+Generation 27 adds screen-scale lowland hills, shared physical height variation,
+native slopes with southern ramps, and complete trees on safe raised hilltops.
+Existing generation-3 through generation-26 worlds keep their original geography and walkability.
 This repository is the development home: **ArmenionCH2/pokeemerald-expansion**.
 The full game vision is [FULL_PLAN.md](docs/atlas/FULL_PLAN.md). It includes goals
 beyond the current implementation; a successful build does not mean that vision
@@ -75,8 +77,8 @@ for inspecting native ground edges, islands for checking small landmasses, and
 dunes for checking actual sand relief. The fifth page locates rounded rock/grass
 and snow/grass ground borders, mesas, headwater creeks, sea cliffs and rounded rock/sand boundaries. The border artwork preserves terrain
 heights and walking collision. Mesas require generation 20 or newer; headwaters require 21 and sea cliffs 22. A sixth page finds karst sinkholes in generation 23 and rounded rock/snow boundaries. Its River canyon entry requires generation 24; Backswamp and Natural levee entries require generation 25.
-The sixth page also finds Coastal distributary channels in generation 26 worlds.
-A seventh page finds flowering clearings, including separate purple/gold targets, cold sea ice and diagonal sand/grass and rock/grass inner corners. Page eight finds snow/grass inner corners. L/R jumps between inspector pages.
+The sixth page also finds Coastal distributary channels in generation 26 or later worlds.
+A seventh page finds flowering clearings, including separate purple/gold targets, cold sea ice and diagonal sand/grass and rock/grass inner corners. Page eight finds snow/grass inner corners, lowland hills and wooded hills. Hills require a new generation-27 world. L/R jumps between inspector pages.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain. Rivers follow stable mainstem/tributary identities from the drainage graph.
 Connected equal-level lakes, individual mesas, sinkholes and volcanic cone/caldera complexes

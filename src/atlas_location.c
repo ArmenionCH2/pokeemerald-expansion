@@ -71,6 +71,7 @@ void AtlasLocation_Tick(void)
             else if(cell.landform==ATLAS_DUNE || cell.landform==ATLAS_DUNE_CREST)sPlace.kind=ATLAS_PLACE_DUNES;
             else if(AtlasWorld_Generation()>=17 && cell.valley==0 && cell.elevation<155 && cell.moisture>=132)
                 sPlace.kind=ATLAS_PLACE_FLOODPLAIN;
+            else if(cell.landform==ATLAS_KNOLL)sPlace.kind=ATLAS_PLACE_LOW_HILLS;
             else if (region==ATLAS_REGION_PLATEAU) sPlace.kind=ATLAS_PLACE_PLATEAU;
             else if (region==ATLAS_REGION_VALLEY) sPlace.kind=ATLAS_PLACE_VALLEY;
             else if (region==ATLAS_REGION_RIDGE) sPlace.kind=ATLAS_PLACE_RIDGE;

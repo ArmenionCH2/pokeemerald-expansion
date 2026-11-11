@@ -7,6 +7,8 @@
 #include <string.h>
 #include "../../src/atlas_stream.c"
 
+u16 AtlasWorld_Generation(void){return ATLAS_GENERATION_VERSION;}
+
 static u16 map[35 * 34];
 static unsigned row_descriptions[SIDE];
 static unsigned descriptions, attempts, failed;

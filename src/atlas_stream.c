@@ -78,7 +78,19 @@ static void Render(s32 x, s32 y)
             if (at<0 || !(sEntries[at]&SAMPLED)) return;
             floors[i]=sEntries[at]&0x3FFF;semantics[i]=sSemantics[at];
         }
-        entry=AtlasVegetation_Result(entry,AtlasVegetation_Valid(floors,semantics));
+        bool8 valid=AtlasVegetation_Valid(floors,semantics);
+        if(!valid && AtlasVegetation_HillFootprint(floors,semantics))
+        {
+            u16 halo[25];
+            for(s32 hy=-1;hy<=3;hy++)for(s32 hx=-1;hx<=3;hx++)
+            {
+                s32 at=Index(ax+hx,ay+hy);
+                if(at<0 || !(sEntries[at]&SAMPLED))return;
+                halo[(hy+1)*5+hx+1]=sSemantics[at];
+            }
+            valid=AtlasVegetation_HillHalo(halo);
+        }
+        entry=AtlasVegetation_Result(entry,valid);
         goto ready;
     }
     /* Material borders also read the prepared stencil. This adds no sampling;
@@ -258,7 +270,8 @@ void AtlasStream_Tick(s32 x,s32 y,s32 localX,s32 localY)
             if(!AtlasWater_Prewarm(wx,wy))continue;
             sSemantics[index]=AtlasTiles_Describe(wx,wy,&floor);
             sEntries[index]=floor|SAMPLED;
-            for(dy=-2;dy<=2;dy++)for(dx=-2;dx<=2;dx++)Render(wx+dx,wy+dy);
+            s32 reach=AtlasWorld_Generation()>=27?3:2;
+            for(dy=-reach;dy<=reach;dy++)for(dx=-reach;dx<=reach;dx++)Render(wx+dx,wy+dy);
         }
         Advance();
     }

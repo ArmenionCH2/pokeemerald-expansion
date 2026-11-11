@@ -1,5 +1,7 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
+#define ATLAS_LOW_SAND_CLIFF_FIRST 128
+#define ATLAS_LOW_SAND_CLIFF_COUNT 47
 #define ATLAS_ROCK_NOTCH_FIRST 192
 #define ATLAS_SNOW_NOTCH_FIRST 224
 #define ATLAS_GROUND_NOTCH_COUNT 31
@@ -71,7 +73,8 @@ static inline bool8 AtlasTiles_IsSandBorder(u16 id)
 }
 static inline bool8 AtlasTiles_IsCliff(u16 id)
 {
-    return (id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
+    return (id>=ATLAS_LOW_SAND_CLIFF_FIRST && id<ATLAS_LOW_SAND_CLIFF_FIRST+ATLAS_LOW_SAND_CLIFF_COUNT)
+        || (id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
         || (id>=ATLAS_ROCK_CLIFF_FIRST && id<ATLAS_ROCK_CLIFF_FIRST+47);
 }
 extern const u16 gAtlasPrimaryMetatiles[4096],gAtlasPrimaryAttributes[512];

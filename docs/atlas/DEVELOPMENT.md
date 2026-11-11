@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms`, `--tour ice`, `--tour corners` or `--tour material-corners`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms`, `--tour ice`, `--tour corners`, `--tour material-corners` or `--tour hills`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -427,8 +427,32 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Seven-seed tests check connected centerlines and unchanged macro notes; strict
   camera walks check streaming, with a one-query budget/rejection fixture.
   Native QA visits, labels, maps, cached crossings and cold save reloads cover the
-  actual feature. Use a new generation-26 world for these channels.
-  Existing versions 3 through 25 retain their original
+  actual feature. Use a generation-26 or newer world for these channels.
+  Generation 27 adds screen-scale lowland relief. A cached 32-tile noise field
+  supplies up to ten positive ordinal height units on inland macro heights
+  133–159, tapered toward the range ends and capped at absolute elevation 164.
+  Lake contexts, sea-level ground and terrain already modified by a special
+  uplift/cut are excluded. The same helper feeds hydrology's ground fitting and
+  final terrain sampling. Dry non-desert rises of at least three units outside
+  river-bank influence become Low hills. One native visual tier follows their
+  shape; southern ramps keep summits accessible. These are ordinal morphological
+  knolls, not calibrated metres, geology or a physical erosion model.
+  A 52-byte noise cache is added; macro notes, water-bank capacities, art glyphs
+  and journal size are unchanged. Sand slope roles 128–174 reuse existing sand
+  ridge art with separate blocking IDs, preserving walkable dunes. Generation-27
+  semantics now follow actual sand floors in savanna patches as well, so their
+  banks and slopes do not acquire a false grass fringe.
+  Complete groves may occupy low raised surfaces only when the full 3x3 crown and
+  its 5x5 semantic halo stay on the same low tier, with at most two height units
+  across the crown. Direct and streaming rendering share this validation. The
+  ring reads sampled semantics and revisits pending trees within radius three;
+  it performs no extra geography sampling for the halo. Cliff/ramp edges stay
+  clear; older generations retain the original flat-ground tree policy.
+  Eighth-page Lowland hills / ramps and Wooded lowland hills targets require safe
+  walking patches plus actual visible contours; the wooded target also requires
+  native trees in the camera. Both retain bounded yielding, Retry and cancel.
+  Only a new world uses these physical changes. Never retag a saved world.
+  Existing versions 3 through 26 retain their original
   algorithms, checksums and walkability. Never retag an existing world to add trees
   or upgrade terrain.
   Version 4 also labels connected ocean/sea components using a tagged existing

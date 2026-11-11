@@ -145,3 +145,9 @@ Cave rock or derived native snow floor quarters; every interior texture pixel is
 preserved. Graphics append after the sand corners (128/512 total). Native inputs,
 previous glyphs, palettes, animation strips, and other layouts remain unchanged.
 Each material keeps its original normal-ground behavior and movement flags.
+
+Generation-27 lowland sand slopes reclaim Atlas-only primary roles 128–174,
+copying the established General-derived sand ridge quarters without new graphics
+or palette changes. Separate terrain IDs distinguish blocked hill slopes from
+walkable dune ridges. Previous Atlas output IDs never referenced these reclaimed
+native layout roles; other layouts retain the original General catalogue.

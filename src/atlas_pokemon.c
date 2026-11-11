@@ -46,7 +46,7 @@ bool8 AtlasPokemon_Select(s32 x, s32 y, u32 seed, const struct AtlasCell *cell, 
     out->rarity = ATLAS_POKEMON_COMMON;
     if (cell == NULL || y < -ATLAS_WORLD_HALF_HEIGHT
      || y >= ATLAS_WORLD_HALF_HEIGHT || cell->biome > ATLAS_WETLAND
-     || cell->waterform > ATLAS_LAKE || cell->landform > ATLAS_LEVEE
+     || cell->waterform > ATLAS_LAKE || cell->landform > ATLAS_KNOLL
      || cell->waterform != ATLAS_DRY)
         return FALSE;
 

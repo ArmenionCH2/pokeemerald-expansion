@@ -29,6 +29,10 @@ int main(void)
     }
     assert(AtlasPlace_Identify(0, 0, &cell, &a));
     assert(a.landmass == 1 && a.basin == 37 && a.kind == ATLAS_PLACE_FOREST);
+    cell.landform=ATLAS_KNOLL;
+    assert(AtlasPlace_Identify(0,0,&cell,&b) && b.kind==ATLAS_PLACE_LOW_HILLS);
+    assert(AtlasPlace_Name(&b,2,name) && !strcmp(name,"Low hills"));
+    cell.landform=ATLAS_PLAIN;
     for (i = 0; i < 400; i++)
     {
         assert(AtlasPlace_Identify(i, 0, &cell, &b));

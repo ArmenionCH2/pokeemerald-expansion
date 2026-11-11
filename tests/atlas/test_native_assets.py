@@ -24,11 +24,14 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 192<=role<223 or 224<=role<255 or 256<=role<287 or 322<=role<512:continue
+    if 128<=role<175 or 192<=role<223 or 224<=role<255 or 256<=role<287 or 322<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
 assert all(primary_attrs[i]==0x1021 for i in range(256,287))
+for i in range(47):
+    assert primary[(128+i)*8:(129+i)*8]==primary[(435+i)*8:(436+i)*8]
+    assert primary_attrs[128+i]==0x1021
 assert all(primary_attrs[i]==0x1000 for first in [192,224] for i in range(first,first+31))
 for variant in range(2):
     words=list(native[0x193*8:0x194*8]);h=variant;v=0
