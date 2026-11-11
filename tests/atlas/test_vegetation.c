@@ -20,6 +20,9 @@ int main(void)
         semantics[i]=old;floors[i]=0x3001;assert(!AtlasVegetation_Valid(floors,semantics));
         floors[i]=0x3000|(ATLAS_NATURE_TREE_FIRST+i);
     }
+    for(i=0;i<9;i++)floors[i]=0x3000|(ATLAS_ALT_TREE_FIRST+i);
+    assert(AtlasVegetation_Valid(floors,semantics));
+    floors[4]=0x3000|(ATLAS_NATURE_TREE_FIRST+4);assert(!AtlasVegetation_Valid(floors,semantics));
     struct AtlasCell forest={0};forest.biome=ATLAS_FOREST;forest.elevation=140;forest.valley=255;
     AtlasWorld_SetGeneration(6);
     for (i=0;i<1000;i++) assert(!AtlasVegetation_IsTree(AtlasTerrain_BaseTile(i%100,i/100,&forest,FALSE)));
@@ -36,12 +39,12 @@ int main(void)
         if (AtlasVegetation_IsTree(floor)) proposals++;
         if (!AtlasVegetation_IsTree(tile)) continue;
         assert(tile&0x400);assert(!(semantic&0xF3));trees++;
-        unsigned part=(tile&1023)-ATLAS_NATURE_TREE_FIRST;
+        unsigned first=AtlasVegetation_First(tile),part=AtlasVegetation_Part(tile);
         s32 ax=x-(s32)(part%3),ay=y-(s32)(part/3);
         for (i=0;i<9;i++)
         {
             u16 other=AtlasTerrain_Tile(ax+(s32)(i%3),ay+(s32)(i/3));
-            assert((other&1023)==ATLAS_NATURE_TREE_FIRST+i && (other&0x400));
+            assert((other&1023)==first+i && (other&0x400));
         }
         s32 wx=x%ATLAS_WORLD_WIDTH;if(wx<0)wx+=ATLAS_WORLD_WIDTH;
         assert(wx%5!=4 && y-AtlasTerrain_FloorDiv(y,5)*5!=4);

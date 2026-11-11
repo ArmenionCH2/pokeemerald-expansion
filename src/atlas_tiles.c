@@ -159,7 +159,7 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
 static u16 Tree(s32 x,s32 y,u16 floor)
 {
     u16 floors[9],semantics[9];unsigned i;
-    u16 part=(floor&1023)-ATLAS_NATURE_TREE_FIRST;
+    u16 part=AtlasVegetation_Part(floor);
     x-=part%3;y-=part/3;
     for (i=0;i<9;i++) semantics[i]=AtlasTiles_Describe(x+(s32)(i%3),y+(s32)(i/3),&floors[i]);
     return AtlasVegetation_Result(floor,AtlasVegetation_Valid(floors,semantics));

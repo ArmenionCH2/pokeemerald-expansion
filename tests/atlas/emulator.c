@@ -388,23 +388,25 @@ static void shoreTour(uint32_t savePointer,unsigned focus)
             if (type==17)
             {
                 uint32_t map=core->busRead32(core,symbol("gBackupMapLayout")+8);
-                unsigned trees=0,understory=0,visibleUnderstory=0;
+                unsigned trees=0,alternateTrees=0,understory=0,visibleUnderstory=0;
                 for (unsigned at=0;at<1190;at++)
                 {
                     unsigned tile=core->busRead16(core,map+at*2),id=tile&1023;
                     if(id>=367 && id<369){assert(!(tile&0xC00));understory++;}
-                    if (id<915 || id>=924) continue;
+                    unsigned first=id>=369 && id<378?369:id>=915 && id<924?915:0;
+                    if(!first)continue;
+                    alternateTrees+=first==369;
                     trees++;assert(tile&0x400);
-                    int ax=(int)(at%35)-(int)((id-915)%3),ay=(int)(at/35)-(int)((id-915)/3);
+                    int ax=(int)(at%35)-(int)((id-first)%3),ay=(int)(at/35)-(int)((id-first)/3);
                     if (ax<0 || ay<0 || ax+2>=35 || ay+2>=34) continue;
                     for (unsigned part=0;part<9;part++)
-                        assert((core->busRead16(core,map+((ay+part/3)*35+ax+part%3)*2)&1023)==915+part);
+                        assert((core->busRead16(core,map+((ay+part/3)*35+ax+part%3)*2)&1023)==first+part);
                 }
                 uint32_t player=core->busRead32(core,savePointer);
                 unsigned px=core->busRead16(core,player)+7,py=core->busRead16(core,player+2)+7;
                 for(int dy=-4;dy<=4;dy++)for(int dx=-6;dx<=6;dx++)
                 {unsigned id=core->busRead16(core,map+(((int)py+dy)*35+(int)px+dx)*2)&1023;visibleUnderstory+=id>=367 && id<369;}
-                assert(trees>=9);printf("PASS native visible complete forest groves: %u blocked tree tiles, %u walkable undergrowth tiles (%u visible)\n",trees,understory,visibleUnderstory);
+                assert(trees>=9);printf("PASS native visible complete forest groves: %u blocked tree tiles, %u walkable undergrowth tiles (%u visible), %u alternate canopy tiles\n",trees,understory,visibleUnderstory,alternateTrees);
             }
             else if (isShore || type==16)
             {

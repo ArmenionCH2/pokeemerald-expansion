@@ -88,7 +88,7 @@ there is no runtime art conversion. Native terrain graphic usage is 68/512.
 Snow/sand boundaries reclaim Atlas-only primary roles 322–336. They use the
 same rounded native silhouette, native snow interiors and textured General sand
 outside. Eleven additional compiled subtiles use palette-12 entries 5–8 for sand,
-preserving all earlier 68 graphics exactly. Total graphic use is79/512. This is
+preserving all earlier 68 graphics exactly. This brought graphic use to 79/512 before the alternate canopy was added. This is
 renderer/asset support; controlled host terrain validates the rare pair. No claim
 is made that every random world contains it or that a natural cold beach was
 visited in the native emulator. Existing green and rock junction priority stays.
@@ -100,3 +100,12 @@ graphic references and palettes remain unchanged; no new raw tiles are added.
 The adapter uses normal ground behavior/layer (0x1000), while terrain placement
 keeps tree footprints, tall grass and protected approaches intact. This is
 small ground-cover variety, not new palm/conifer artwork or canopy layering.
+
+Alternate broadleaf crowns use General 0x1D6/0x1D7/0x1E6/0x1E7, with the same
+transparent-ground adapter and nearest scaling as the original 3x3 grove.
+Atlas-only primary roles 369–377 keep the original native palette and canopy
+layer. Twenty-five deduplicated subtiles are appended after the established
+79-tile bank (104/512 total); previous graphics and the secondary catalogue
+remain byte-identical. The shared grove hash chooses one whole family without
+moving its footprint. This is another native crown variant, not a new species,
+conifer/palm set, walk-under canopy system or extra runtime RAM allocation.

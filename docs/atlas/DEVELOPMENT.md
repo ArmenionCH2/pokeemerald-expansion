@@ -549,9 +549,10 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Green and rock/sand outlines keep priority at mixed junctions. A sixth-page
   Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
   Native QA checks visible edges, cached walking and cold save reload there.
-  Primary roles 369–383 remain untouched; roles 367–368 now supply leafy understory.
+  Primary roles 378–383 remain untouched; roles 367–368 supply leafy understory
+  and 369–377 supply the alternate broadleaf crown.
   Snow/sand boundaries additionally reclaim primary roles 322–336 and eleven
-  compiled subtiles, bringing current graphic use to 79/512. They retain actual
+  compiled subtiles, bringing graphic use to 79/512 before the alternate canopy. They retain actual
   snow interiors and textured native sand outside. Palette-12 entries 5–8 hold
   native sand shades; all first 68 graphic tiles remain byte-identical. Water,
   green and rock junctions retain their existing priority. A controlled coastal
@@ -571,6 +572,18 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   global route through pre-existing cliffs/water. Direct and ring rendering share
   footprint rules. The ring reads prepared semantics and retries within a two-tile
   radius as cells arrive; it adds no terrain query while rendering a grove.
+  Groves now choose between two native broadleaf crowns using one bit of their
+  existing shared hash. The alternative uses General 0x1D6/1D7/1E6/1E7 in primary
+  roles 369–377, with the same 3x3 footprint, ground and canopy layer. Direct and
+  streaming renderers recognize both families, derive the correct anchor and
+  reject mixed-family footprints. Density, gaps, terrain suitability and collision
+  remain unchanged. Twenty-five subtiles append to the established 79 graphics
+  (104/512 used), without a new palette, runtime RAM or secondary metatile slot.
+  Existing generation-7-and-newer trees gain visual variety; older no-tree rules
+  remain intact. Six frozen-build forest snapshots check identical destinations,
+  normalized tile words and collision/elevation; `--tour forests` counts both
+  families and checks actual movement/save reload. This is a crown variation,
+  not new tree species, additional forest density or walk-under canopy collision.
   Warm, moist forest/jungle clearings additionally use two horizontally mirrored
   leafy understory roles from General 0x193. Primary Atlas-only roles 367–368
   retain native graphic/palette references and normal walkable ground behavior.

@@ -80,6 +80,7 @@ The volcano entry finds dormant cones in generation 13 worlds. Physical location
 catchment and terrain. Rivers follow stable mainstem/tributary identities from the drainage graph.
 Connected equal-level lakes, individual mesas, sinkholes and volcanic cone/caldera complexes
 have seed-stable landmark names; regional plateau/valley/ridge descriptors use surrounding relief.
+Groves mix two native broadleaf crowns while retaining their tree footprints.
 Warm, moist forest clearings also contain walkable native leafy undergrowth.
 This visual update works on existing saves without regenerating their terrain.
 The exploration journal has a fixed save capacity and warns when space is low.

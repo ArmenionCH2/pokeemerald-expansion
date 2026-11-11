@@ -70,7 +70,7 @@ static void Render(s32 x, s32 y)
     center=sSemantics[index];
     if (AtlasVegetation_IsTree(entry))
     {
-        u16 floors[9],semantics[9],part=(entry&1023)-ATLAS_NATURE_TREE_FIRST;
+        u16 floors[9],semantics[9],part=AtlasVegetation_Part(entry);
         s32 ax=x-part%3,ay=y-part/3;
         for (i=0;i<9;i++)
         {

@@ -2,6 +2,7 @@
 #include "atlas_world.h"
 #include "atlas_plan.h"
 #include "atlas_tiles.h"
+#include "atlas_vegetation.h"
 #include <assert.h>
 #include <stdio.h>
 int main(void)
@@ -37,7 +38,7 @@ int main(void)
     {
         u16 id=AtlasTerrain_BaseTile(x,0,&cell,FALSE)&1023;
         assert(id<ATLAS_ROCK_FLOOR_FIRST || id>=ATLAS_ROCK_FLOOR_FIRST+4);
-        assert(id<ATLAS_NATURE_TREE_FIRST || id>=ATLAS_NATURE_TREE_FIRST+9);
+        assert(!AtlasVegetation_IsTree(id));
     }
     cell.moisture=70;cell.biome=ATLAS_DESERT;
     unsigned id=AtlasTerrain_BaseTile(0,0,&cell,FALSE)&1023;assert(id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4);

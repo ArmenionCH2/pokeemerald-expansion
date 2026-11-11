@@ -523,7 +523,7 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
         // Every fifth row/column stays free of groves. These remain natural
         // ground/cover, not artificial roads. Offsets vary between clearings.
         if ((grove>>8)%100<density && ox>=0 && ox<3 && oy>=0 && oy<3)
-            return PACK_METATILE(ATLAS_NATURE_TREE_FIRST+oy*3+ox)|PACK_ELEVATION(3);
+            return PACK_METATILE(((grove>>17)&1?ATLAS_ALT_TREE_FIRST:ATLAS_NATURE_TREE_FIRST)+oy*3+ox)|PACK_ELEVATION(3);
     }
     variant = (detail & 15) < 4 ? detail & 3 : 0;
     id = ATLAS_NATURE_GRASS_FIRST + variant;
