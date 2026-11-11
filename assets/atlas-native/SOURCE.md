@@ -121,3 +121,10 @@ The Atlas-only primary animation callback retains General's original scheduling
 and queues two 128-byte VBlank transfers every sixteen frames. Native water,
 shore and flower references remain unchanged. No new runtime animation counter
 or buffer is allocated; other tilesets retain their own callbacks.
+
+Cold-water fragments reclaim Atlas-only primary roles 382–383. The existing
+General 0x13B rock silhouette is reduced and recolored into the derived snow
+palette, then placed over unchanged native lake/sea water bottoms. Normal water
+behaviors remain 0x1010/0x1015. Eight static glyphs append after the reserved bloom
+animation strips (120/512 total); they never share mutable glyphs. These are sparse
+decorations, not walkable frozen water or new third-party artwork.

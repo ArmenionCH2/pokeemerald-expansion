@@ -24,7 +24,7 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 322<=role<382 or 384<=role<512:continue
+    if 322<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
@@ -35,6 +35,12 @@ for variant in range(2):
     assert primary_attrs[367+variant]==0x1000
 assert all(primary_attrs[i]==0x2000 for i in range(369,378))
 assert all(primary_attrs[i]==0x1000 for i in range(378,382))
+for role,original,behavior in [(382,0xA1,0x1010),(383,0x170,0x1015)]:
+    words=primary[role*8:(role+1)*8]
+    assert words[:4]==list(native[original*8:original*8+4])
+    assert primary_attrs[role]==behavior
+    assert all(w>>12==6 and ((w&1023)==512 or (w&1023)>=624) for w in words[4:])
+    assert any((w&1023)>=624 for w in words[4:])
 assert all(primary[i*8:i*8+4]==list(native[8:12]) for i in range(369,378))
 assert any((w&1023)>=512+79 for w in primary[369*8:378*8])
 # The only newly used palette belongs to rock/sand edges. Existing terrain and
@@ -46,6 +52,7 @@ pals=array('gAtlasNaturePalettes')
 # blossoms change only the native petal/center colors; grass and leaves match.
 native_tiles=Image.open(R/'data/tilesets/primary/general/tiles.png')
 raw=b''.join(struct.pack('<I',n) for n in array('gAtlasNatureTiles'))
+assert raw[:32]==bytes(32) # transparent quadrant shared by sparse overlays
 frames=b''.join(struct.pack('<I',n) for n in array('gAtlasBloomAnimFrames'))
 assert len(frames)==384 and frames[:128]==raw[104*32:108*32]==raw[108*32:112*32]
 lookup={index:i for i,index in enumerate([2,3,4,9,11,12,13,14,15],1)}
@@ -71,6 +78,12 @@ for role in range(512):
     if 378<=role<382:continue
     for w in primary[role*8:(role+1)*8]:
         if w>>12 in [10,11]:assert all(index_at(w,x,y)==0 or index_at(w,x,y)>=11 for y in range(8) for x in range(8))
+for role in [382,383]:
+    words=primary[role*8+4:(role+1)*8]
+    colors=[index_at(w,x,y) for w in words for y in range(8) for x in range(8)]
+    assert 50<=sum(bool(i) for i in colors)<=100 # solid fragments, not a hollow outline
+    assert len(set(colors)-{0})>=2
+
 def visible_color(words,x,y):
     q=(y//8)*2+x//8;color=0
     for w in [words[q],words[q+4]]:

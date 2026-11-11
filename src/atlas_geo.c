@@ -128,6 +128,13 @@ static bool8 Candidate(u16 id)
         s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         return AtlasDune_Envelope(x,y,&plan)>=64;
     }
+    if(sType==ATLAS_GEO_ICE_SHORE)
+    {
+        struct AtlasHabitat h;
+        s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        AtlasHabitat_Sample(y,ATLAS_PLAN_SEA,n->rain,n->humidity,ATLAS_SEA,&h);
+        return n->height>=ATLAS_PLAN_SEA && n->height<145 && h.temperature<65;
+    }
     if(BloomTarget())
     {
         struct AtlasHabitat h;s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
@@ -472,6 +479,7 @@ u8 AtlasGeo_Step(void)
             if(sType==ATLAS_GEO_DUNES){sTrial=0;sPhase=27;return 0;}
             if(sType==ATLAS_GEO_CREEK || sType==ATLAS_GEO_HEADWATER){sTrial=0;sPhase=25;return 0;}
             if(sType==ATLAS_GEO_FLOODPLAIN){sDirection=0;sPhase=1;return 0;}
+            if(sType==ATLAS_GEO_ICE_SHORE){sDirection=0;sPhase=1;return 0;}
             if (sType>=ATLAS_GEO_FOREST) {sTrial=0;sPhase=17;return 0;}
             sDirection=0;sPhase=1;return 0;
         }
@@ -495,6 +503,17 @@ u8 AtlasGeo_Step(void)
         AtlasTerrain_Sample(sCX,sCY,&c);
         if(c.waterform!=ATLAS_RIVER){sPhase=0;return 0;}
         sDirection=0;Direction();return 0;
+    }
+    if(sPhase==45)
+    {
+        /* Require an actual fragment inside the player's camera, not merely
+         * a cold macro cell. Inspect one prepared point per update. */
+        x=sLX+(s32)(sSceneAt%11)-5;y=sLY+(s32)(sSceneAt/11)-3;
+        if(!ReadyPoint(x,y))return 0;
+        if((AtlasTerrain_Tile(x,y)&1023)==ATLAS_ICE_SEA){sPhase=9;return 0;}
+        if(++sSceneAt<77)return 0;
+        if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;
+        return 0;
     }
     if(sPhase==14)
     {
@@ -551,7 +570,7 @@ u8 AtlasGeo_Step(void)
             if(c.waterform){sPhase=0;return 0;}
             sLX=sCX;sLY=sCY;sCheck=0;sAttempt=0;sPhase=4;return 0;
         }
-        if(sType==ATLAS_GEO_COAST)
+        if(sType==ATLAS_GEO_COAST || sType==ATLAS_GEO_ICE_SHORE)
         {
             /* Search for a sea edge around this low coastal candidate. */
             if(c.waterform){sPhase=0;return 0;}
@@ -585,7 +604,7 @@ u8 AtlasGeo_Step(void)
     {
         if(Abs(sDX-sWX)+Abs(sDY-sWY)<=1)
         {
-            s32 offset=sType==ATLAS_GEO_FLOODPLAIN?40:(MouthTarget() || sType==ATLAS_GEO_SEA_CLIFF || sType==ATLAS_GEO_DISTRIBUTARY)?2:4;
+            s32 offset=sType==ATLAS_GEO_ICE_SHORE?1:sType==ATLAS_GEO_FLOODPLAIN?40:(MouthTarget() || sType==ATLAS_GEO_SEA_CLIFF || sType==ATLAS_GEO_DISTRIBUTARY)?2:4;
             sLX=sDX+(sDX>sWX?offset:sDX<sWX?-offset:0);sLY=sDY+(sDY>sWY?offset:sDY<sWY?-offset:0);
             sCheck=0;sAttempt=0;sPhase=4;return 0;
         }
@@ -707,6 +726,8 @@ u8 AtlasGeo_Step(void)
         if(sType==ATLAS_GEO_CREEK || sType==ATLAS_GEO_HEADWATER){sPhase=25;return 0;}
         if(sType==ATLAS_GEO_FLOODPLAIN)
         {if(++sDirection<4)Direction();else sPhase=0;return 0;}
+        if(sType==ATLAS_GEO_ICE_SHORE)
+        {if(++sDirection<4){Direction();sPhase=5;}else sPhase=0;return 0;}
         if (sType>=ATLAS_GEO_FOREST) {sPhase=17;return 0;}
         if(++sAttempt<4 && sType!=ATLAS_GEO_LAND && !ReliefTarget())
         {sLX+=sDX>sWX?3:sDX<sWX?-3:0;sLY+=sDY>sWY?3:sDY<sWY?-3:0;sCheck=0;return 0;}
@@ -716,6 +737,7 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_ICE_SHORE){sSceneAt=0;sPhase=45;return 0;}
         if(sType==ATLAS_GEO_SEA_CLIFF)
         {
             AtlasTerrain_Sample(sLX,sLY,&c);

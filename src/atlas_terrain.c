@@ -504,7 +504,13 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     u32 detail;
     u8 variant;
     if (c->waterform != ATLAS_DRY)
-        return PACK_METATILE(AtlasTiles_Water(255, 0, c->waterform)) | PACK_COLLISION(1) | PACK_ELEVATION(3);
+    {
+        unsigned water=AtlasTiles_Water(255,0,c->waterform);
+        if(c->temperature<65 && (c->waterform==ATLAS_SEA || c->waterform==ATLAS_LAKE)
+         && (Hash(Wrap(x),y,0x49434546u)&31)==0)
+            water=c->waterform==ATLAS_SEA?ATLAS_ICE_SEA:ATLAS_ICE_LAKE;
+        return PACK_METATILE(water)|PACK_COLLISION(1)|PACK_ELEVATION(3);
+    }
     x = Wrap(x);
     /* Stateless native floor detail; no new lattice, cache or geographic query. */
     detail = Hash(x, y, 0x47524E44);

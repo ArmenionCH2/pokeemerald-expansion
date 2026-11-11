@@ -27,7 +27,7 @@
     "data/tilesets/primary/general/anim/flower/1.png": "3423723ca6d73e793c8c62bb6d500b21a22533dc5cadb769571f3aad8033c300",
     "data/tilesets/primary/general/anim/flower/2.png": "0bacd2807bd601c49a817090e40cef95ee0865b8be8c75712cc4422a8e194525"
   },
-  "raw_tiles": 112,
+  "raw_tiles": 120,
   "metatiles": 512,
   "families": [
     {
@@ -172,6 +172,12 @@
       "count": 4,
       "role": "primary_climate_blooms",
       "source": "General 0x004/flower animation; shared reindexed purple/gold glyph strip"
+    },
+    {
+      "first": 382,
+      "count": 2,
+      "role": "primary_surface_ice",
+      "source": "General 0x13B silhouette, derived snow palette and native lake/sea water"
     },
     {
       "first": 482,

@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests` or `--tour blooms`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms` or `--tour ice`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -549,7 +549,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Green and rock/sand outlines keep priority at mixed junctions. A sixth-page
   Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
   Native QA checks visible edges, cached walking and cold save reload there.
-  Primary roles 382–383 remain untouched; roles 367–368 supply leafy understory
+  Primary roles 382–383 now supply cold-water fragments; roles 367–368 supply leafy understory
   and 369–377 supply the alternate broadleaf crown.
   Snow/sand boundaries additionally reclaim primary roles 322–336 and eleven
   compiled subtiles, bringing graphic use to 79/512 before the alternate canopy. They retain actual
@@ -625,6 +625,17 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   climate gates, both variants, native mild flowers and streaming in three seeds.
   No world/save generation change is required; this is visual flora, not seasonal
   ecology or flowering simulation.
+  Sparse ice fragments decorate sea and lake cells below ordinal temperature 65,
+  using a periodic seed hash at one site in 32. Rivers are excluded. The renderer
+  retains fragments only in fully surrounded water; all shoreline masks keep their
+  normal banks. Atlas-only primary roles 382–383 preserve native fresh/sea water
+  behaviors and animated water bottoms, with a recolored General 0x13B foreground
+  in the existing snow palette. Eight static glyphs bring use to 120/512 and remain
+  outside the mutable bloom range. Water collision and elevation are unchanged;
+  this is decorative surface ice, not freezing, walkable ice or seasonal physics.
+  The seventh-page Cold sea / surface ice target validates a dry 3x3 landing and
+  an actual fragment inside the camera. Searches yield and retain the bounded
+  retry/cancel behavior. No generation or save schema change is required.
   Two native flowering ground tiles decorate suitable mild/moist clearings without
   changing collision, elevation or normal-ground behavior. They retain native
   animation references and fill the remaining two secondary metatile slots (512/512); future

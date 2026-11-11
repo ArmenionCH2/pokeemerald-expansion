@@ -154,6 +154,11 @@ u16 AtlasTiles_Render(u16 floor, const u16 *cells)
             count[bank]++;
         }
     for (i = 1; i < 4; i++) if (count[i] > count[material]) material = i;
+    /* Fragments belong to open cold water. All shoreline quarters and river
+     * openings retain hydrology's normal bank art and water behavior. */
+    unsigned ice=floor&1023;
+    if(mask==255 && ((water==ATLAS_SEA && ice==ATLAS_ICE_SEA) || (water==ATLAS_LAKE && ice==ATLAS_ICE_LAKE)))
+        return PACK_METATILE(ice)|PACK_COLLISION(1)|PACK_ELEVATION(3);
     return PACK_METATILE(AtlasTiles_Water(mask, material, water)) | PACK_COLLISION(1) | PACK_ELEVATION(3);
 }
 static u16 Tree(s32 x,s32 y,u16 floor)
