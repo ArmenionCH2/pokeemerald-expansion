@@ -561,7 +561,12 @@ u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *c, bool8 clearCo
     if (!clearCover && c->elevation<175 && c->temperature>=85 && c->moisture>=100
      && id>=ATLAS_NATURE_GRASS_FIRST && id<ATLAS_NATURE_GRASS_FIRST+4
      && ((detail>>16)&31)==0)
-        id=ATLAS_NATURE_FLOWER_FIRST+((detail>>22)&1);
+    {
+        unsigned first=ATLAS_NATURE_FLOWER_FIRST;
+        if(c->temperature>=160 && c->moisture>=155)first=ATLAS_WARM_FLOWER_FIRST;
+        else if(c->temperature>=150 && c->moisture<155)first=ATLAS_WARM_FLOWER_FIRST+2;
+        id=first+((detail>>22)&1);
+    }
 
     return PACK_METATILE(id) | PACK_ELEVATION(3);
 }

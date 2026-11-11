@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers` or `--tour forests`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests` or `--tour blooms`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -549,7 +549,7 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   Green and rock/sand outlines keep priority at mixed junctions. A sixth-page
   Rock / snow inspector validates an actual dry edge and a safe 3x3 landing.
   Native QA checks visible edges, cached walking and cold save reload there.
-  Primary roles 378–383 remain untouched; roles 367–368 supply leafy understory
+  Primary roles 382–383 remain untouched; roles 367–368 supply leafy understory
   and 369–377 supply the alternate broadleaf crown.
   Snow/sand boundaries additionally reclaim primary roles 322–336 and eleven
   compiled subtiles, bringing graphic use to 79/512 before the alternate canopy. They retain actual
@@ -598,6 +598,23 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   world wrap and strict direct/ring agreement through real forest regions.
   This does not implement new tree species, canopy walk-under collision,
   waterfall animation or the reference image's overall art direction.
+  Existing flower sites gain climate colors: temperature at least 160 and soil
+  moisture at least 155 select purple blooms; temperature at least 150 with
+  moisture below 155 selects gold. Other mild/moist sites retain native flowers.
+  Site density, protected cover and walkability are unchanged. Primary roles
+  378–381 reuse native General 0x004 geometry and grass, reindexed to audited
+  unused palette 10/11 entries 1–9. Cliff/snow entries 11–15 and UI palettes
+  13–15 stay intact. Four shared subtiles bring use to 108/512; the new variants
+  are static frames, while original native animated flower references remain.
+  Pixel-level asset tests verify leaf/grass colors and allocation separation.
+  Seventh-page Warm flowering clearing searches real final flower tiles and lands
+  two tiles west, with a safe 3x3 patch, keeping blooms visible beside the player.
+  Search remains bounded/cancellable. L/R jumps inspector pages, wrapping and
+  clamping the final partial page; arrows retain item navigation. Native QA checks
+  page wrap, visible blooms, cached travel and cold Continue. Host checks cover
+  climate gates, both variants, native mild flowers and streaming in three seeds.
+  No world/save generation change is required; this is visual flora, not seasonal
+  ecology or flowering simulation.
   Two native flowering ground tiles decorate suitable mild/moist clearings without
   changing collision, elevation or normal-ground behavior. They retain native
   animation references and fill the remaining two secondary metatile slots (512/512); future

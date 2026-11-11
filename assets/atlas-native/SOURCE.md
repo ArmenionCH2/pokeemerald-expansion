@@ -109,3 +109,11 @@ layer. Twenty-five deduplicated subtiles are appended after the established
 remain byte-identical. The shared grove hash chooses one whole family without
 moving its footprint. This is another native crown variant, not a new species,
 conifer/palm set, walk-under canopy system or extra runtime RAM allocation.
+
+Warm-climate bloom variants reclaim primary roles 378–381. They reindex the
+native General 0x004 flower frame into spare entries 1–9 of palettes 10/11,
+changing only its center/petal colors to purple or gold. Every leaf and grass
+pixel retains its native color. Existing cliff/snow entries 11–15 stay intact;
+UI palettes 13–15 are not used. Four deduplicated subtiles append after the
+104 existing graphics (108/512 total). These new color variants are static;
+the original native animated flower references remain unchanged.

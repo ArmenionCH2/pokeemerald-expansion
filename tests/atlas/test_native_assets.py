@@ -3,6 +3,7 @@ This checks asset data, not emulator frame performance or visual quality.
 """
 from pathlib import Path
 import hashlib,json,re,shutil,struct,subprocess,sys,tempfile
+from PIL import Image
 R=Path(__file__).resolve().parents[2]
 manifest=json.loads((R/'assets/atlas-native/manifest.json').read_text())
 assert not (R/'assets/punyworld').exists()
@@ -23,7 +24,7 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 322<=role<378 or 384<=role<512:continue
+    if 322<=role<382 or 384<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
@@ -33,6 +34,7 @@ for variant in range(2):
     assert primary[(367+variant)*8:(368+variant)*8]==expected
     assert primary_attrs[367+variant]==0x1000
 assert all(primary_attrs[i]==0x2000 for i in range(369,378))
+assert all(primary_attrs[i]==0x1000 for i in range(378,382))
 assert all(primary[i*8:i*8+4]==list(native[8:12]) for i in range(369,378))
 assert any((w&1023)>=512+79 for w in primary[369*8:378*8])
 # The only newly used palette belongs to rock/sand edges. Existing terrain and
@@ -40,6 +42,35 @@ assert any((w&1023)>=512+79 for w in primary[369*8:378*8])
 assert not any(w>>12==12 for w in metatiles)
 assert not any(w>>12==12 for i,w in enumerate(primary) if not 322*8<=i<367*8)
 pals=array('gAtlasNaturePalettes')
+# Spare low entries must remain unreferenced by all pre-existing roles. New
+# blossoms change only the native petal/center colors; grass and leaves match.
+native_tiles=Image.open(R/'data/tilesets/primary/general/tiles.png')
+raw=b''.join(struct.pack('<I',n) for n in array('gAtlasNatureTiles'))
+def index_at(w,x,y):
+    tile=w&1023;x=7-x if w&1024 else x;y=7-y if w&2048 else y
+    if tile<512:return native_tiles.getpixel(((tile%16)*8+x,(tile//16)*8+y))
+    value=raw[(tile-512)*32+y*4+x//2];return (value>>(4*(x%2)))&15
+for role in range(512):
+    if 378<=role<382:continue
+    for w in primary[role*8:(role+1)*8]:
+        if w>>12 in [10,11]:assert all(index_at(w,x,y)==0 or index_at(w,x,y)>=11 for y in range(8) for x in range(8))
+def visible_color(words,x,y):
+    q=(y//8)*2+x//8;color=0
+    for w in [words[q],words[q+4]]:
+        i=index_at(w,x%8,y%8)
+        if i:color=pals[(w>>12)*16+i]
+    return color
+for w in metatiles:
+    if w>>12 in [10,11]:assert all(index_at(w,x,y)==0 or index_at(w,x,y)>=11 for y in range(8) for x in range(8))
+for role in range(378,382):
+    center,petal=((27,20,31),(21,8,25)) if role<380 else ((31,29,14),(27,19,3))
+    center=center[0]|center[1]<<5|center[2]<<10;petal=petal[0]|petal[1]<<5|petal[2]<<10
+    for y in range(16):
+        for x in range(16):
+            old=visible_color(native[4*8:5*8],15-x if role&1 else x,y)
+            expected=center if old==pals[2*16+9] else petal if old==pals[2*16+11] else old
+            assert visible_color(primary[role*8:(role+1)*8],x,y)==expected
+
 assert pals[12*16+1:12*16+5]==pals[6*16+12:6*16+16]
 assert pals[12*16+5:12*16+9]==pals[5*16+11:5*16+15]
 assert pals[12*16+15]==pals[5*16+12] # dominant native sand floor outside

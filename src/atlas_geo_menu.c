@@ -53,12 +53,13 @@ static const u8 sDunes[] = _("Dunes / walkable sand ridges");
 static const u8 sCreek[] = _("Local creek / tributary");
 static const u8 sFloodplain[] = _("Floodplain / river-fed soil");
 static const u8 sEstuary[] = _("Estuary / flared river mouth");
+static const u8 sBlooms[] = _("Warm flowering clearing");
 static const u8 sIsland[] = _("Island / island chain");
-static const u8 *const sLabels[]={sLand,sMountain,sLake,sRiver,sCoast,sVolcano,sReturn,sRidge,sValley,sFoothills,sMouth,sTributary,sForest,sDesert,sTundra,sWetland,sPlateau,sGrove,sSandEdge,sIsland,sEstuary,sFloodplain,sCreek,sDunes,sRockEdge,sSnowEdge,sMesa,sHeadwater,sSeaCliff,sRockSand,sSinkhole,sRockSnow,sCanyon,sBackswamp,sLevee,sDistributary};
+static const u8 *const sLabels[]={sLand,sMountain,sLake,sRiver,sCoast,sVolcano,sReturn,sRidge,sValley,sFoothills,sMouth,sTributary,sForest,sDesert,sTundra,sWetland,sPlateau,sGrove,sSandEdge,sIsland,sEstuary,sFloodplain,sCreek,sDunes,sRockEdge,sSnowEdge,sMesa,sHeadwater,sSeaCliff,sRockSand,sSinkhole,sRockSnow,sCanyon,sBackswamp,sLevee,sDistributary,sBlooms};
 static const u8 sX[] = _("X: ");
 static const u8 sY[] = _("  Y: ");
 static const u8 sArrow[] = _(">");
-static const u8 sHelp[] = _("A: find and go   B: back / cancel");
+static const u8 sHelp[] = _("L/R: page   A: go   B: back");
 static const u8 sSearching[] = _("Searching real terrain...");
 static const u8 sMissing[] = _("No safe landing found. Try again.");
 static const u8 sSoon[] = _("This geography is not generated yet.");
@@ -127,6 +128,14 @@ static void GeoMenu_Run(void)
     }
     if(JOY_NEW(DPAD_UP)){sGeoChoice=sGeoChoice?sGeoChoice-1:ATLAS_GEO_COUNT-1;sMessage=0;Draw();}
     if(JOY_NEW(DPAD_DOWN)){sGeoChoice=(sGeoChoice+1)%ATLAS_GEO_COUNT;sMessage=0;Draw();}
+    if(JOY_NEW(L_BUTTON) || JOY_NEW(R_BUTTON))
+    {
+        unsigned pages=(ATLAS_GEO_COUNT+5)/6,page=sGeoChoice/6,slot=sGeoChoice%6;
+        page=(page+(JOY_NEW(R_BUTTON)?1:pages-1))%pages;
+        sGeoChoice=page*6+slot;
+        if(sGeoChoice>=ATLAS_GEO_COUNT)sGeoChoice=ATLAS_GEO_COUNT-1;
+        sMessage=0;Draw();
+    }
     if(JOY_NEW(A_BUTTON))
     {
         if(sGeoChoice==ATLAS_GEO_RETURN)

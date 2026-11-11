@@ -76,13 +76,16 @@ dunes for checking actual sand relief. The fifth page locates rounded rock/grass
 and snow/grass ground borders, mesas, headwater creeks, sea cliffs and rounded rock/sand boundaries. The border artwork preserves terrain
 heights and walking collision. Mesas require generation 20 or newer; headwaters require 21 and sea cliffs 22. A sixth page finds karst sinkholes in generation 23 and rounded rock/snow boundaries. Its River canyon entry requires generation 24; Backswamp and Natural levee entries require generation 25.
 The sixth page also finds Coastal distributary channels in generation 26 worlds.
+A seventh page finds Warm flowering clearings. L/R jumps between inspector pages.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain. Rivers follow stable mainstem/tributary identities from the drainage graph.
 Connected equal-level lakes, individual mesas, sinkholes and volcanic cone/caldera complexes
 have seed-stable landmark names; regional plateau/valley/ridge descriptors use surrounding relief.
 Groves mix two native broadleaf crowns while retaining their tree footprints.
 Warm, moist forest clearings also contain walkable native leafy undergrowth.
-This visual update works on existing saves without regenerating their terrain.
+Warm clearings also vary flower colors with soil moisture: humid sites can have
+purple blossoms and moderately dry sites gold. The new color variants use a static
+native flower frame. These visual updates work on existing saves without regenerating terrain.
 The exploration journal has a fixed save capacity and warns when space is low.
 Use a fresh save for this port; back up saves from other engines/versions.
 

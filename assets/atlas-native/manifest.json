@@ -24,7 +24,7 @@
     "data/tilesets/secondary/cave/metatiles.bin": "fca8629264b6ff2324224864ed98d929cc5a93213a5a512a3798d144470e022b",
     "data/tilesets/secondary/cave/palettes/06.pal": "f0205efcdd74ead5efd49e4c6b3559cff92ade3010bce19a26882d0dd021867b"
   },
-  "raw_tiles": 104,
+  "raw_tiles": 108,
   "metatiles": 512,
   "families": [
     {
@@ -163,6 +163,12 @@
       "count": 9,
       "role": "primary_alternate_broadleaf",
       "source": "General 0x1D6/1D7/1E6/1E7; existing 3x3 footprint and canopy layer"
+    },
+    {
+      "first": 378,
+      "count": 4,
+      "role": "primary_climate_blooms",
+      "source": "General 0x004 static flower frame; reindexed purple/gold palettes, native geometry"
     },
     {
       "first": 482,

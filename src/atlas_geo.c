@@ -127,6 +127,12 @@ static bool8 Candidate(u16 id)
         s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
         return AtlasDune_Envelope(x,y,&plan)>=64;
     }
+    if(sType==ATLAS_GEO_BLOOMS)
+    {
+        struct AtlasHabitat h;s32 y=(id/ATLAS_PLAN_WIDTH)*(2*ATLAS_WORLD_HALF_HEIGHT/(ATLAS_PLAN_HEIGHT-1))-ATLAS_WORLD_HALF_HEIGHT;
+        AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&h);
+        return n->height>=ATLAS_PLAN_SEA && n->height<170 && h.temperature>=145 && h.moisture>=95;
+    }
     if(sType==ATLAS_GEO_DISTRIBUTARY)return AtlasWater_IsEstuary(id);
     if(WetPlain())return n->height>=125 && n->height<=155 && n->rain>=96 && n->humidity>=80
         && n->runoff>=512 && (n->runoff>=600 || AtlasWater_IsSmallRiver(id)) && n->parent<ATLAS_PLAN_COUNT && n->parent!=id;
@@ -591,6 +597,12 @@ u8 AtlasGeo_Step(void)
         x=sCX+((s32)(sTrial%16)-8)*8;y=sCY+((s32)(sTrial/16)-8)*8;
         if (!Warm(x,y)) return 0;
         sTrial++;AtlasTerrain_Sample(x,y,&c);
+        if(sType==ATLAS_GEO_BLOOMS)
+        {
+            u16 id=AtlasTerrain_Tile(x,y)&1023;
+            if(c.waterform || id<ATLAS_WARM_FLOWER_FIRST || id>=ATLAS_WARM_FLOWER_FIRST+ATLAS_WARM_FLOWER_COUNT)return 0;
+            sLX=x-2;sLY=y;sCheck=sAttempt=0;sPhase=4;return 0;
+        }
         u8 target=sType==ATLAS_GEO_FOREST || sType==ATLAS_GEO_GROVE?ATLAS_FOREST:sType==ATLAS_GEO_DESERT?ATLAS_DESERT:sType==ATLAS_GEO_TUNDRA?ATLAS_TUNDRA:ATLAS_WETLAND;
         if (c.waterform || (sType==ATLAS_GEO_GROVE && (c.landform==ATLAS_COAST || c.elevation>=175 || AtlasMountain_Relief(x,y,&c))) || (sType==ATLAS_GEO_PLATEAU
             ? AtlasRegion_At(x,y)!=ATLAS_REGION_PLATEAU : sType==ATLAS_GEO_ISLAND?FALSE:c.biome!=target))
