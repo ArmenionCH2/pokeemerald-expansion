@@ -99,6 +99,7 @@ void AtlasLocation_Tick(void)
                 sPlace.kind=ATLAS_PLACE_DISTRIBUTARY;
             else if(sPlace.kind==ATLAS_PLACE_RIVER && AtlasWater_CreekNear(x,y,4))
                 sPlace.kind=AtlasWater_HeadwaterNear(x,y,4)?ATLAS_PLACE_HEADWATER:ATLAS_PLACE_CREEK;
+            if(sPlace.kind==ATLAS_PLACE_RIVER)AtlasPlace_SetLandmark(&sPlace,x,y);
         }
         sX = x; sY = y;
     }

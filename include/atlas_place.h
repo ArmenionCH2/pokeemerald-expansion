@@ -18,6 +18,7 @@ struct AtlasPlaceTracker
 /* Names follow connected macro landmasses and drainage catchments, never
  * chunk IDs. Bounded cones/calderas, mesas and sinkholes use their seeded
  * macro-site identity; lakes use their connected equal-level component root.
+ * Rivers use strongest-incoming-branch continuity in the drainage graph.
  * Generic forests/ridges remain contextual descriptors. */
 bool8 AtlasPlace_Identify(s32 x, s32 y, const struct AtlasCell *cell, struct AtlasPlace *out);
 void AtlasPlace_SetLandmark(struct AtlasPlace *place,s32 x,s32 y);

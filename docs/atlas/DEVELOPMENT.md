@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes` or `--tour distributaries`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries` or `--tour rivers`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -456,12 +456,12 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   hydrology. The atlas footer uses the same regional model. This does not implement
   terrain changes or a complete seasons/ecology simulation.
 - Physical names derive from connected macro landmasses, water bodies and drainage catchments.
-  The local label describes the terrain inside that catchment; individual forests,
-  ridges and river branches are not separately component-labelled. Bounded volcanic
+  The local label describes the terrain inside that catchment; individual forests
+  and ridges remain contextual descriptors. Bounded volcanic
   cones/calderas, mesas and sinkholes additionally receive a landmark identity from
   their seeded macro site, not their containing render chunk. Their root names are
   deterministic and distinct across site IDs; a cone and its caldera share one
-  root. Local labels fit the existing 21-byte buffer. Shoreline priority clears the
+  root. Local labels fit the existing 21-byte buffer. Shoreline priority replaces a bounded
   landmark identity when the local label becomes a bank/coast. Switching landmarks
   in one catchment queues only the changed leaf, with normal debounce/cooldown.
   This identifier lives only in the ephemeral place/tracker; no saved fields,
@@ -476,7 +476,24 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   This derived index is rebuilt during normal New Game/Continue, never saved;
   it preserves generation-3 through generation-25 geometry and the journal.
   `--tour lakes` verifies a proper-name shore popup and identity after cold reload.
-  Generic forest/ridge/river labels remain contextual descriptors. Names are seed
+  River names follow the drainage graph: at each confluence the greatest incoming
+  runoff continues the mainstem, with the smaller node ID breaking a tie. Other
+  incoming branches retain a distinct identity ending at that confluence. Rivers
+  end at a receiving lake or the sea; dry outflow reaches take the downstream
+  river identity. This is a deterministic naming convention using ordinal runoff,
+  not a claim about historical real-world river names or simulated discharge.
+  Four-bit owner slots retain each prepared piece's macro source (448 bytes total,
+  no RiverPiece/bucket size changes). Read-only bank lookup uses only resident
+  geometry, gives the larger river priority at overlaps, and follows the graph
+  once for the selected source. It never prepares water, changes LRU order or
+  marks discovery. Creek/headwater/distributary descriptors keep their priority.
+  Proper river names reuse the existing place/leaf debounce and 21-byte buffer.
+  No generation bump or saved fields are needed; supported older saves gain names
+  while retaining terrain. `--tour rivers` checks native main/estuary/tributary
+  labels, bank travel and identity after cold Continue. Host checks use an
+  independent strongest-child oracle across legacy/current worlds, include lake
+  outflows and verify that identity queries leave resident buckets untouched.
+  Generic forest/ridge labels remain contextual descriptors. Names are seed
   stable, cross chunk boundaries and announce only changed hierarchy levels after
   a debounce/cooldown. This adds no terrain or save identity change.
   Dry riverbanks/lake shores/coasts use nearby prepared terrain semantics, within

@@ -107,6 +107,30 @@ static void SetLakeLink(u16 node,u8 link)
     sLakeLinks[byte]=(sLakeLinks[byte]&~(7u<<shift))|(link<<shift);
     if(shift>5)sLakeLinks[byte+1]=(sLakeLinks[byte+1]&~(7u>>(8-shift)))|(link>>(8-shift));
 }
+u16 AtlasPlan_RiverRoot(u16 node)
+{
+    if(!gAtlasPlanReady || node>=ATLAS_PLAN_COUNT)return 0;
+    for(unsigned step=0;step<ATLAS_PLAN_COUNT;step++)
+    {
+        const struct AtlasPlanNode *n=&gAtlasPlan[node];
+        if(n->height<ATLAS_PLAN_SEA || (n->basin&ATLAS_LAKE_FLAG) || n->runoff<240
+         || n->parent>=ATLAS_PLAN_COUNT || n->parent==node)return 0;
+        u16 parent=n->parent,best=node;
+        const struct AtlasPlanNode *p=&gAtlasPlan[parent];
+        if(p->height<ATLAS_PLAN_SEA || (p->basin&ATLAS_LAKE_FLAG))return node+1;
+        for(unsigned direction=0;direction<4;direction++)
+        {
+            u16 child=Neighbor(parent,direction);
+            const struct AtlasPlanNode *c=&gAtlasPlan[child];
+            if(child==parent || c->parent!=parent || c->height<ATLAS_PLAN_SEA
+             || (c->basin&ATLAS_LAKE_FLAG) || c->runoff<240)continue;
+            if(c->runoff>gAtlasPlan[best].runoff || (c->runoff==gAtlasPlan[best].runoff && child<best))best=child;
+        }
+        if(best!=node)return node+1;
+        node=parent;
+    }
+    return 0;
+}
 static u16 LakeRoot(u16 node)
 {
     for(unsigned step=0;node<ATLAS_PLAN_COUNT && step<ATLAS_PLAN_COUNT;step++)

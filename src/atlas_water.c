@@ -31,6 +31,9 @@
  * TipWidth reads the separate physical width and never treats flags as width. */
 struct RiverPiece { s16 ax, ay, bx, by; u16 ha, hb, width, widthB; };
 EWRAM_DATA static struct RiverPiece sPieceBank[4][WATER_SEGMENTS] = {{{0}}};
+/* A bank has exactly sixteen macro candidate owners. Retain their local slot
+ * in four bits per piece, rather than a 16-bit global node per piece (448 B). */
+EWRAM_DATA static u8 sOwnerSlots[4][(WATER_SEGMENTS+1)/2] = {{0}};
 struct CreekLine {s32 ax,ay,bx,by;u16 ha,hb;u8 width,join;};
 struct WaterBucket {
     s32 x,y,col,row;u32 stamp,coastLo,coastHi;u16 coastNode;
@@ -537,6 +540,7 @@ static void PreparePart(void)
     if (width > 400) width = 400;
     {
         s32 ax, ay, bx, by; u16 ha, hb;bool8 distribute=FALSE;
+        unsigned ownerStart=sPieceCount;
         AtlasWater_Point(id,part,&ax,&ay,&ha); AtlasWater_Point(id,part+1,&bx,&by,&hb);
         if(fit)
         {
@@ -575,6 +579,11 @@ static void PreparePart(void)
                 AddTaper(line.ax+shift,line.ay,line.bx+shift,line.by,line.ha,line.hb,line.width,line.width);
                 if(sPieceCount>before)sPieces[before].widthB=DISTRIBUTARY_FLAG|line.width;
             }
+        }
+        for(unsigned i=ownerStart;i<sPieceCount;i++)
+        {
+            unsigned shift=(i&1)*4;
+            sOwnerSlots[sActive][i/2]=(sOwnerSlots[sActive][i/2]&~(15u<<shift))|(node<<shift);
         }
     }
 next:
@@ -757,7 +766,7 @@ u8 AtlasWater_SampleBank(s32 x,s32 y,u8 terrainHeight,const struct AtlasPlanSamp
 /* Minimum-width cartographic stroke from prepared local channel geometry.
  * A bounded footprint prevents narrow rivers aliasing out of a close atlas.
  * No LRU touch, preparation, terrain query, or exploration write is allowed. */
-static bool8 RiverNear(s32 x,s32 y,u8 padding,u8 creekOnly)
+static u16 RiverNear(s32 x,s32 y,u8 padding,u8 creekOnly)
 {
     if(!gAtlasPlanReady || padding>80 || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return FALSE;
     x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
@@ -767,12 +776,14 @@ static bool8 RiverNear(s32 x,s32 y,u8 padding,u8 creekOnly)
         const struct WaterBucket *b=&sBuckets[bucket];
         if(!b->valid || !b->ready || b->x!=bx || b->y!=by)continue;
         x-=bx*WATER_BUCKET;y-=by*WATER_BUCKET;
+        u16 chosen=0;
         for(unsigned i=0;i<b->count;i++)
         {
             const struct RiverPiece *p=&sPieceBank[bucket][i];
             if((creekOnly==1 || creekOnly==2) && !(p->widthB&CREEK_FLAG))continue;
             if(creekOnly==2 && !(p->widthB&HEADWATER_FLAG))continue;
             if(creekOnly==3 && !(p->widthB&DISTRIBUTARY_FLAG))continue;
+            if(creekOnly==4 && (p->widthB&(CREEK_FLAG|DISTRIBUTARY_FLAG)))continue;
             u16 tip=TipWidth(p);
             s32 maximum=tip>p->width?tip:p->width;
             s32 margin=maximum+padding;
@@ -790,15 +801,38 @@ static bool8 RiverNear(s32 x,s32 y,u8 padding,u8 creekOnly)
                 if(tip && tip!=p->width)width+=(s64)((s32)tip-p->width)*dot/length;
             }
             width+=padding;
-            if(metric<=(s64)width*width*unit)return TRUE;
+            if(metric<=(s64)width*width*unit)
+            {
+                if(creekOnly!=4)return TRUE;
+                unsigned slot=(sOwnerSlots[bucket][i/2]>>((i&1)*4))&15;
+                s32 col=b->col+slot%4-1,row=b->row+slot/4-1;
+                if(row<0 || row>=ATLAS_PLAN_HEIGHT)continue;
+                if(col<0)col+=ATLAS_PLAN_WIDTH;
+                if(col>=ATLAS_PLAN_WIDTH)col-=ATLAS_PLAN_WIDTH;
+                u16 node=row*ATLAS_PLAN_WIDTH+col;
+                if(gAtlasPlan[node].basin&ATLAS_LAKE_FLAG)
+                {
+                    /* A lake node's outgoing edge extends beyond its fitted
+                     * water patch. Its dry downstream node owns that outflow. */
+                    u16 parent=gAtlasPlan[node].parent;
+                    if(parent>=ATLAS_PLAN_COUNT || gAtlasPlan[parent].height<ATLAS_PLAN_SEA
+                     || (gAtlasPlan[parent].basin&ATLAS_LAKE_FLAG) || gAtlasPlan[parent].runoff<240)continue;
+                    node=parent;
+                }
+                /* The larger river owns a confluence's overlapping bank. */
+                if(!chosen || gAtlasPlan[node].runoff>gAtlasPlan[chosen-1].runoff
+                 || (gAtlasPlan[node].runoff==gAtlasPlan[chosen-1].runoff && node<chosen-1))chosen=node+1;
+            }
         }
-        return FALSE;
+        return creekOnly==4?chosen:FALSE;
     }
     return FALSE;
 }
 
 bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding)
 {return RiverNear(x,y,padding,FALSE);}
+u16 AtlasWater_RiverNameId(s32 x,s32 y,u8 padding)
+{u16 owner=RiverNear(x,y,padding,4);return owner?AtlasPlan_RiverRoot(owner-1):0;}
 bool8 AtlasWater_CreekNear(s32 x,s32 y,u8 padding)
 {return AtlasWorld_Generation()>=18 && RiverNear(x,y,padding,TRUE);}
 

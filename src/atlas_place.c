@@ -11,7 +11,7 @@ static bool8 Equal(const struct AtlasPlace *a, const struct AtlasPlace *b)
 static bool8 Landmark(u8 kind)
 {
     return kind==ATLAS_PLACE_VOLCANO || kind==ATLAS_PLACE_CALDERA
-        || kind==ATLAS_PLACE_MESA || kind==ATLAS_PLACE_SINKHOLE || kind==ATLAS_PLACE_LAKE;
+        || kind==ATLAS_PLACE_MESA || kind==ATLAS_PLACE_SINKHOLE || kind==ATLAS_PLACE_LAKE || kind==ATLAS_PLACE_RIVER;
 }
 void AtlasPlace_SetLandmark(struct AtlasPlace *place,s32 x,s32 y)
 {
@@ -19,6 +19,7 @@ void AtlasPlace_SetLandmark(struct AtlasPlace *place,s32 x,s32 y)
     place->landmark=0;
     if(!gAtlasPlanReady || !Landmark(place->kind) || y< -ATLAS_WORLD_HALF_HEIGHT || y>=ATLAS_WORLD_HALF_HEIGHT)return;
     if(place->kind==ATLAS_PLACE_LAKE){place->landmark=AtlasPlan_LakeId(x,y);return;}
+    if(place->kind==ATLAS_PLACE_RIVER){place->landmark=AtlasWater_RiverNameId(x,y,4);return;}
     x%=ATLAS_WORLD_WIDTH;if(x<0)x+=ATLAS_WORLD_WIDTH;
     /* These bounded features occupy under 5 km around their seeded site,
      * comfortably inside the nearest-owner footprint (~417 km per node). */
@@ -121,7 +122,7 @@ bool8 AtlasPlace_Name(const struct AtlasPlace *place, u8 level, char out[ATLAS_P
         {
             code=(place->landmark*4051u+(gAtlasWorldSeed^(gAtlasWorldSeed>>16))+1994u)&8191;
             Append(out,first[code&15]);Append(out,middle[(code>>4)&15]);Append(out,last[code>>8]);
-            Append(out,place->kind==ATLAS_PLACE_VOLCANO?" Cone":place->kind==ATLAS_PLACE_CALDERA?" Caldera":place->kind==ATLAS_PLACE_MESA?" Mesa":place->kind==ATLAS_PLACE_LAKE?" Lake":" Sinkhole");
+            Append(out,place->kind==ATLAS_PLACE_VOLCANO?" Cone":place->kind==ATLAS_PLACE_CALDERA?" Caldera":place->kind==ATLAS_PLACE_MESA?" Mesa":place->kind==ATLAS_PLACE_LAKE?" Lake":place->kind==ATLAS_PLACE_RIVER?" River":" Sinkhole");
         }
         else Append(out,feature[place->kind]);
         return TRUE;

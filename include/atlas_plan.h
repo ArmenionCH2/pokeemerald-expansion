@@ -44,6 +44,9 @@ void AtlasPlan_ResetSample(void);
 /* Connected, equal-level lake identity (root node + 1), including its fitted
  * shoreline apron. Zero outside lake context. No terrain/water preparation. */
 u16 AtlasPlan_LakeId(s32 x,s32 y);
+/* Mainstem continues through the greatest-discharge incoming edge, with a
+ * node-ID tie break. Tributaries and lake boundaries terminate distinct rivers. */
+u16 AtlasPlan_RiverRoot(u16 node);
 bool8 AtlasPlan_HasSea(s32 x,s32 y);
 /* Interpolated ocean contribution, 0..255; no detailed water preparation. */
 u8 AtlasPlan_SeaContext(s32 x,s32 y);
@@ -57,6 +60,8 @@ void AtlasWater_Reset(void);
  * Padding must fit the existing 80-tile apron. Never prepares a bucket. */
 bool8 AtlasWater_RiverNear(s32 x,s32 y,u8 padding);
 bool8 AtlasWater_IsEstuary(u16 node);
+/* Read-only identity from resident main-channel geometry; zero if unavailable. */
+u16 AtlasWater_RiverNameId(s32 x,s32 y,u8 padding);
 bool8 AtlasWater_DistributaryNear(s32 x,s32 y,u8 padding);
 bool8 AtlasWater_DistributaryProbe(s32 x,s32 y,s32 *outX,s32 *outY);
 bool8 AtlasWater_CreekSource(u16 node);

@@ -24,7 +24,7 @@ groups = {
     'mountain tiles tiles_data': ['atlas_tiles'],
     '': ['stream_polar','stream_frontier_native','stream_poison_native','water_equivalence','water_junctions','bank_profile','canyon_profile','wet_floodplain_profile','estuary_profile','floodplain_profile','creek_profile','creek_budget','headwater_budget','distributary_budget'],
     'plan climate': ['plan_cache_native'],
-    ' '.join(world)+' place': ['lake_identity'],
+    ' '.join(world)+' place': ['lake_identity','river_identity'],
 }
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--case',action='append',choices=sorted(case for cases in groups.values() for case in cases),
