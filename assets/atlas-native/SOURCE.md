@@ -128,3 +128,12 @@ palette, then placed over unchanged native lake/sea water bottoms. Normal water
 behaviors remain 0x1010/0x1015. Eight static glyphs append after the reserved bloom
 animation strips (120/512 total); they never share mutable glyphs. These are sparse
 decorations, not walkable frozen water or new third-party artwork.
+
+Diagonal sand/grass inner corners supplement the existing cardinal borders.
+Atlas-only primary roles 256–286 reclaim otherwise unused native layout roles;
+all other layouts still use the immutable General catalogue. Four static subtiles
+append after the ice glyphs (124/512 total). They combine General 0x124 sand
+texture with the alpha silhouettes of General 0xC0/0xC2 inner pond corners,
+recolored to the established General palette-5 grass fringe. No native source,
+palette or mutable animation allocation changes. All 31 additional canonical
+patterns retain native sand behavior and map collision/elevation.

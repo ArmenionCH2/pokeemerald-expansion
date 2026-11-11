@@ -41,12 +41,13 @@ int main(void){
   cells[4]|=0x80;assert(!(AtlasTiles_Render(0x3001,cells)&0xC00));
  }
  /* All cardinal borders preserve the floor's movement/elevation bits and
-  * native sand behavior. Diagonal geography does not change this first-stage
-  * edge catalogue. Water/snow/rock continue sand instead of adding green. */
+  * native sand behavior when the diagonals continue the floor.
+  * Water/snow/rock continue sand instead of adding green. */
  for(m=0;m<16;m++)for(mat=0;mat<4;mat++)for(form=0;form<4;form++){
   static const unsigned sides[4]={1,5,7,3};
   u16 cells[9]={0},floor=0x3000|(ATLAS_NATURE_SAND_FIRST+mat),expected;
   cells[4]=0x7C04;
+  cells[0]=cells[2]=cells[6]=cells[8]=4;
   for(i=0;i<4;i++)cells[sides[i]]=(m&(1<<i))?(form?form:4):0;
   expected=m==15?(floor&1023):m==14?ATLAS_NATURE_SAND_EDGE_NORTH:ATLAS_NATURE_SAND_EDGE_FIRST+m;
   u16 result=AtlasTiles_Render(floor,cells);

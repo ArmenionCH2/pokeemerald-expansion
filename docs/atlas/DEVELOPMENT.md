@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms` or `--tour ice`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms`, `--tour ice` or `--tour corners`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -515,9 +515,22 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   behavior, preserving running/bicycle rules rather than importing new restrictions.
   It takes priority over generic coast sand on dry wetland cells.
   Its prepared bank material is green as well, matching the ground floor.
-  Sand/grass borders use cardinal neighbor semantics and native sand quarters,
+  Sand/grass borders use eight-neighbor semantics and native sand quarters,
   preserving movement/elevation and the native sand behavior. The ring waits for
   the already scheduled stencil; border rendering performs no terrain queries.
+  Thirty-one diagonal inner-corner variants reclaim Atlas-only primary roles
+  256–286. They supplement the unchanged cardinal catalogue, covering all 47
+  canonical eight-neighbor configurations. Four static glyphs append after the
+  ice graphics (124/512 total), combining native sand texture with native pond
+  inner-corner alpha recolored to the established grass fringe. A 256-byte ROM
+  lookup selects the corner using already prepared neighbors; it adds no terrain
+  queries, runtime buffers or saved fields. Water and non-green materials continue
+  sand, preserving their existing priority. Other layouts keep native General.
+  Sand / grass inner corner on inspector page seven validates a safe dry landing
+  and an actual corner inside the camera. Bounded searches can require Retry.
+  Tests cover all 256 neighborhoods, pixel-exact quadrant selection, safe seeded
+  searches, strict streaming and native save/Continue. This changes presentation;
+  geographic heights, collision, generation and journal schema remain unchanged.
   Rock/grass and snow/grass boundaries use primary roles 482–496 and 497–511,
   with the same rounded native cardinal geometry and derived palettes 10/11.
   Interior quarters retain the existing floor art; no graphic tile, height,
@@ -560,8 +573,8 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   agreement; six-seed random worlds are not assumed to contain this rare pair.
   There is no dedicated snow/sand inspector entry, and no claim of a native visit
   to a natural cold beach. Native snowline travel/save checks cover the combined
-  graphics bank. Diagonal-only notches and complete three-material blends remain
-  future work.
+  graphics bank. Diagonal-only notches for the other materials and complete three-material
+  blends remain future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native

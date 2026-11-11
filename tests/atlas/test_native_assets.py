@@ -24,10 +24,11 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 322<=role<512:continue
+    if 256<=role<287 or 322<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
+assert all(primary_attrs[i]==0x1021 for i in range(256,287))
 for variant in range(2):
     words=list(native[0x193*8:0x194*8]);h=variant;v=0
     expected=[words[(i//4)*4+((i%4)^h^(v*2))]^(1024 if h else 0)^(2048 if v else 0) for i in range(8)]
@@ -100,6 +101,28 @@ for role in range(378,382):
             old=visible_color(native[4*8:5*8],15-x if role&1 else x,y)
             expected=center if old==pals[2*16+9] else petal if old==pals[2*16+11] else old
             assert visible_color(primary[role*8:(role+1)*8],x,y)==expected
+
+# Every corner role must be reachable and change only its intended quadrant.
+notch_lookup=array('gAtlasSandNotchIndex')
+assert len(notch_lookup)==256 and set(notch_lookup)==set(range(31))|{255}
+for mask,index in enumerate(notch_lookup):
+    missing=[bool(mask&(1<<q) and mask&(1<<((q+1)%4)) and not mask&(1<<(q+4))) for q in range(4)]
+    assert (index!=255)==any(missing)
+    if index==255:continue
+    words=primary[(256+index)*8:(257+index)*8];cardinal=mask&15
+    oldrole=892 if cardinal==15 else 887 if cardinal==14 else 901+cardinal
+    oldwords=metatiles[(oldrole-512)*8:(oldrole-511)*8]
+    # Runtime bit order NE,SE,SW,NW differs from image NW,NE,SW,SE.
+    for q,diagonal in enumerate([3,0,2,1]):
+        if not missing[diagonal]:
+            assert [words[q],words[q+4]]==[oldwords[q],oldwords[q+4]]
+            continue
+        inner=native[(0xC0 if q%2==0 else 0xC2)*8+4+q%2]^(2048 if q>=2 else 0)
+        for y in range(8):
+            for x in range(8):
+                xx=(q%2)*8+x;yy=(q//2)*8+y
+                expected=pals[5*16+15] if index_at(inner,x,y) else visible_color(native[0x124*8:0x125*8],xx,yy)
+                assert visible_color(words,xx,yy)==expected
 
 assert pals[12*16+1:12*16+5]==pals[6*16+12:6*16+16]
 assert pals[12*16+5:12*16+9]==pals[5*16+11:5*16+15]

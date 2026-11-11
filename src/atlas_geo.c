@@ -36,11 +36,12 @@ static bool8 Green(const struct AtlasCell *c)
 {
     return !c->waterform && c->elevation<175 && c->biome!=ATLAS_TUNDRA && !Sand(c);
 }
+static bool8 SandBoundary(void){return sType==ATLAS_GEO_SAND_EDGE || sType==ATLAS_GEO_SAND_CORNER;}
 static bool8 GroundBoundary(void)
-{return sType==ATLAS_GEO_SAND_EDGE || sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW;}
+{return SandBoundary() || sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_SNOW_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW;}
 static bool8 BoundaryMaterial(s32 x,s32 y,const struct AtlasCell *c)
 {
-    if(sType==ATLAS_GEO_SAND_EDGE)return Sand(c);
+    if(SandBoundary())return Sand(c);
     if(c->waterform)return FALSE;
     u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
     unsigned first=(sType==ATLAS_GEO_ROCK_EDGE || sType==ATLAS_GEO_ROCK_SAND || sType==ATLAS_GEO_ROCK_SNOW)?ATLAS_ROCK_FLOOR_FIRST:ATLAS_NATURE_SNOW_FIRST;
@@ -48,7 +49,7 @@ static bool8 BoundaryMaterial(s32 x,s32 y,const struct AtlasCell *c)
 }
 static bool8 BoundaryGreen(s32 x,s32 y,const struct AtlasCell *c)
 {
-    if(sType==ATLAS_GEO_SAND_EDGE)return Green(c);
+    if(SandBoundary())return Green(c);
     if(c->waterform)return FALSE;
     u16 id=AtlasTerrain_BaseTile(x,y,c,TRUE)&1023;
     if(sType==ATLAS_GEO_ROCK_SNOW)return id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4;
@@ -168,7 +169,7 @@ static bool8 Candidate(u16 id)
         AtlasHabitat_Sample(y,n->height,n->rain,n->humidity,ATLAS_DRY,&habitat);
         return n->height>=ATLAS_PLAN_SEA && habitat.temperature<75;
     }
-    if (sType==ATLAS_GEO_SAND_EDGE) return n->height>=121 && n->height<128;
+    if (SandBoundary()) return n->height>=121 && n->height<128;
     if (sType==ATLAS_GEO_PLATEAU) return n->height>=170 && n->height<230;
     if (sType>=ATLAS_GEO_FOREST)
     {
@@ -504,6 +505,16 @@ u8 AtlasGeo_Step(void)
         if(c.waterform!=ATLAS_RIVER){sPhase=0;return 0;}
         sDirection=0;Direction();return 0;
     }
+    if(sPhase==46)
+    {
+        x=sLX+(s32)(sSceneAt%11)-5;y=sLY+(s32)(sSceneAt/11)-3;
+        if(!ReadyPoint(x,y))return 0;
+        u16 id=AtlasTerrain_Tile(x,y)&1023;
+        if(id>=ATLAS_SAND_NOTCH_FIRST && id<ATLAS_SAND_NOTCH_FIRST+ATLAS_SAND_NOTCH_COUNT){sPhase=9;return 0;}
+        if(++sSceneAt<77)return 0;
+        if(++sDirection<4)SandDirection();else sPhase=0;
+        return 0;
+    }
     if(sPhase==45)
     {
         /* Require an actual fragment inside the player's camera, not merely
@@ -737,6 +748,7 @@ u8 AtlasGeo_Step(void)
     }
     if(++sCheck==9)
     {
+        if(sType==ATLAS_GEO_SAND_CORNER){sSceneAt=0;sPhase=46;return 0;}
         if(sType==ATLAS_GEO_ICE_SHORE){sSceneAt=0;sPhase=45;return 0;}
         if(sType==ATLAS_GEO_SEA_CLIFF)
         {

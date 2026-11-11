@@ -27,7 +27,7 @@
     "data/tilesets/primary/general/anim/flower/1.png": "3423723ca6d73e793c8c62bb6d500b21a22533dc5cadb769571f3aad8033c300",
     "data/tilesets/primary/general/anim/flower/2.png": "0bacd2807bd601c49a817090e40cef95ee0865b8be8c75712cc4422a8e194525"
   },
-  "raw_tiles": 120,
+  "raw_tiles": 124,
   "metatiles": 512,
   "families": [
     {
@@ -139,6 +139,12 @@
       "first": 435,
       "count": 47,
       "role": "primary_walkable_sand_ridges"
+    },
+    {
+      "first": 256,
+      "count": 31,
+      "role": "primary_sand_inner_edges",
+      "source": "General sand quarters and 0xC0/0xC2 inner-corner silhouettes"
     },
     {
       "first": 322,

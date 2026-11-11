@@ -26,7 +26,7 @@ int main(void)
             if(type==ATLAS_GEO_SAND_EDGE)
             {
                 u16 id=AtlasTerrain_Tile(gAtlasGeoResult.x,gAtlasGeoResult.y)&1023;
-                assert(id==ATLAS_NATURE_SAND_EDGE_NORTH || (id>=ATLAS_NATURE_SAND_EDGE_FIRST && id<ATLAS_NATURE_SAND_EDGE_FIRST+ATLAS_NATURE_SAND_EDGE_COUNT));
+                assert(AtlasTiles_IsSandBorder(id));
             }
             if(type>=ATLAS_GEO_FOREST && type<=ATLAS_GEO_WETLAND)
             {

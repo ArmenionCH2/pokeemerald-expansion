@@ -1,5 +1,7 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
+#define ATLAS_SAND_NOTCH_FIRST 256
+#define ATLAS_SAND_NOTCH_COUNT 31
 #define ATLAS_SNOW_SAND_EDGE_FIRST 322
 #define ATLAS_ROCK_SNOW_EDGE_FIRST 337
 #define ATLAS_ROCK_SAND_EDGE_FIRST 352
@@ -51,6 +53,12 @@ static inline bool8 AtlasTiles_GroundEdge(u16 floor,u16 semantic)
         && ((material==2 && id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)
          || (material==3 && id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4)));
 }
+static inline bool8 AtlasTiles_IsSandBorder(u16 id)
+{
+    return id==ATLAS_NATURE_SAND_EDGE_NORTH
+        || (id>=ATLAS_NATURE_SAND_EDGE_FIRST && id<ATLAS_NATURE_SAND_EDGE_FIRST+ATLAS_NATURE_SAND_EDGE_COUNT)
+        || (id>=ATLAS_SAND_NOTCH_FIRST && id<ATLAS_SAND_NOTCH_FIRST+ATLAS_SAND_NOTCH_COUNT);
+}
 static inline bool8 AtlasTiles_IsCliff(u16 id)
 {
     return (id>=ATLAS_NATURE_MOUNTAIN_FIRST && id<ATLAS_NATURE_MOUNTAIN_FIRST+94)
@@ -60,7 +68,7 @@ extern const u16 gAtlasPrimaryMetatiles[4096],gAtlasPrimaryAttributes[512];
 extern const u32 gAtlasNatureTiles[4096];
 extern const u16 gAtlasNaturePalettes[16][16];
 extern const u16 gAtlasNatureMetatiles[4096], gAtlasNatureAttributes[512];
-extern const u8 gAtlasNatureMaskIndex[256];
+extern const u8 gAtlasNatureMaskIndex[256],gAtlasSandNotchIndex[256];
 u16 AtlasTiles_Water(u8 mask, u8 material, u8 waterform);
 u16 AtlasTiles_At(s32 x, s32 y, const struct AtlasCell *center);
 u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *cell, bool8 clearCover);
