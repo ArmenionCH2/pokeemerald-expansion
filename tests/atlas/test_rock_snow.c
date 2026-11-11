@@ -23,7 +23,7 @@ int main(void)
          * no sand-colored pixels should replace actual green neighbors. */
         cells[1]=(150<<8);cells[5]=(150<<8)|12;
         tile=AtlasTiles_Render(floor,cells)&1023;
-        assert(tile>=ATLAS_ROCK_GROUND_EDGE_FIRST && tile<ATLAS_ROCK_GROUND_EDGE_FIRST+15);
+        assert(AtlasTiles_IsMaterialBorder(tile,FALSE));
     }
     const u32 seeds[]={0,1,0xffffffffu,0xdeadbeefu,4220706268u,123456789};
     for(unsigned k=0;k<6;k++)

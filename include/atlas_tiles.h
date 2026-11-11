@@ -1,5 +1,8 @@
 #ifndef GUARD_ATLAS_TILES_H
 #define GUARD_ATLAS_TILES_H
+#define ATLAS_ROCK_NOTCH_FIRST 192
+#define ATLAS_SNOW_NOTCH_FIRST 224
+#define ATLAS_GROUND_NOTCH_COUNT 31
 #define ATLAS_SAND_NOTCH_FIRST 256
 #define ATLAS_SAND_NOTCH_COUNT 31
 #define ATLAS_SNOW_SAND_EDGE_FIRST 322
@@ -38,7 +41,7 @@ extern const u32 gAtlasBloomAnimFrames[96]; /* Three frames, four 4bpp tiles eac
 #define ATLAS_NATURE_FLOWER_FIRST 1022
 #define ATLAS_NATURE_FLOWER_COUNT 2
 struct AtlasCell;
-/* Material borders read the prepared cardinal stencil. Water continues the
+/* Material borders read the prepared neighbor stencil. Water continues the
  * dry material rather than introducing a false green fringe. */
 static inline bool8 AtlasTiles_SandEdge(u16 floor, u16 semantic)
 {
@@ -52,6 +55,13 @@ static inline bool8 AtlasTiles_GroundEdge(u16 floor,u16 semantic)
     return AtlasTiles_SandEdge(floor,semantic) || (!(semantic&3)
         && ((material==2 && id>=ATLAS_ROCK_FLOOR_FIRST && id<ATLAS_ROCK_FLOOR_FIRST+4)
          || (material==3 && id>=ATLAS_NATURE_SNOW_FIRST && id<ATLAS_NATURE_SNOW_FIRST+4)));
+}
+static inline bool8 AtlasTiles_IsMaterialBorder(u16 id, bool8 snow)
+{
+    unsigned first=snow?ATLAS_SNOW_GROUND_EDGE_FIRST:ATLAS_ROCK_GROUND_EDGE_FIRST;
+    unsigned notch=snow?ATLAS_SNOW_NOTCH_FIRST:ATLAS_ROCK_NOTCH_FIRST;
+    return (id>=first && id<first+ATLAS_MATERIAL_GROUND_EDGE_COUNT)
+        || (id>=notch && id<notch+ATLAS_GROUND_NOTCH_COUNT);
 }
 static inline bool8 AtlasTiles_IsSandBorder(u16 id)
 {
@@ -68,7 +78,7 @@ extern const u16 gAtlasPrimaryMetatiles[4096],gAtlasPrimaryAttributes[512];
 extern const u32 gAtlasNatureTiles[4096];
 extern const u16 gAtlasNaturePalettes[16][16];
 extern const u16 gAtlasNatureMetatiles[4096], gAtlasNatureAttributes[512];
-extern const u8 gAtlasNatureMaskIndex[256],gAtlasSandNotchIndex[256];
+extern const u8 gAtlasNatureMaskIndex[256],gAtlasGroundNotchIndex[256];
 u16 AtlasTiles_Water(u8 mask, u8 material, u8 waterform);
 u16 AtlasTiles_At(s32 x, s32 y, const struct AtlasCell *center);
 u16 AtlasTerrain_BaseTile(s32 x, s32 y, const struct AtlasCell *cell, bool8 clearCover);

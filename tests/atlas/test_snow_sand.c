@@ -23,7 +23,7 @@ int main(void)
          * no sand-colored pixels should replace actual green neighbors. */
         cells[1]=(150<<8);cells[5]=(150<<8)|4;
         tile=AtlasTiles_Render(floor,cells)&1023;
-        assert(tile>=ATLAS_SNOW_GROUND_EDGE_FIRST && tile<ATLAS_SNOW_GROUND_EDGE_FIRST+15);
+        assert(AtlasTiles_IsMaterialBorder(tile,TRUE));
     }
     /* A controlled cold coastal field exercises final terrain, rather than
      * asserting that every random world must contain a rare beach/snow join. */

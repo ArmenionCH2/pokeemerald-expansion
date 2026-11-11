@@ -27,7 +27,7 @@
     "data/tilesets/primary/general/anim/flower/1.png": "3423723ca6d73e793c8c62bb6d500b21a22533dc5cadb769571f3aad8033c300",
     "data/tilesets/primary/general/anim/flower/2.png": "0bacd2807bd601c49a817090e40cef95ee0865b8be8c75712cc4422a8e194525"
   },
-  "raw_tiles": 124,
+  "raw_tiles": 128,
   "metatiles": 512,
   "families": [
     {
@@ -139,6 +139,16 @@
       "first": 435,
       "count": 47,
       "role": "primary_walkable_sand_ridges"
+    },
+    {
+      "first": 192,
+      "count": 31,
+      "role": "primary_rock_inner_edges"
+    },
+    {
+      "first": 224,
+      "count": 31,
+      "role": "primary_snow_inner_edges"
     },
     {
       "first": 256,

@@ -12,6 +12,7 @@ int main(void)
     for(unsigned material=2;material<=3;material++)for(unsigned mask=0;mask<16;mask++)
     {
         u16 cells[9]={0};cells[4]=(150<<8)|(material<<2);
+        cells[0]=cells[2]=cells[6]=cells[8]=material<<2;
         unsigned floorId=material==2?ATLAS_ROCK_FLOOR_FIRST:ATLAS_NATURE_SNOW_FIRST;
         unsigned edgeId=material==2?ATLAS_ROCK_GROUND_EDGE_FIRST:ATLAS_SNOW_GROUND_EDGE_FIRST;
         for(unsigned i=0;i<4;i++)if(mask&(1u<<i))cells[sides[i]]=cells[4];
@@ -36,9 +37,8 @@ int main(void)
             for(steps=0;steps<ATLAS_GEO_SEARCH_STEPS && !AtlasGeo_Step();steps++);
             printf("material boundary seed=%u type=%u status=%u steps=%u\n",seeds[i],type,gAtlasGeoStatus,steps);
             assert(gAtlasGeoStatus==1);
-            unsigned first=type==ATLAS_GEO_ROCK_EDGE?ATLAS_ROCK_GROUND_EDGE_FIRST:ATLAS_SNOW_GROUND_EDGE_FIRST;
             unsigned tile=AtlasTerrain_Tile(gAtlasGeoResult.x,gAtlasGeoResult.y)&1023;
-            assert(tile>=first && tile<first+15);
+            assert(AtlasTiles_IsMaterialBorder(tile,type==ATLAS_GEO_SNOW_EDGE));
             for(s32 dy=-1;dy<=1;dy++)for(s32 dx=-1;dx<=1;dx++)
                 assert(!(AtlasTerrain_Tile(gAtlasGeoResult.x+dx,gAtlasGeoResult.y+dy)&0xC00));
         }

@@ -36,7 +36,7 @@ use `libmgba-dev`. No private repository credential is required for normal devel
 Run the commands in README. For a built development ROM, run
 `python3 dev_scripts/test_atlas_emulator.py` for key-driven mGBA checks of world
 entry, map isolation and save/reset/Continue; screenshots stay in `build/atlas-emulator/`.
-Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms`, `--tour ice` or `--tour corners`,
+Focused native checks are available with `--tour materials`, `--tour mesa`, `--tour headwaters`, `--tour coasts`, `--tour rock-sand`, `--tour karst`, `--tour snowline`, `--tour landmarks`, `--tour canyons`, `--tour wetlands`, `--tour lakes`, `--tour distributaries`, `--tour rivers`, `--tour forests`, `--tour blooms`, `--tour ice`, `--tour corners` or `--tour material-corners`,
 optionally with `--save path/to/a/copied/test.sav`; the harness copies supplied
 saves and still uses genuine key input and emulation. The native runner holds a
 POSIX file lock before copying the shared ROM/save/symbol/executable files; an
@@ -532,7 +532,23 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   searches, strict streaming and native save/Continue. This changes presentation;
   geographic heights, collision, generation and journal schema remain unchanged.
   Rock/grass and snow/grass boundaries use primary roles 482–496 and 497–511,
-  with the same rounded native cardinal geometry and derived palettes 10/11.
+  with rounded native cardinal geometry and derived palettes 10/11.
+  Each also has 31 diagonal inner-corner variants, reclaiming Atlas-only primary
+  roles 192–222 for rock and 224–254 for snow. Four shared transparent grass-mask
+  glyphs append after the sand corners (128/512 total). They overlay the original
+  rock/snow floor, preserving every interior pixel rather than requantizing its
+  texture. The three green-facing materials share one 256-byte ROM topology
+  lookup. Existing cardinal words, palettes and prior graphics remain intact.
+  The Rock / grass inner corner target is on page seven; Snow / grass inner corner
+  is on the eighth partial page. Both require a visible corner and safe dry 3x3
+  landing. A nearby corner is kept outside the player sprite footprint, with the
+  shifted landing revalidated. Snow search can trace up to 128 tiles each way along a real boundary,
+  yielding one point per update, and inspects a new camera only when it turns.
+  The normal 4096-step bound, cursor Retry and cancellation still apply. The
+  inspector adds two temporary coordinates and two cursor entries; no gameplay
+  cache or saved field is added. Native tours check both targets, page wrap,
+  cached crossings and cold Continue. Complete colored-material pair cornering
+  and three-material blending remain future work.
   Interior quarters retain the existing floor art; no graphic tile, height,
   collision or saved-state expansion is needed. Flat material floors wait for
   the already prepared ring stencil, with no terrain query during border rendering.
@@ -573,8 +589,8 @@ header and manifest diff. The PNG preview and detailed role index go to `build/a
   agreement; six-seed random worlds are not assumed to contain this rare pair.
   There is no dedicated snow/sand inspector entry, and no claim of a native visit
   to a natural cold beach. Native snowline travel/save checks cover the combined
-  graphics bank. Diagonal-only notches for the other materials and complete three-material
-  blends remain future work.
+  graphics bank. Diagonal-only notches between colored material pairs and complete
+  three-material blends remain future work.
   GEO TP's fourth page finds a real sand/grass boundary by resumable bisection of
   dry ground, rejecting water interruptions and verifying a final safe 3x3 patch.
   Generation-7 forests/jungles/taiga can propose 3x3 groves from the native

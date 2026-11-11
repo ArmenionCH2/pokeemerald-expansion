@@ -24,11 +24,12 @@ assert all((w&1023)<512+manifest['raw_tiles'] and (w>>12)<13 for w in primary)
 native=struct.unpack('<4096H',(R/'data/tilesets/primary/general/metatiles.bin').read_bytes())
 native_attrs=struct.unpack('<512H',(R/'data/tilesets/primary/general/metatile_attributes.bin').read_bytes())
 for role in range(512):
-    if 256<=role<287 or 322<=role<512:continue
+    if 192<=role<223 or 224<=role<255 or 256<=role<287 or 322<=role<512:continue
     assert primary[role*8:(role+1)*8]==list(native[role*8:(role+1)*8])
     assert primary_attrs[role]==native_attrs[role]
 assert all(primary_attrs[i]==0x1000 for i in range(322,367))
 assert all(primary_attrs[i]==0x1021 for i in range(256,287))
+assert all(primary_attrs[i]==0x1000 for first in [192,224] for i in range(first,first+31))
 for variant in range(2):
     words=list(native[0x193*8:0x194*8]);h=variant;v=0
     expected=[words[(i//4)*4+((i%4)^h^(v*2))]^(1024 if h else 0)^(2048 if v else 0) for i in range(8)]
@@ -103,7 +104,7 @@ for role in range(378,382):
             assert visible_color(primary[role*8:(role+1)*8],x,y)==expected
 
 # Every corner role must be reachable and change only its intended quadrant.
-notch_lookup=array('gAtlasSandNotchIndex')
+notch_lookup=array('gAtlasGroundNotchIndex')
 assert len(notch_lookup)==256 and set(notch_lookup)==set(range(31))|{255}
 for mask,index in enumerate(notch_lookup):
     missing=[bool(mask&(1<<q) and mask&(1<<((q+1)%4)) and not mask&(1<<(q+4))) for q in range(4)]
@@ -123,6 +124,23 @@ for mask,index in enumerate(notch_lookup):
                 xx=(q%2)*8+x;yy=(q//2)*8+y
                 expected=pals[5*16+15] if index_at(inner,x,y) else visible_color(native[0x124*8:0x125*8],xx,yy)
                 assert visible_color(words,xx,yy)==expected
+
+# Rock/snow retain exact native interior pixels; only the grass mask overlays.
+for first,edge,floorrole in [(192,482,431),(224,497,896)]:
+    for mask,index in enumerate(notch_lookup):
+        if index==255:continue
+        cardinal=mask&15;oldrole=floorrole if cardinal==15 else edge+cardinal
+        oldwords=metatiles[(oldrole-512)*8:(oldrole-511)*8] if oldrole>=512 else primary[oldrole*8:(oldrole+1)*8];words=primary[(first+index)*8:(first+index+1)*8]
+        assert words[:4]==oldwords[:4]
+        for q,(a,b,diagonal) in enumerate([(0,3,3),(0,1,0),(2,3,2),(2,1,1)]):
+            missing=mask&(1<<a) and mask&(1<<b) and not mask&(1<<(diagonal+4))
+            if not missing:assert words[q+4]==oldwords[q+4]
+            inner=native[(0xC0 if q%2==0 else 0xC2)*8+4+q%2]^(2048 if q>=2 else 0)
+            for y in range(8):
+                for x in range(8):
+                    xx=(q%2)*8+x;yy=(q//2)*8+y
+                    expected=pals[5*16+15] if missing and index_at(inner,x,y) else visible_color(oldwords,xx,yy)
+                    assert visible_color(words,xx,yy)==expected
 
 assert pals[12*16+1:12*16+5]==pals[6*16+12:6*16+16]
 assert pals[12*16+5:12*16+9]==pals[5*16+11:5*16+15]

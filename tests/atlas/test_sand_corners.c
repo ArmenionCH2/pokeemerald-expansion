@@ -45,7 +45,7 @@ int main(void)
         {AtlasGeo_Begin(ATLAS_GEO_SAND_CORNER);while(!AtlasGeo_Step())steps++;status=gAtlasGeoStatus;}
         printf("sand corner seed=%u status=%u steps=%u at=%d,%d\n",seeds[k],status,steps,gAtlasGeoResult.x,gAtlasGeoResult.y);assert(status==1);
         s32 x=gAtlasGeoResult.x,y=gAtlasGeoResult.y;unsigned visible=0;
-        for(s32 dy=-3;dy<=3;dy++)for(s32 dx=-5;dx<=5;dx++)visible+=Corner(AtlasTerrain_Tile(x+dx,y+dy));
+        for(s32 dy=-3;dy<=3;dy++)for(s32 dx=-5;dx<=5;dx++)if(dx<-1 || dx>1 || dy<-1 || dy>1)visible+=Corner(AtlasTerrain_Tile(x+dx,y+dy));
         assert(visible);
         for(s32 dy=-1;dy<=1;dy++)for(s32 dx=-1;dx<=1;dx++)assert(!(AtlasTerrain_Tile(x+dx,y+dy)&0xC00));
         Walk(x-100,y,FALSE);Walk(x,y-100,TRUE);

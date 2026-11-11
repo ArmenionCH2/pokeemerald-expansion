@@ -62,8 +62,8 @@ static u16 Ground(u16 floor, const u16 *cells)
         return (floor&~1023)|(ATLAS_ROCK_SNOW_EDGE_FIRST+snowMask);
     if(material==2 && sand && !green)
         return (floor&~1023)|(ATLAS_ROCK_SAND_EDGE_FIRST+sandMask);
-    if(material==1)
     {
+        /* All three green-facing floors share the same topology lookup. */
         static const u8 diagonals[4]={2,8,6,0};
         u8 full=mask;
         for(i=0;i<4;i++)
@@ -71,8 +71,9 @@ static u16 Ground(u16 floor, const u16 *cells)
             u16 neighbor=cells[diagonals[i]];
             if((neighbor&3) || (neighbor&12))full|=1<<(i+4);
         }
-        u8 notch=gAtlasSandNotchIndex[full];
-        if(notch!=255)return (floor&~1023)|(ATLAS_SAND_NOTCH_FIRST+notch);
+        u8 notch=gAtlasGroundNotchIndex[full];
+        unsigned first=material==1?ATLAS_SAND_NOTCH_FIRST:material==2?ATLAS_ROCK_NOTCH_FIRST:ATLAS_SNOW_NOTCH_FIRST;
+        if(notch!=255)return (floor&~1023)|(first+notch);
     }
     if (mask == 15) return floor;
     if(material>=2)return (floor&~1023)|((material==3?ATLAS_SNOW_GROUND_EDGE_FIRST:ATLAS_ROCK_GROUND_EDGE_FIRST)+mask);

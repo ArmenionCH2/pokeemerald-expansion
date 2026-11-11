@@ -76,7 +76,7 @@ dunes for checking actual sand relief. The fifth page locates rounded rock/grass
 and snow/grass ground borders, mesas, headwater creeks, sea cliffs and rounded rock/sand boundaries. The border artwork preserves terrain
 heights and walking collision. Mesas require generation 20 or newer; headwaters require 21 and sea cliffs 22. A sixth page finds karst sinkholes in generation 23 and rounded rock/snow boundaries. Its River canyon entry requires generation 24; Backswamp and Natural levee entries require generation 25.
 The sixth page also finds Coastal distributary channels in generation 26 worlds.
-A seventh page finds flowering clearings, including separate purple/gold targets, cold sea ice and diagonal sand/grass inner corners. L/R jumps between inspector pages.
+A seventh page finds flowering clearings, including separate purple/gold targets, cold sea ice and diagonal sand/grass and rock/grass inner corners. Page eight finds snow/grass inner corners. L/R jumps between inspector pages.
 The volcano entry finds dormant cones in generation 13 worlds. Physical location breadcrumbs name the landmass,
 catchment and terrain. Rivers follow stable mainstem/tributary identities from the drainage graph.
 Connected equal-level lakes, individual mesas, sinkholes and volcanic cone/caldera complexes

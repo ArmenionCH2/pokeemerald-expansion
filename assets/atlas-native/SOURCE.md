@@ -137,3 +137,11 @@ texture with the alpha silhouettes of General 0xC0/0xC2 inner pond corners,
 recolored to the established General palette-5 grass fringe. No native source,
 palette or mutable animation allocation changes. All 31 additional canonical
 patterns retain native sand behavior and map collision/elevation.
+
+Rock/grass and snow/grass diagonal corners reclaim Atlas-only primary roles
+192–222 and 224–254. Four transparent glyphs share General 0xC0/0xC2 inner-corner
+alpha in the established native palette-5 grass color. The masks overlay original
+Cave rock or derived native snow floor quarters; every interior texture pixel is
+preserved. Graphics append after the sand corners (128/512 total). Native inputs,
+previous glyphs, palettes, animation strips, and other layouts remain unchanged.
+Each material keeps its original normal-ground behavior and movement flags.
